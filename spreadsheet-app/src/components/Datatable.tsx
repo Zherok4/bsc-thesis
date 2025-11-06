@@ -1,19 +1,19 @@
 import { HotTable } from '@handsontable/react-wrapper';
 
+const ROWS : number = 100;
+const COLS : number = 26;
+const INIT_DATA = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+
 const Datatable = () => {
     return (
         <HotTable
         themeName="ht-theme-main"
-        data={[
-        ['d', 'Tesla', 'Volvo', 'Toyota', 'Ford'],
-        ['2019', 10, 11, 12, 13],
-        ['2020', 20, 11, 14, 13],
-        ['2021', 30, 15, 12, 13]
-        ]}
+        data={INIT_DATA}
+        width="100%"
+        height="auto"
         rowHeaders={true}
         colHeaders={true}
-        width="auto"
-        height="auto"
+        colWidths={100}
         autoWrapRow={true}
         autoWrapCol={true}
         licenseKey="non-commercial-and-evaluation"
