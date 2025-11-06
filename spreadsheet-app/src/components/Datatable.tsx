@@ -10,7 +10,7 @@ const Datatable = () => {
         themeName="ht-theme-main"
         data={INIT_DATA}
         width="100%"
-        height="auto"
+        height= "100vh"
         rowHeaders={true}
         colHeaders={true}
         colWidths={100}
