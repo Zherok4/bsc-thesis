@@ -1,15 +1,17 @@
 import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
 import { useRef } from 'react';
 import { registerAllModules } from 'handsontable/registry';
+import { HyperFormula } from 'hyperformula';
 import Handsontable from 'handsontable';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 
 registerAllModules();
 
-const ROWS : number = 100;
-const COLS : number = 26;
-const INIT_DATA = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+const DEFAULT_ROW_COUNT : number = 100;
+const DEFAULT_COL_COUNT : number = 26;
+const DEFAULT_COL_WIDTH : number = 110;
+const INIT_DATA = Array(DEFAULT_ROW_COUNT).fill(null).map(() => Array(DEFAULT_COL_COUNT).fill(null));
 
 interface DatatableProps {
     onCellSelect: (value: string) => void
@@ -18,11 +20,17 @@ interface DatatableProps {
 const Datatable = ({onCellSelect} : DatatableProps) => {
     const hotTableRef = useRef<HotTableRef>(null);
 
-    const handleAfterSelection = (row: number, column: number, row2: number, column2: number) => {
+    // TODO: Write documentation
+    const handleAfterSelection = (startRow: number, startColumn: number, endRow: number, endCol: number) => {
         const hotInstance = hotTableRef.current?.hotInstance;
-        const cellValue = hotInstance?.getDataAtCell(row, column);
+        const cellValue = hotInstance?.getDataAtCell(startRow, startColumn);
         onCellSelect(cellValue !== null ? String(cellValue) : '')
     };
+
+    // TODO: Write documentation
+    const handleAfterChange = (changes: Array<Array<any>>, source: string) => {
+
+    }
 
     return (
         <HotTable
@@ -33,12 +41,13 @@ const Datatable = ({onCellSelect} : DatatableProps) => {
         height= "auto"
         rowHeaders={true}
         colHeaders={true}
-        colWidths={110}
+        colWidths={DEFAULT_COL_WIDTH}
         autoWrapRow={true}
         autoWrapCol={true}
+        formulas={{engine: HyperFormula}}
         contextMenu={true}
         licenseKey="non-commercial-and-evaluation"
-        // HOOKS
+        // HOOKS / EVENTS
         afterSelection={handleAfterSelection}
 
     />

@@ -1,9 +1,10 @@
 import './FormulaBar.css';
 interface FormulaBarProps {
     value: string;
+    handleOnChange: (newValue: string) => void; 
 }
-
-const FormulaBar = ({value}: FormulaBarProps) => {
+// TODO: after onChange let new Value be propogated back to the cell
+const FormulaBar = ({value, handleOnChange}: FormulaBarProps) => {
     return (
         <div className="formula-bar">
             <div className="formula-bar__fx-button">
@@ -14,6 +15,7 @@ const FormulaBar = ({value}: FormulaBarProps) => {
                 className="formula-bar__input"
                 placeholder=""
                 value = {value}
+                onChange = {(e) => handleOnChange(e.target.value)}
             />
         </div>
     );
