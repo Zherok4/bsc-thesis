@@ -1,6 +1,9 @@
 import './FormulaBar.css';
+interface FormulaBarProps {
+    value: string;
+}
 
-const FormulaBar = () => {
+const FormulaBar = ({value}: FormulaBarProps) => {
     return (
         <div className="formula-bar">
             <div className="formula-bar__fx-button">
@@ -10,7 +13,7 @@ const FormulaBar = () => {
                 type="text"
                 className="formula-bar__input"
                 placeholder=""
-                readOnly
+                value = {value}
             />
         </div>
     );
