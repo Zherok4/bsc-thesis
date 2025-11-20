@@ -1,5 +1,5 @@
 import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
-import { useRef } from 'react';
+import { memo, useCallback, useImperativeHandle, useRef } from 'react';
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
 import Handsontable from 'handsontable';
@@ -14,24 +14,41 @@ const DEFAULT_COL_WIDTH : number = 110;
 const INIT_DATA = Array(DEFAULT_ROW_COUNT).fill(null).map(() => Array(DEFAULT_COL_COUNT).fill(null));
 
 interface DatatableProps {
-    onCellSelect: (value: string) => void
+    onCellSelect: (value: string, row: number, col: number) => void;
+    ref?: React.Ref<DatatableHandle>;
+}
+export interface DatatableHandle {
+    updateCell: (row: number, col: number, value: string) => void;
 }
 
-const Datatable = ({onCellSelect} : DatatableProps) => {
+const Datatable = ({onCellSelect, ref} : DatatableProps) => {
     const hotTableRef = useRef<HotTableRef>(null);
 
-    // TODO: Write documentation
-    const handleAfterSelection = (startRow: number, startColumn: number, endRow: number, endCol: number) => {
-        const hotInstance = hotTableRef.current?.hotInstance;
-        const cellValue = hotInstance?.getDataAtCell(startRow, startColumn);
-        onCellSelect(cellValue !== null ? String(cellValue) : '')
-    };
+    useImperativeHandle(ref, () => ({
+        updateCell: (row: number, col: number, value: string) => {
+            const hotInstance = hotTableRef.current?.hotInstance;
+            if (hotInstance) {
+                hotInstance.setDataAtCell(row, col, value)
+            }
+        }
+    }), []);
+
+    // TODO: Write documentation, useCallback
+    const handleAfterSelection = useCallback((
+        startRow: number,
+        startColumn: number,
+        endRow: number,
+        endCol: number
+        ) => {
+            const hotInstance = hotTableRef.current?.hotInstance;
+            if (!hotInstance) return;
+            const rawValue = hotInstance.getSourceDataAtCell(startRow, startColumn);
+            const displayValue = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+            onCellSelect(displayValue, startRow, startColumn)
+        }
+    , [onCellSelect]);
 
     // TODO: Write documentation
-    const handleAfterChange = (changes: Array<Array<any>>, source: string) => {
-
-    }
-
     return (
         <HotTable
         ref = {hotTableRef}
@@ -54,4 +71,4 @@ const Datatable = ({onCellSelect} : DatatableProps) => {
     );
 }
 
-export default Datatable
+export default memo(Datatable)
