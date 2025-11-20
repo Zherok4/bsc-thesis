@@ -2,7 +2,6 @@ import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
 import { memo, useCallback, useImperativeHandle, useRef } from 'react';
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
-import Handsontable from 'handsontable';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 
@@ -18,17 +17,17 @@ interface DatatableProps {
     ref?: React.Ref<DatatableHandle>;
 }
 export interface DatatableHandle {
-    updateCell: (row: number, col: number, value: string) => void;
+    updateCell: (newValue: string, row: number, col: number) => void;
 }
 
 const Datatable = ({onCellSelect, ref} : DatatableProps) => {
     const hotTableRef = useRef<HotTableRef>(null);
 
     useImperativeHandle(ref, () => ({
-        updateCell: (row: number, col: number, value: string) => {
+        updateCell: (newValue: string, row: number, col: number) => {
             const hotInstance = hotTableRef.current?.hotInstance;
             if (hotInstance) {
-                hotInstance.setDataAtCell(row, col, value)
+                hotInstance.setDataAtCell(row, col, newValue)
             }
         }
     }), []);
@@ -64,6 +63,7 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
         formulas={{engine: HyperFormula}}
         contextMenu={true}
         licenseKey="non-commercial-and-evaluation"
+        outsideClickDeselects={false}
         // HOOKS / EVENTS
         afterSelection={handleAfterSelection}
 
