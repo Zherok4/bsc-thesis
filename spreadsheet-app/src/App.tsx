@@ -59,9 +59,25 @@ function App() {
     }
   }, [selectedCell]);
 
+  /**
+   * handleImport is triggered when:
+   * - User imports an Excel file via the TopBar
+   *
+   * Loads the imported data into the Datatable and resets selection
+   * @param data - 2D array of imported cell values
+   */
+  const handleImport = useCallback((data: (string | number | null)[][]) => {
+    const currentDatatable: DatatableHandle | null = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.loadData(data);
+      setSelectedCell(null);
+      setSelectedCellValue('');
+    }
+  }, []);
+
   return (
     <div className="app-container">
-      <TopBar />
+      <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
         <Datatable onCellSelect={updateSelectionState} ref={datatableRef}/>

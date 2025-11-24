@@ -19,6 +19,7 @@ interface DatatableProps {
 export interface DatatableHandle {
     updateCell: (newValue: string, row: number, col: number) => void;
     selectCell: (row: number, col: number) => void;
+    loadData: (data: (string | number | null)[][]) => void;
 }
 
 const Datatable = ({onCellSelect, ref} : DatatableProps) => {
@@ -35,6 +36,12 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
             const hotInstance = hotTableRef.current?.hotInstance;
             if (hotInstance) {
                 hotInstance.selectCell(row, col);
+            }
+        },
+        loadData: (data: (string | number | null)[][]) => {
+            const hotInstance = hotTableRef.current?.hotInstance;
+            if (hotInstance) {
+                hotInstance.loadData(data);
             }
         }
     }), []);
