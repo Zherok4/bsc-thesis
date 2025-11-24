@@ -4,12 +4,16 @@ import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
+import SheetTabs from './components/SheetTabs';
+import type { Sheet } from './components/SheetTabs';
 
 
 function App() {
   const datatableRef = useRef<DatatableHandle>(null);
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
+  const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [activeSheetId, setActiveSheetId] = useState<string>('');
 
   /**
    * updateSelectionState is triggered if:
@@ -63,17 +67,37 @@ function App() {
    * handleImport is triggered when:
    * - User imports an Excel file via the TopBar
    *
-   * Loads the imported data into the Datatable and resets selection
-   * @param data - 2D array of imported cell values
+   * Loads the imported sheets and displays the first sheet
+   * @param importedSheets - Array of sheets with their data
    */
-  const handleImport = useCallback((data: (string | number | null)[][]) => {
+  const handleImport = useCallback((importedSheets: Sheet[]) => {
     const currentDatatable: DatatableHandle | null = datatableRef.current;
-    if (currentDatatable) {
-      currentDatatable.loadData(data);
+    if (currentDatatable && importedSheets.length > 0) {
+      setSheets(importedSheets);
+      setActiveSheetId(importedSheets[0].id);
+      currentDatatable.loadData(importedSheets[0].data);
       setSelectedCell(null);
       setSelectedCellValue('');
     }
   }, []);
+
+  /**
+   * handleSheetChange is triggered when:
+   * - User clicks on a sheet tab
+   *
+   * Switches to the selected sheet and loads its data
+   * @param sheetId - ID of the sheet to switch to
+   */
+  const handleSheetChange = useCallback((sheetId: string) => {
+    const currentDatatable: DatatableHandle | null = datatableRef.current;
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (currentDatatable && sheet) {
+      setActiveSheetId(sheetId);
+      currentDatatable.loadData(sheet.data);
+      setSelectedCell(null);
+      setSelectedCellValue('');
+    }
+  }, [sheets]);
 
   return (
     <div className="app-container">
@@ -81,6 +105,13 @@ function App() {
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
         <Datatable onCellSelect={updateSelectionState} ref={datatableRef}/>
+        {sheets.length > 0 && (
+          <SheetTabs
+            sheets={sheets}
+            activeSheetId={activeSheetId}
+            onSheetChange={handleSheetChange}
+          />
+        )}
       </div>
     </div>
   )

@@ -1,12 +1,13 @@
 import './TopBar.css';
 import { useRef } from 'react';
 import * as XLSX from 'xlsx';
+import type { Sheet } from './SheetTabs';
 
 interface TopBarProps {
-    onImport: (data: (string | number | null)[][]) => void;
+    onImport: (sheets: Sheet[]) => void;
 }
 
-const TopBar = ({ onImport }: TopBarProps) => {
+const TopBar = ({ onImport } : TopBarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -16,34 +17,43 @@ const TopBar = ({ onImport }: TopBarProps) => {
         try {
             const arrayBuffer = await file.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, {cellFormula: true});
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
 
-            // Extract formulas and values from cells
-            const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-            const data: (string | number | null)[][] = [];
+            // Extract all sheets
+            const sheets: Sheet[] = workbook.SheetNames.map((sheetName, index) => {
+                const worksheet = workbook.Sheets[sheetName];
 
-            for (let row = range.s.r; row <= range.e.r; row++) {
-                const rowData: (string | number | null)[] = [];
-                for (let col = range.s.c; col <= range.e.c; col++) {
-                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                    const cell = worksheet[cellAddress];
+                // Extract formulas and values from cells
+                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+                const data: (string | number | null)[][] = [];
 
-                    if (!cell) {
-                        // Empty cell
-                        rowData.push(null);
-                    } else if (cell.f) {
-                        // Cell contains a formula - prepend = for Handsontable
-                        rowData.push('=' + cell.f);
-                    } else {
-                        // Regular value
-                        rowData.push(cell.v ?? null);
+                for (let row = range.s.r; row <= range.e.r; row++) {
+                    const rowData: (string | number | null)[] = [];
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                        const cell = worksheet[cellAddress];
+
+                        if (!cell) {
+                            // Empty cell
+                            rowData.push(null);
+                        } else if (cell.f) {
+                            // Cell contains a formula - prepend = for Handsontable
+                            rowData.push('=' + cell.f);
+                        } else {
+                            // Regular value
+                            rowData.push(cell.v ?? null);
+                        }
                     }
+                    data.push(rowData);
                 }
-                data.push(rowData);
-            }
 
-            onImport(data);
+                return {
+                    id: `sheet-${index}`,
+                    name: sheetName,
+                    data
+                };
+            });
+
+            onImport(sheets);
 
             // Reset file input to allow re-importing the same file
             if (fileInputRef.current) {
