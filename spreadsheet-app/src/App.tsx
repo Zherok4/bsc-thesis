@@ -31,7 +31,7 @@ function App() {
   /**
    * updateSelectedCellValueState is triggered if:
    * - FormulaBar component changes
-   * 
+   *
    * @param newValue - the newValue for the selected cell
    */
   const updateSelectedCellValueState = useCallback((
@@ -45,10 +45,22 @@ function App() {
   }
   , [selectedCell]);
 
+  /**
+   * handleMoveSelectionDown is triggered if:
+   * - Enter key is pressed in the FormulaBar
+   *
+   * Moves the cell selection one row down
+   */
+  const handleMoveSelectionDown = useCallback(() => {
+    const currentDatatable: DatatableHandle | null = datatableRef.current;
+    if (currentDatatable && selectedCell) {
+      currentDatatable.selectCell(selectedCell.row + 1, selectedCell.col);
+    }
+  }, [selectedCell]);
+
   return (
     <div className="app-container">
-      <p>current Value: {String(selectedCellValue)}</p>
-      <FormulaBar value={selectedCellValue} handleOnChange={updateSelectedCellValueState}/>
+      <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
         <Datatable onCellSelect={updateSelectionState} ref={datatableRef}/>
       </div>

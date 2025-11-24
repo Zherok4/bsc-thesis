@@ -18,6 +18,7 @@ interface DatatableProps {
 }
 export interface DatatableHandle {
     updateCell: (newValue: string, row: number, col: number) => void;
+    selectCell: (row: number, col: number) => void;
 }
 
 const Datatable = ({onCellSelect, ref} : DatatableProps) => {
@@ -28,6 +29,12 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
             const hotInstance = hotTableRef.current?.hotInstance;
             if (hotInstance) {
                 hotInstance.setDataAtCell(row, col, newValue)
+            }
+        },
+        selectCell: (row: number, col: number) => {
+            const hotInstance = hotTableRef.current?.hotInstance;
+            if (hotInstance) {
+                hotInstance.selectCell(row, col);
             }
         }
     }), []);
@@ -48,6 +55,7 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
     , [onCellSelect]);
 
     // TODO: Write documentation
+    // afterEdit hook ==> also an Edit can change current Value State
     return (
         <HotTable
         ref = {hotTableRef}
@@ -66,7 +74,6 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
         outsideClickDeselects={false}
         // HOOKS / EVENTS
         afterSelection={handleAfterSelection}
-
     />
     );
 }
