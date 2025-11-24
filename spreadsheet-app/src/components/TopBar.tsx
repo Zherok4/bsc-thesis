@@ -15,14 +15,33 @@ const TopBar = ({ onImport }: TopBarProps) => {
 
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer);
+            const workbook = XLSX.read(arrayBuffer, {cellFormula: true});
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
-            const data = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-                raw: true,
-                defval: null
-            }) as (string | number | null)[][];
+
+            // Extract formulas and values from cells
+            const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+            const data: (string | number | null)[][] = [];
+
+            for (let row = range.s.r; row <= range.e.r; row++) {
+                const rowData: (string | number | null)[] = [];
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                    const cell = worksheet[cellAddress];
+
+                    if (!cell) {
+                        // Empty cell
+                        rowData.push(null);
+                    } else if (cell.f) {
+                        // Cell contains a formula - prepend = for Handsontable
+                        rowData.push('=' + cell.f);
+                    } else {
+                        // Regular value
+                        rowData.push(cell.v ?? null);
+                    }
+                }
+                data.push(rowData);
+            }
 
             onImport(data);
 
