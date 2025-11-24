@@ -69,7 +69,7 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
         themeName="ht-theme-main"
         data={INIT_DATA}
         width="100%"
-        height= "auto"
+        height= "100%"
         rowHeaders={true}
         colHeaders={true}
         colWidths={DEFAULT_COL_WIDTH}
