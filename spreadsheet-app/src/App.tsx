@@ -3,6 +3,7 @@ import './App.css'
 import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
+import TopBar from './components/TopBar';
 
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <TopBar />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
         <Datatable onCellSelect={updateSelectionState} ref={datatableRef}/>
