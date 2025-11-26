@@ -7,6 +7,7 @@ interface TopBarProps {
     onImport: (sheets: Sheet[]) => void;
 }
 
+// TODO: Convert so that it uses HyperFormula Engine
 const TopBar = ({ onImport } : TopBarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 

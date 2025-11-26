@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import './App.css'
 import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
@@ -6,10 +6,23 @@ import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
 import type { Sheet } from './components/SheetTabs';
+import { HyperFormula } from 'hyperformula';
 
+const options : {licenseKey : string}= {
+  licenseKey: 'gpl-v3'
+};
+
+const DEFAULT_ROW_COUNT : number = 100;
+const DEFAULT_COL_COUNT : number = 26;
+const INIT_DATA = Array(DEFAULT_ROW_COUNT).fill('').map(() => Array(DEFAULT_COL_COUNT).fill(''));
 
 function App() {
   const datatableRef = useRef<DatatableHandle>(null);
+  
+  const hfInstance = useMemo(() => {
+    return HyperFormula.buildFromSheets({defaultSheet: INIT_DATA}, options);
+  }, [])
+
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
   const [sheets, setSheets] = useState<Sheet[]>([]);
@@ -70,6 +83,7 @@ function App() {
    * Loads the imported sheets and displays the first sheet
    * @param importedSheets - Array of sheets with their data
    */
+  // TODO: save / import data into hyperformula Instance
   const handleImport = useCallback((importedSheets: Sheet[]) => {
     const currentDatatable: DatatableHandle | null = datatableRef.current;
     if (currentDatatable && importedSheets.length > 0) {
@@ -90,7 +104,7 @@ function App() {
    */
   const handleSheetChange = useCallback((sheetId: string) => {
     const currentDatatable: DatatableHandle | null = datatableRef.current;
-    const sheet = sheets.find(s => s.id === sheetId);
+    const sheet : Sheet | undefined = sheets.find(s => s.id === sheetId);
     if (currentDatatable && sheet) {
       setActiveSheetId(sheetId);
       currentDatatable.loadData(sheet.data);
@@ -104,7 +118,7 @@ function App() {
       <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
-        <Datatable onCellSelect={updateSelectionState} ref={datatableRef}/>
+        <Datatable onCellSelect={updateSelectionState} hfInstance={hfInstance} ref={datatableRef}/>
         {sheets.length > 0 && (
           <SheetTabs
             sheets={sheets}

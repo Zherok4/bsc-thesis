@@ -7,22 +7,21 @@ import 'handsontable/styles/ht-theme-main.min.css';
 
 registerAllModules();
 
-const DEFAULT_ROW_COUNT : number = 100;
-const DEFAULT_COL_COUNT : number = 26;
 const DEFAULT_COL_WIDTH : number = 110;
-const INIT_DATA = Array(DEFAULT_ROW_COUNT).fill(null).map(() => Array(DEFAULT_COL_COUNT).fill(null));
 
 interface DatatableProps {
     onCellSelect: (value: string, row: number, col: number) => void;
+    hfInstance : (HyperFormula);
     ref?: React.Ref<DatatableHandle>;
 }
 export interface DatatableHandle {
     updateCell: (newValue: string, row: number, col: number) => void;
     selectCell: (row: number, col: number) => void;
     loadData: (data: (string | number | null)[][]) => void;
+    switchSheet: (sheetName : string) => void;
 }
 
-const Datatable = ({onCellSelect, ref} : DatatableProps) => {
+const Datatable = ({onCellSelect, hfInstance, ref} : DatatableProps) => {
     const hotTableRef = useRef<HotTableRef>(null);
 
     useImperativeHandle(ref, () => ({
@@ -43,10 +42,16 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
             if (hotInstance) {
                 hotInstance.loadData(data);
             }
+        },
+        switchSheet: (sheetName : string) => {
+            const hotInstance = hotTableRef.current?.hotInstance;
+            if (hotInstance) {
+                hotInstance.getPlugin('formulas').switchSheet(sheetName);
+            }
         }
     }), []);
 
-    // TODO: Write documentation, useCallback
+    // TODO: Write documentation
     const handleAfterSelection = useCallback((
         startRow: number,
         startColumn: number,
@@ -67,7 +72,6 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
         <HotTable
         ref = {hotTableRef}
         themeName="ht-theme-main"
-        data={INIT_DATA}
         width="100%"
         height= "100%"
         rowHeaders={true}
@@ -75,7 +79,10 @@ const Datatable = ({onCellSelect, ref} : DatatableProps) => {
         colWidths={DEFAULT_COL_WIDTH}
         autoWrapRow={true}
         autoWrapCol={true}
-        formulas={{engine: HyperFormula}}
+        formulas={{
+            engine: hfInstance,
+            sheetName: 'defaultSheet',
+        }}
         contextMenu={true}
         licenseKey="non-commercial-and-evaluation"
         outsideClickDeselects={false}
