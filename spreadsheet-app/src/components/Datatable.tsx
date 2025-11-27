@@ -12,6 +12,7 @@ const DEFAULT_COL_WIDTH : number = 110;
 interface DatatableProps {
     onCellSelect: (value: string, row: number, col: number) => void;
     hfInstance : (HyperFormula);
+    activeSheetName : string;
     ref?: React.Ref<DatatableHandle>;
 }
 export interface DatatableHandle {
@@ -21,7 +22,7 @@ export interface DatatableHandle {
     switchSheet: (sheetName : string) => void;
 }
 
-const Datatable = ({onCellSelect, hfInstance, ref} : DatatableProps) => {
+const Datatable = ({onCellSelect, hfInstance, activeSheetName, ref} : DatatableProps) => {
     const hotTableRef = useRef<HotTableRef>(null);
 
     useImperativeHandle(ref, () => ({
@@ -81,7 +82,7 @@ const Datatable = ({onCellSelect, hfInstance, ref} : DatatableProps) => {
         autoWrapCol={true}
         formulas={{
             engine: hfInstance,
-            sheetName: 'defaultSheet',
+            sheetName: activeSheetName,
         }}
         contextMenu={true}
         licenseKey="non-commercial-and-evaluation"

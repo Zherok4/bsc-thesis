@@ -1,4 +1,5 @@
 import './SheetTabs.css';
+import { HyperFormula } from 'hyperformula';
 
 export interface Sheet {
     id: string;
@@ -7,22 +8,22 @@ export interface Sheet {
 }
 
 interface SheetTabsProps {
-    sheets: Sheet[];
+    hfInstance: HyperFormula;
     activeSheetId: string;
     onSheetChange: (sheetId: string) => void;
 }
 
-const SheetTabs = ({ sheets, activeSheetId, onSheetChange }: SheetTabsProps) => {
+const SheetTabs = ({hfInstance, activeSheetId, onSheetChange }: SheetTabsProps) => {
     return (
         <div className="sheet-tabs">
             <div className="sheet-tabs__container">
-                {sheets.map((sheet) => (
+                {(hfInstance.getSheetNames()).map((sheetName) => (
                     <button
-                        key={sheet.id}
-                        className={`sheet-tabs__tab ${sheet.id === activeSheetId ? 'sheet-tabs__tab--active' : ''}`}
-                        onClick={() => onSheetChange(sheet.id)}
+                        key={hfInstance.getSheetId(sheetName)}
+                        className={`sheet-tabs__tab ${sheetName === activeSheetId ? 'sheet-tabs__tab--active' : ''}`}
+                        onClick={() => onSheetChange(sheetName)}
                     >
-                        {sheet.name}
+                        {sheetName}
                     </button>
                 ))}
             </div>

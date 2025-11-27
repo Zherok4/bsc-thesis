@@ -7,6 +7,7 @@ import TopBar from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
 import type { Sheet } from './components/SheetTabs';
 import { HyperFormula } from 'hyperformula';
+import ExcelJS from 'exceljs';
 
 const options : {licenseKey : string}= {
   licenseKey: 'gpl-v3'
@@ -14,19 +15,18 @@ const options : {licenseKey : string}= {
 
 const DEFAULT_ROW_COUNT : number = 100;
 const DEFAULT_COL_COUNT : number = 26;
-const INIT_DATA = Array(DEFAULT_ROW_COUNT).fill('').map(() => Array(DEFAULT_COL_COUNT).fill(''));
+const DEFAULT_DATA = Array(DEFAULT_ROW_COUNT).fill('').map(() => Array(DEFAULT_COL_COUNT).fill(''));
 
 function App() {
   const datatableRef = useRef<DatatableHandle>(null);
   
   const hfInstance = useMemo(() => {
-    return HyperFormula.buildFromSheets({defaultSheet: INIT_DATA}, options);
+    return HyperFormula.buildFromSheets({'Tabelle1': DEFAULT_DATA}, options);
   }, [])
 
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
-  const [sheets, setSheets] = useState<Sheet[]>([]);
-  const [activeSheetId, setActiveSheetId] = useState<string>('');
+  const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
 
   /**
    * updateSelectionState is triggered if:
@@ -77,55 +77,69 @@ function App() {
   }, [selectedCell]);
 
   /**
+   * handleSheetChange is triggered when:
+   * - User clicks on a sheet tab
+   *
+   * Switches to the selected sheet and loads its data
+   * @param sheetName - name of the sheet to switch to
+   */
+  const handleSheetChange = useCallback((sheetName: string) => {
+    const currentDatatable: DatatableHandle | null = datatableRef.current;
+    currentDatatable?.switchSheet(sheetName);
+    setActiveSheetName(sheetName);
+  }, []);
+
+  /**
    * handleImport is triggered when:
    * - User imports an Excel file via the TopBar
    *
    * Loads the imported sheets and displays the first sheet
    * @param importedSheets - Array of sheets with their data
    */
-  // TODO: save / import data into hyperformula Instance
-  const handleImport = useCallback((importedSheets: Sheet[]) => {
-    const currentDatatable: DatatableHandle | null = datatableRef.current;
-    if (currentDatatable && importedSheets.length > 0) {
-      setSheets(importedSheets);
-      setActiveSheetId(importedSheets[0].id);
-      currentDatatable.loadData(importedSheets[0].data);
-      setSelectedCell(null);
-      setSelectedCellValue('');
-    }
-  }, []);
+  const handleImport = useCallback((sheetsAsJavascriptArrays: {[key: string]: (any)[][]}) => {
+    if (sheetsAsJavascriptArrays) {
+      hfInstance.batch(() => {
+        // Remove all active Sheets
+        const sheetNames = hfInstance.getSheetNames();
+        for (const sheetName of sheetNames) {
+          const sheetId = hfInstance.getSheetId(sheetName);
+          if (sheetId !== undefined) {
+            hfInstance.removeSheet(sheetId);
+          }
+        }
 
-  /**
-   * handleSheetChange is triggered when:
-   * - User clicks on a sheet tab
-   *
-   * Switches to the selected sheet and loads its data
-   * @param sheetId - ID of the sheet to switch to
-   */
-  const handleSheetChange = useCallback((sheetId: string) => {
-    const currentDatatable: DatatableHandle | null = datatableRef.current;
-    const sheet : Sheet | undefined = sheets.find(s => s.id === sheetId);
-    if (currentDatatable && sheet) {
-      setActiveSheetId(sheetId);
-      currentDatatable.loadData(sheet.data);
-      setSelectedCell(null);
-      setSelectedCellValue('');
+        // Add all new sheets
+        for (const [sheetName, sheetData] of Object.entries(sheetsAsJavascriptArrays)) {
+          if (hfInstance.isItPossibleToAddSheet(sheetName)) {
+            hfInstance.addSheet(sheetName);
+            const sheetId = hfInstance.getSheetId(sheetName);
+            if (sheetId !== undefined) {
+              hfInstance.setSheetContent(sheetId, sheetData);
+            }
+          }
+        }
+      });
+
+      // Update states
+      handleSheetChange(Object.keys(sheetsAsJavascriptArrays)[0]);
     }
-  }, [sheets]);
+  }, [handleSheetChange]);
 
   return (
     <div className="app-container">
       <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
-        <Datatable onCellSelect={updateSelectionState} hfInstance={hfInstance} ref={datatableRef}/>
-        {sheets.length > 0 && (
-          <SheetTabs
-            sheets={sheets}
-            activeSheetId={activeSheetId}
-            onSheetChange={handleSheetChange}
-          />
-        )}
+        <Datatable 
+        onCellSelect={updateSelectionState} 
+        hfInstance={hfInstance} 
+        activeSheetName={activeSheetName}
+        ref={datatableRef}/>
+        <SheetTabs
+          hfInstance={hfInstance}
+          activeSheetId={activeSheetName}
+          onSheetChange={handleSheetChange}
+        />
       </div>
     </div>
   )

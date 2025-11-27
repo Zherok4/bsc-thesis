@@ -1,70 +1,63 @@
 import './TopBar.css';
 import { useRef } from 'react';
-import * as XLSX from 'xlsx';
 import type { Sheet } from './SheetTabs';
+import ExcelJS from 'exceljs';
 
 interface TopBarProps {
-    onImport: (sheets: Sheet[]) => void;
+    onImport: (sheetsAsJavascriptArrays: {[key: string]: (ExcelJS.CellValue)[][]}) => void;
 }
 
 // TODO: Convert so that it uses HyperFormula Engine
 const TopBar = ({ onImport } : TopBarProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const readXlsxWorkbookFromFile = async (file: File) => {
+        const workbook = new ExcelJS.Workbook();
+        const arrayBuffer = await file.arrayBuffer();
+        await workbook.xlsx.load(arrayBuffer);
+
+        return workbook;
+    }
+
+    const convertXlsxWorkbookToJavascriptArrays = (workbook: ExcelJS.Workbook) => {
+        const workbookData: {[key: string]: (ExcelJS.CellValue)[][]} = {};
+
+        workbook.eachSheet((worksheet: ExcelJS.Worksheet) => {
+            const sheetDimensions: ExcelJS.Range = worksheet.dimensions;
+            const sheetData: any[] = [];
+
+            for (let rowNum: number = sheetDimensions.top; rowNum <= sheetDimensions.bottom; rowNum++) {
+                const rowData: any[] = []
+
+                for (let colNum = sheetDimensions.left; colNum <= sheetDimensions.right; colNum++) {
+                    const cell: ExcelJS.Cell = worksheet.getCell(rowNum, colNum)
+
+                    const cellData: ExcelJS.CellValue = cell.formula ? `=${cell.formula}` : cell.value;
+                    rowData.push(cellData); 
+                }
+
+                sheetData.push(rowData);
+            }
+
+            workbookData[worksheet.name] = sheetData;
+        })
+
+        return workbookData;
+    }
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         try {
-            const arrayBuffer = await file.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, {cellFormula: true});
-
-            // Extract all sheets
-            const sheets: Sheet[] = workbook.SheetNames.map((sheetName, index) => {
-                const worksheet = workbook.Sheets[sheetName];
-
-                // Extract formulas and values from cells
-                const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-                const data: (string | number | null)[][] = [];
-
-                for (let row = range.s.r; row <= range.e.r; row++) {
-                    const rowData: (string | number | null)[] = [];
-                    for (let col = range.s.c; col <= range.e.c; col++) {
-                        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                        const cell = worksheet[cellAddress];
-
-                        if (!cell) {
-                            // Empty cell
-                            rowData.push(null);
-                        } else if (cell.f) {
-                            // Cell contains a formula - prepend = for Handsontable
-                            rowData.push('=' + cell.f);
-                        } else {
-                            // Regular value
-                            rowData.push(cell.v ?? null);
-                        }
-                    }
-                    data.push(rowData);
-                }
-
-                return {
-                    id: `sheet-${index}`,
-                    name: sheetName,
-                    data
-                };
-            });
-
-            onImport(sheets);
-
-            // Reset file input to allow re-importing the same file
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        } catch (error) {
+            const xlsxWorkbook = await readXlsxWorkbookFromFile(file);
+            const sheetsAsJavascriptArrays = convertXlsxWorkbookToJavascriptArrays(xlsxWorkbook);
+            onImport(sheetsAsJavascriptArrays)
+        } catch(error) {
             alert('Failed to import file. Please make sure it is a valid Excel file.');
             console.error('Import error:', error);
         }
-    };
+    }
 
     const handleButtonClick = () => {
         fileInputRef.current?.click();

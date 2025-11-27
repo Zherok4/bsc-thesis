@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@handsontable/react-wrapper": "^16.1.1",
+    "exceljs": "^4.4.0",
     "handsontable": "^16.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
