@@ -27,6 +27,7 @@ function App() {
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
   const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
+  const [sheetsVersion, setSheetsVersion] = useState(0);
 
   /**
    * updateSelectionState is triggered if:
@@ -84,8 +85,6 @@ function App() {
    * @param sheetName - name of the sheet to switch to
    */
   const handleSheetChange = useCallback((sheetName: string) => {
-    const currentDatatable: DatatableHandle | null = datatableRef.current;
-    currentDatatable?.switchSheet(sheetName);
     setActiveSheetName(sheetName);
   }, []);
 
@@ -119,8 +118,8 @@ function App() {
           }
         }
       });
-
       // Update states
+      setSheetsVersion(prev => prev + 1);
       handleSheetChange(Object.keys(sheetsAsJavascriptArrays)[0]);
     }
   }, [handleSheetChange]);
@@ -135,6 +134,7 @@ function App() {
             onCellSelect={updateSelectionState} 
             hfInstance={hfInstance} 
             activeSheetName={activeSheetName}
+            sheetsVersion={sheetsVersion}
             ref={datatableRef}
           />
         </div>
