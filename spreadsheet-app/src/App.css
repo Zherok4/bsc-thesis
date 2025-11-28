@@ -17,8 +17,12 @@
   flex-direction: column;
   overflow: hidden;
 }
-
-.datatable-container > div:first-child {
+.hottable-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.hottable-wrapper > div {
   flex: 1;
   overflow: scroll;
 }

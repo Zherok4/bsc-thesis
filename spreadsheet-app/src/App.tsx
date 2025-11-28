@@ -130,11 +130,14 @@ function App() {
       <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="datatable-container">
-        <Datatable 
-        onCellSelect={updateSelectionState} 
-        hfInstance={hfInstance} 
-        activeSheetName={activeSheetName}
-        ref={datatableRef}/>
+        <div className="hottable-wrapper">
+          <Datatable 
+            onCellSelect={updateSelectionState} 
+            hfInstance={hfInstance} 
+            activeSheetName={activeSheetName}
+            ref={datatableRef}
+          />
+        </div>
         <SheetTabs
           hfInstance={hfInstance}
           activeSheetId={activeSheetName}
