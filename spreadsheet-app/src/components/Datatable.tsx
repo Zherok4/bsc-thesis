@@ -111,6 +111,7 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
                     engine: hfInstance,
                     sheetName: sheetName,
                 }}
+                minCols = {100}
                 contextMenu={true}
                 licenseKey="non-commercial-and-evaluation"
                 outsideClickDeselects={false}

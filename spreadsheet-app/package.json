@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@handsontable/react-wrapper": "^16.1.1",
+    "@xyflow/react": "^12.9.3",
     "exceljs": "^4.4.0",
     "handsontable": "^16.1.1",
     "react": "^19.1.1",

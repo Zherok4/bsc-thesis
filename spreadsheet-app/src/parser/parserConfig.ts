@@ -171,7 +171,6 @@ class SpreadsheetFormulaParser extends CstParser {
             $.OR([
                 { ALT: () => $.CONSUME(Number) },
                 { ALT: () => $.CONSUME(String) },
-                { ALT: () => $.CONSUME(Boolean) },
             ]);
         });
 
