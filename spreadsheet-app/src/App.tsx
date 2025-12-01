@@ -5,12 +5,12 @@ import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
-import type { Sheet } from './components/SheetTabs';
-import { HyperFormula } from 'hyperformula';
+import { HyperFormula, AlwaysSparse } from 'hyperformula';
 import ExcelJS from 'exceljs';
+import Sidebar from './components/Sidebar';
 
-const options : {licenseKey : string}= {
-  licenseKey: 'gpl-v3'
+const options : {licenseKey : string} = {
+  licenseKey: 'gpl-v3',
 };
 
 const DEFAULT_ROW_COUNT : number = 100;
@@ -113,6 +113,7 @@ function App() {
             hfInstance.addSheet(sheetName);
             const sheetId = hfInstance.getSheetId(sheetName);
             if (sheetId !== undefined) {
+              // TODO: First normalize data ==> first row has to be equal length of longest row
               hfInstance.setSheetContent(sheetId, sheetData);
             }
           }
@@ -128,21 +129,26 @@ function App() {
     <div className="app-container">
       <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
-      <div className="datatable-container">
-        <div className="hottable-wrapper">
-          <Datatable 
-            onCellSelect={updateSelectionState} 
-            hfInstance={hfInstance} 
-            activeSheetName={activeSheetName}
-            sheetsVersion={sheetsVersion}
-            ref={datatableRef}
+      <div className="main-container">
+        <div className="datatable-container">
+          <div className="hottable-wrapper">
+            <Datatable 
+              onCellSelect={updateSelectionState} 
+              hfInstance={hfInstance} 
+              activeSheetName={activeSheetName}
+              sheetsVersion={sheetsVersion}
+              ref={datatableRef}
+            />
+          </div>
+          <SheetTabs
+            hfInstance={hfInstance}
+            activeSheetId={activeSheetName}
+            onSheetChange={handleSheetChange}
           />
         </div>
-        <SheetTabs
-          hfInstance={hfInstance}
-          activeSheetId={activeSheetName}
-          onSheetChange={handleSheetChange}
-        />
+        <div className="sidebar-container">
+          <Sidebar/>
+        </div>
       </div>
     </div>
   )
