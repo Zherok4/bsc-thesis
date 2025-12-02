@@ -1,5 +1,6 @@
-import type { CstNode, IToken } from "chevrotain";
+import type { CstNode, ILexingResult, IToken } from "chevrotain";
 import { parserInstance } from "./parserConfig";
+import { SpreadsheetFormulaLexer } from "./tokens";
 
 export type ASTNode = 
     | FormulaNode
@@ -254,7 +255,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
     }
 
     functionCall(ctx: any): FunctionCallNode {
-        const args = ctx.argumentList ? this.visit(ctx.arugmentList) : [];
+        const args = ctx.argumentList ? this.visit(ctx.argumentList) : [];
         return {
             type: "FunctionCall",
             name: ctx.FunctionName[0].image.toUpperCase(),
@@ -328,3 +329,60 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 }
 
 export const astVisitor = new SpreadsheetASTVisitor();
+
+// PUBLIC API
+// TODO: Documentation
+export interface ParseResult {
+    ast: FormulaNode | null;
+    cst: CstNode | null,
+    errors: any[];
+    lexErrors: any[];
+}
+
+export function parse(formula: string): ParseResult {
+    const lexResult: ILexingResult = SpreadsheetFormulaLexer.tokenize(formula);
+
+    if (lexResult.errors.length > 0) {
+        return {
+            ast: null,
+            cst: null,
+            errors: [],
+            lexErrors: lexResult.errors,
+        }
+    }
+
+    parserInstance.input = lexResult.tokens;
+    const cst: CstNode = parserInstance.formula();
+
+    if (parserInstance.errors.length > 0) {
+        return {
+            ast: null,
+            cst,
+            errors: parserInstance.errors,
+            lexErrors: [],
+        };
+    }
+
+    const ast: FormulaNode = astVisitor.visit(cst) as FormulaNode;
+
+    return {
+        ast,
+        cst,
+        errors: [],
+        lexErrors: [],
+    };
+}
+
+export function parseFormula(formula: string): FormulaNode {
+    const result: ParseResult = parse(formula);
+
+    if (result.lexErrors.length > 0) {
+        throw new Error('Lexer error: ${result.lexErrors[0].message}');
+    }
+
+    if (result.errors.length > 0) {
+        throw new Error('Parser error: ${result.errors[0].message}');
+    }
+
+    return result.ast!;
+}

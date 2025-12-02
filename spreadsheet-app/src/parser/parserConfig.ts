@@ -108,14 +108,14 @@ class SpreadsheetFormulaParser extends CstParser {
         });
 
         $.RULE("powerExpression", () => {
-            $.SUBRULE($.unaryExpression, {LABEL: "lhs" });
+            $.SUBRULE($.unaryExpression, { LABEL: "lhs" });
             $.MANY(() => {
                 $.CONSUME(Power);
                 $.SUBRULE2($.unaryExpression, {LABEL: "rhs"});
             });
         });
 
-        $.RULE("unaryyExpression", () => {
+        $.RULE("unaryExpression", () => {
             $.OPTION(() => {
                 $.OR([
                     { ALT: () => $.CONSUME(Minus) },
@@ -172,6 +172,12 @@ class SpreadsheetFormulaParser extends CstParser {
                 { ALT: () => $.CONSUME(Number) },
                 { ALT: () => $.CONSUME(String) },
             ]);
+        });
+
+        $.RULE("parenExpression", () => {
+            $.CONSUME(LParen);
+            $.SUBRULE($.expression);
+            $.CONSUME(RParen);
         });
 
         $.performSelfAnalysis();

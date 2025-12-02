@@ -42,7 +42,7 @@ export const FunctionName: TokenType = createToken({
 // Operators
 export const Plus: TokenType = createToken({name: "Plus", pattern: /\+/});
 export const Minus: TokenType = createToken({name: "Minus", pattern: /-/});
-export const Multiply: TokenType = createToken({name: "Multiply", pattern: /\+/});
+export const Multiply: TokenType = createToken({name: "Multiply", pattern: /\*/});
 export const Divide: TokenType = createToken({name:"Divide", pattern: /\//});
 export const Power:TokenType = createToken({name: "Power", pattern: /\^/});
 export const Concat: TokenType = createToken({name: "Concat", pattern: /&/});
