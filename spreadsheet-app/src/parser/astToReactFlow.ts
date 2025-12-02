@@ -1,4 +1,4 @@
-import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
+import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
 
 export interface defaultNode {
@@ -7,7 +7,15 @@ export interface defaultNode {
     data: { label: string };
 }
 
-export interface astGraph {
+export interface defaultEdge {
+    id: string;
+    source: string;
+    target: string;
+    type: string;
+    label: string;
+}
+
+export interface Graph {
     nodes: any[];
     edges: any[]
 }
@@ -18,6 +26,10 @@ function generateNodeId(): string {
     return `node_${nodeIdCounter++}`
 }
 
+export function resetNodeIdCounter(): void {
+    nodeIdCounter = 0;
+}
+
 function createDefaultNode(label: string): defaultNode {
     return {
         id: `${generateNodeId()}`,
@@ -26,58 +38,102 @@ function createDefaultNode(label: string): defaultNode {
     };
 }
 
-function visitNode(node: ASTNode, nodes: any[], edges: any[]) {
+function createDefaultEdge(source: string, target: string) : defaultEdge {
+    return {
+        id: `${source}-${target}`,
+        source,
+        target,
+        type: "step",
+        label: ""
+    }
+}
+
+function visitNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {
     switch(node.type) {
-        case "Formula":
-            visitNode(node.expression, nodes, edges);
+        case "Formula":{
+            const formulaNode = node as FormulaNode;
+            const createdNode = createDefaultNode(formulaNode.type);
+            nodes.push(createdNode);
+            visitNode(node.expression, nodes, edges, createdNode.id);
             break;
-        case "BinaryOp":
+        }
+        case "BinaryOp":{
             const binaryNode = node as BinaryOpNode;
-            nodes.push(createDefaultNode(node.type));
-            visitNode(binaryNode.left, nodes, edges);
-            visitNode(binaryNode.right, nodes, edges);
+            const createdNode = createDefaultNode(binaryNode.operator)
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            visitNode(binaryNode.left, nodes, edges, createdNode.id);
+            visitNode(binaryNode.right, nodes, edges, createdNode.id);
             break;
-        case "UnaryOp":
+        }
+        case "UnaryOp":{
             const unaryNode = node as UnaryOpNode;
-            nodes.push(createDefaultNode(unaryNode.type));
-            visitNode(unaryNode.operand, nodes, edges);
+            const createdNode = createDefaultNode(unaryNode.type)
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            visitNode(unaryNode.operand, nodes, edges, createdNode.id);
             break;
-        case "Percent":
+        }
+        case "Percent":{
             const percentNode = node as PercentNode;
-            nodes.push(createDefaultNode(percentNode.type));
-            visitNode(percentNode.operand, nodes, edges);
+            const createdNode = createDefaultNode(percentNode.type);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            visitNode(percentNode.operand, nodes, edges, createdNode.id);
             break;
-        case "FunctionCall":
+        }
+        case "FunctionCall":{
             const functionNode = node as FunctionCallNode;
-            nodes.push(createDefaultNode(functionNode.type));
+            const createdNode = createDefaultNode(functionNode.name);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
             const argumentNodes = functionNode.arguments;
-            argumentNodes.forEach((node) => visitNode(node, nodes, edges));
-            break;
-        case "CellReference":
+            argumentNodes.forEach((node) => visitNode(node, nodes, edges, createdNode.id));
+            break;}
+        case "CellReference":{
             const referenceNode = node as CellReferenceNode;
-            nodes.push(createDefaultNode(referenceNode.type));
+            const createdNode = createDefaultNode(referenceNode.type);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
             break;
-        case "CellRange":
+        }
+        case "CellRange":{
             const rangeNode = node as CellRangeNode;
-            nodes.push(createDefaultNode(rangeNode.type));
-            visitNode(rangeNode.start, nodes, edges);
-            visitNode(rangeNode.end, nodes, edges);
+            const createdNode = createDefaultNode(rangeNode.type);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            visitNode(rangeNode.start, nodes, edges, createdNode.id);
+            visitNode(rangeNode.end, nodes, edges, createdNode.id);
             break;
-        case "NumberLiteral":
+        }
+        case "NumberLiteral":{
             const numberNode = node as NumberLiteralNode;
-            nodes.push(createDefaultNode(`${numberNode.value}`));
+            const createdNode = createDefaultNode(`${numberNode.value}`);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
             break;
+        }
         case "StringLiteral":
             const stringNode = node as StringLiteralNode;
-            nodes.push(createDefaultNode(stringNode.value));
+            const createdNode = createDefaultNode(stringNode.value);
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
             break;
     }
 }
 
-export function astToGraph(ast: ASTNode): astGraph {
+export function astToGraph(ast: ASTNode): Graph {
     const nodes: any[] = [];
     const edges: any[] = [];
-    visitNode(ast, nodes, edges);
+    visitNode(ast, nodes, edges, "-1");
     return {
         nodes,
         edges,

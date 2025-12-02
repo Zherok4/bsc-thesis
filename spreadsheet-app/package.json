@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@handsontable/react-wrapper": "^16.1.1",
+    "@types/dagre": "^0.7.53",
     "@xyflow/react": "^12.9.3",
+    "dagre": "^0.8.5",
     "exceljs": "^4.4.0",
     "handsontable": "^16.1.1",
     "react": "^19.1.1",

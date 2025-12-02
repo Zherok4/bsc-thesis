@@ -8,6 +8,8 @@ import SheetTabs from './components/SheetTabs';
 import { HyperFormula, AlwaysSparse } from 'hyperformula';
 import ExcelJS from 'exceljs';
 import Sidebar from './components/Sidebar';
+import type { FormulaNode } from './parser';
+import { parseFormula } from './parser';
 
 const options : {licenseKey : string} = {
   licenseKey: 'gpl-v3',
@@ -16,6 +18,10 @@ const options : {licenseKey : string} = {
 const DEFAULT_ROW_COUNT : number = 100;
 const DEFAULT_COL_COUNT : number = 26;
 const DEFAULT_DATA = Array(DEFAULT_ROW_COUNT).fill('').map(() => Array(DEFAULT_COL_COUNT).fill(''));
+
+function isFormula(text: string) : boolean {
+  return typeof text === 'string' && text.trim().startsWith('=')
+}
 
 function App() {
   const datatableRef = useRef<DatatableHandle>(null);
@@ -29,6 +35,19 @@ function App() {
   const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
   const [sheetsVersion, setSheetsVersion] = useState(0);
 
+
+  const selectedCellValueAST: FormulaNode | undefined = useMemo(() => {
+    if (isFormula(selectedCellValue)) {
+      try {
+        const ast: FormulaNode = parseFormula(selectedCellValue);
+        console.log(ast);
+        return ast;  
+      } catch (error) {
+        console.log(error)
+        return undefined;
+      }
+    }
+  }, [selectedCellValue]);
   /**
    * updateSelectionState is triggered if:
    * - cell is selected in the Datatable
@@ -147,7 +166,7 @@ function App() {
           />
         </div>
         <div className="sidebar-container">
-          <Sidebar/>
+          <Sidebar ast={selectedCellValueAST}/>
         </div>
       </div>
     </div>

@@ -1,5 +1,13 @@
-import { ReactFlow, Background, Controls } from '@xyflow/react';
+import { ReactFlow, Background, Controls, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import type { ASTNode } from '../parser';
+import { astToGraph, resetNodeIdCounter } from '../parser/astToReactFlow';
+import { useMemo, useRef } from 'react';
+import { applyDagreLayout } from '../parser/dagreLayout';
+
+export interface SidebarProps {
+  ast?: ASTNode;
+}
 
 const initialNodes = [
   {
@@ -25,10 +33,28 @@ const initialEdges = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ast} : SidebarProps) {
+  const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+
+  const {nodes, edges} = useMemo(() => {
+    if (ast === undefined) {
+      return {nodes: initialNodes, edges: initialEdges};
+    }
+    resetNodeIdCounter();
+    const G = astToGraph(ast);
+    const layoutedG = applyDagreLayout(G)
+    const nodes = layoutedG.nodes;
+    const edges = layoutedG.edges;
+    if (nodes.length === 0) {
+      return {nodes: initialNodes, edges: initialEdges};
+    } else {
+      return {nodes, edges};
+    }
+  }, [ast]);
+
   return (
     <div style={{ height: '100%', width: '100%' }}>
-      <ReactFlow nodes={initialNodes} edges={initialEdges}>
+      <ReactFlow nodes={nodes} edges={edges}>
         <Background />
         <Controls />
       </ReactFlow>
