@@ -1,3 +1,4 @@
+import { nodeToString, type CollapsedNode } from "./collapseAST";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
 
@@ -48,55 +49,54 @@ function createDefaultEdge(source: string, target: string) : defaultEdge {
     }
 }
 
-function visitNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {
+export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {
     switch(node.type) {
         case "Formula":{
             const formulaNode = node as FormulaNode;
-            const createdNode = createDefaultNode(formulaNode.type);
+            const createdNode = createDefaultNode(nodeToString(node));
             nodes.push(createdNode);
-            visitNode(node.expression, nodes, edges, createdNode.id);
+            visitAstNode(node.expression, nodes, edges, createdNode.id);
             break;
         }
         case "BinaryOp":{
             const binaryNode = node as BinaryOpNode;
-            const createdNode = createDefaultNode(binaryNode.operator)
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            visitNode(binaryNode.left, nodes, edges, createdNode.id);
-            visitNode(binaryNode.right, nodes, edges, createdNode.id);
+            visitAstNode(binaryNode.left, nodes, edges, createdNode.id);
+            visitAstNode(binaryNode.right, nodes, edges, createdNode.id);
             break;
         }
         case "UnaryOp":{
             const unaryNode = node as UnaryOpNode;
-            const createdNode = createDefaultNode(unaryNode.type)
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            visitNode(unaryNode.operand, nodes, edges, createdNode.id);
+            visitAstNode(unaryNode.operand, nodes, edges, createdNode.id);
             break;
         }
         case "Percent":{
             const percentNode = node as PercentNode;
-            const createdNode = createDefaultNode(percentNode.type);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            visitNode(percentNode.operand, nodes, edges, createdNode.id);
+            visitAstNode(percentNode.operand, nodes, edges, createdNode.id);
             break;
         }
         case "FunctionCall":{
             const functionNode = node as FunctionCallNode;
-            const createdNode = createDefaultNode(functionNode.name);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             const argumentNodes = functionNode.arguments;
-            argumentNodes.forEach((node) => visitNode(node, nodes, edges, createdNode.id));
+            argumentNodes.forEach((node) => visitAstNode(node, nodes, edges, createdNode.id));
             break;}
         case "CellReference":{
-            const referenceNode = node as CellReferenceNode;
-            const createdNode = createDefaultNode(referenceNode.type);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
@@ -104,25 +104,23 @@ function visitNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) 
         }
         case "CellRange":{
             const rangeNode = node as CellRangeNode;
-            const createdNode = createDefaultNode(rangeNode.type);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            visitNode(rangeNode.start, nodes, edges, createdNode.id);
-            visitNode(rangeNode.end, nodes, edges, createdNode.id);
+            visitAstNode(rangeNode.start, nodes, edges, createdNode.id);
+            visitAstNode(rangeNode.end, nodes, edges, createdNode.id);
             break;
         }
         case "NumberLiteral":{
-            const numberNode = node as NumberLiteralNode;
-            const createdNode = createDefaultNode(`${numberNode.value}`);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
         }
         case "StringLiteral":
-            const stringNode = node as StringLiteralNode;
-            const createdNode = createDefaultNode(stringNode.value);
+            const createdNode = createDefaultNode(nodeToString(node));
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
@@ -130,10 +128,22 @@ function visitNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) 
     }
 }
 
-export function astToGraph(ast: ASTNode): Graph {
+export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: any[], edges: any[], parentID: string) {
+    const createdNode = createDefaultNode(collapsedNode.label);
+    nodes.push(createdNode);
+    if (collapsedNode.original.type !== "Formula") {
+        const createdEdge = createDefaultEdge(createdNode.id, parentID);
+        edges.push(createdEdge);
+    }
+    collapsedNode.children.forEach(child => {
+        visitCollapsedNode(child, nodes, edges, createdNode.id);
+    });
+}
+
+export function toGraph<T extends ASTNode | CollapsedNode>(nodeToVisit: T, visitMethod: (visitedObject: T, nodes: any[], edges: any[], parentID: string) => void): Graph {
     const nodes: any[] = [];
     const edges: any[] = [];
-    visitNode(ast, nodes, edges, "-1");
+    visitMethod(nodeToVisit, nodes, edges, "-1");
     return {
         nodes,
         edges,

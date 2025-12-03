@@ -1,9 +1,10 @@
 import { ReactFlow, Background, Controls, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ASTNode } from '../parser';
-import { astToGraph, resetNodeIdCounter } from '../parser/astToReactFlow';
+import { toGraph, resetNodeIdCounter, visitCollapsedNode } from '../parser/astToReactFlow';
 import { useMemo, useRef } from 'react';
 import { applyDagreLayout } from '../parser/dagreLayout';
+import { collapseNode } from '../parser/collapseAST';
 
 export interface SidebarProps {
   ast?: ASTNode;
@@ -41,7 +42,8 @@ export default function Sidebar({ast} : SidebarProps) {
       return {nodes: initialNodes, edges: initialEdges};
     }
     resetNodeIdCounter();
-    const G = astToGraph(ast);
+    const collapsedTree = collapseNode(ast);
+    const G = toGraph(collapsedTree, visitCollapsedNode);
     const layoutedG = applyDagreLayout(G)
     const nodes = layoutedG.nodes;
     const edges = layoutedG.edges;
