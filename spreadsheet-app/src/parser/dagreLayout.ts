@@ -6,8 +6,8 @@ export function applyDagreLayout(
 ) : Graph {
     const options = {
         direction: "TB",
-        nodeWidth: 150,
-        nodeHeight: 50,
+        nodeWidth: 300,
+        nodeHeight: 100,
         nodeSep: 50,
         rankSep: 80,
         edgeSep: 10,

@@ -1,0 +1,14 @@
+/* twoTextNode.css */
+.two-text-node {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: white;
+  color: black;
+  border: 1px solid black;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.two-text-node p {
+  margin: 4px 0;
+}

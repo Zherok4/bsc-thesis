@@ -1,24 +1,10 @@
+import type { Edge, Node } from "@xyflow/react";
 import { nodeToString, type CollapsedNode } from "./collapseAST";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
-
-export interface defaultNode {
-    id: string;
-    position: { x: number, y: number };
-    data: { label: string };
-}
-
-export interface defaultEdge {
-    id: string;
-    source: string;
-    target: string;
-    type: string;
-    label: string;
-}
-
 export interface Graph {
-    nodes: any[];
-    edges: any[]
+    nodes: Node[];
+    edges: Edge[]
 }
 
 let nodeIdCounter = 0;
@@ -31,22 +17,23 @@ export function resetNodeIdCounter(): void {
     nodeIdCounter = 0;
 }
 
-function createDefaultNode(label: string): defaultNode {
+function createDefaultNode(label: string): Node {
     return {
         id: `${generateNodeId()}`,
         position: {x: 0, y: 100*nodeIdCounter},
-        data: {label},
-    };
+        data: {formula: label, output: "2"},
+        type: "twoTextNode"
+    } as Node;
 }
 
-function createDefaultEdge(source: string, target: string) : defaultEdge {
+function createDefaultEdge(source: string, target: string) : Edge {
     return {
         id: `${source}-${target}`,
         source,
         target,
-        type: "step",
+        type: "straight",
         label: ""
-    }
+    } as Edge;
 }
 
 export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {

@@ -5,15 +5,17 @@ import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
-import { HyperFormula, AlwaysSparse } from 'hyperformula';
-import ExcelJS from 'exceljs';
+import { HyperFormula } from 'hyperformula';
 import Sidebar from './components/Sidebar';
 import type { FormulaNode } from './parser';
 import { parseFormula } from './parser';
 
-const options : {licenseKey : string} = {
+const options : {licenseKey : string, useArrayArithmetic: boolean} = {
   licenseKey: 'gpl-v3',
+  useArrayArithmetic: true,
 };
+
+
 
 const DEFAULT_ROW_COUNT : number = 100;
 const DEFAULT_COL_COUNT : number = 26;
@@ -28,7 +30,7 @@ function App() {
   
   const hfInstance = useMemo(() => {
     return HyperFormula.buildFromSheets({'Tabelle1': DEFAULT_DATA}, options);
-  }, [])
+  }, []);
 
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
@@ -166,7 +168,7 @@ function App() {
           />
         </div>
         <div className="sidebar-container">
-          <Sidebar ast={selectedCellValueAST}/>
+          <Sidebar ast={selectedCellValueAST} hfInstance={hfInstance} activeSheetName={activeSheetName}/>
         </div>
       </div>
     </div>

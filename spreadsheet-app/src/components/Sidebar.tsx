@@ -1,16 +1,25 @@
-import { ReactFlow, Background, Controls, type ReactFlowInstance } from '@xyflow/react';
+import { ReactFlow, Background, Controls, type ReactFlowInstance, useNodesState, useEdgesState, type Edge, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ASTNode } from '../parser';
 import { toGraph, resetNodeIdCounter, visitCollapsedNode } from '../parser/astToReactFlow';
-import { useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { applyDagreLayout } from '../parser/dagreLayout';
 import { collapseNode } from '../parser/collapseAST';
+import TwoTextNodeComponent from './nodes/TwoTextNode';
+import { HyperFormulaProvider } from './context';
+import type { HyperFormula } from 'hyperformula';
 
 export interface SidebarProps {
   ast?: ASTNode;
+  hfInstance: HyperFormula;
+  activeSheetName: string;
 }
 
-const initialNodes = [
+const nodeTypes = {
+  twoTextNode: TwoTextNodeComponent,
+};
+
+const initialNodes: Node[] = [
   {
     id: 'n1',
     position: { x: 0, y: 0 },
@@ -24,7 +33,7 @@ const initialNodes = [
   },
 ];
 
-const initialEdges = [
+const initialEdges: Edge[] = [
   {
     id: 'n1-n2',
     source: 'n1',
@@ -34,32 +43,33 @@ const initialEdges = [
   },
 ];
 
-export default function Sidebar({ast} : SidebarProps) {
+export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarProps) {
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+  const [nodes, setNodes] = useNodesState<Node>([]);
+  const [edges, setEdges] = useEdgesState<Edge>([]);
 
-  const {nodes, edges} = useMemo(() => {
+  useEffect(() => {
     if (ast === undefined) {
-      return {nodes: initialNodes, edges: initialEdges};
-    }
-    resetNodeIdCounter();
-    const collapsedTree = collapseNode(ast);
-    const G = toGraph(collapsedTree, visitCollapsedNode);
-    const layoutedG = applyDagreLayout(G)
-    const nodes = layoutedG.nodes;
-    const edges = layoutedG.edges;
-    if (nodes.length === 0) {
-      return {nodes: initialNodes, edges: initialEdges};
+      setNodes([]);
+      setEdges([]);
     } else {
-      return {nodes, edges};
+      resetNodeIdCounter();
+      const collapsedTree = collapseNode(ast);
+      const G = toGraph(collapsedTree, visitCollapsedNode);
+      const layoutedG = applyDagreLayout(G);
+      setNodes(layoutedG.nodes);
+      setEdges(layoutedG.edges);
     }
-  }, [ast]);
+  }, [ast, setNodes, setEdges]);
 
   return (
     <div style={{ height: '100%', width: '100%' }}>
-      <ReactFlow nodes={nodes} edges={edges}>
-        <Background />
-        <Controls />
-      </ReactFlow>
+      <HyperFormulaProvider hfInstance={hfInstance} activeSheetName={activeSheetName}>
+        <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes}>
+          <Background />
+          <Controls />
+        </ReactFlow>
+      </HyperFormulaProvider>
     </div>
   );
 }
