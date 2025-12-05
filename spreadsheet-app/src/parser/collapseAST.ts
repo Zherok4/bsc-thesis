@@ -1,3 +1,4 @@
+import { collapsedNodeFactory } from "./collapsedNodeFactory";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
 export interface CollapsedNode {
@@ -87,118 +88,48 @@ function containsFunctionNode(node: ASTNode): boolean {
 export function collapseNode(node: ASTNode): CollapsedNode {
     switch(node.type) {
         case "Formula": { 
-            const formulaNode = node as FormulaNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(formulaNode),
-                nodeType: "expression",
-                children: [collapseNode(formulaNode.expression)],
-                original: formulaNode,
-            };
+            const formulaNode: FormulaNode = node as FormulaNode;
+            return collapsedNodeFactory(formulaNode, "expression", [collapseNode(formulaNode.expression)]);
         }
         case "BinaryOp":
-            const binaryNode = node as BinaryOpNode;
+            const binaryNode: BinaryOpNode = node as BinaryOpNode;
             if (!containsFunctionNode(binaryNode)) {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(binaryNode),
-                    nodeType: "expression",
-                    children: [],
-                    original: binaryNode,
-                };
+                return collapsedNodeFactory(binaryNode, "expression", []);
             } else {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(binaryNode),
-                    nodeType: "expression",
-                    children: [collapseNode(binaryNode.left), collapseNode(binaryNode.right)],
-                    original: binaryNode,
-                };
+                const children: CollapsedNode[] = [collapseNode(binaryNode.left), collapseNode(binaryNode.right)]
+                return collapsedNodeFactory(binaryNode, "expression", children)
             }
         case "UnaryOp":
-            const unaryNode = node as UnaryOpNode;
+            const unaryNode: UnaryOpNode = node as UnaryOpNode;
             if (!containsFunctionNode(unaryNode)) {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(unaryNode),
-                    nodeType: "expression",
-                    children: [],
-                    original: unaryNode,
-                };
+                return collapsedNodeFactory(unaryNode, "expression", []);
             } else {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(unaryNode),
-                    nodeType: "expression",
-                    children: [collapseNode(unaryNode.operand)],
-                    original: unaryNode,
-                };
+                const children: CollapsedNode[] = [collapseNode(unaryNode.operand)];
+                return collapsedNodeFactory(unaryNode, "expression", children);
             }
         case "Percent":
-            const percentNode = node as PercentNode;
+            const percentNode: PercentNode = node as PercentNode;
             if (!containsFunctionNode(percentNode)) {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(percentNode),
-                    nodeType: "expression",
-                    children: [],
-                    original: percentNode,
-                };
+                return collapsedNodeFactory(percentNode, "expression", []);
             } else {
-                return {
-                    type: "CollapsedNode",
-                    label: nodeToString(percentNode),
-                    nodeType: "expression",
-                    children: [collapseNode(percentNode)],
-                    original: percentNode,
-                };
+                const children: CollapsedNode[] = [collapseNode(percentNode.operand)];
+                return collapsedNodeFactory(percentNode, "expression", children);
             }
         case "FunctionCall":
-            const functionNode = node as FunctionCallNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(functionNode),
-                nodeType: "function",
-                children: functionNode.arguments.map(collapseNode),
-                original: functionNode,
-            };
+            const functionNode: FunctionCallNode = node as FunctionCallNode;
+            return collapsedNodeFactory(functionNode, "function", functionNode.arguments.map(collapseNode));
         case "CellReference":
-            const refNode = node as CellReferenceNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(refNode),
-                nodeType: "reference",
-                children: [],
-                original: refNode,
-            };
-
+            const refNode: CellReferenceNode = node as CellReferenceNode;
+            return collapsedNodeFactory(refNode, "reference", []);
         case "CellRange":
-            const rangeNode = node as CellRangeNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(rangeNode),
-                nodeType: "expression",
-                children: [],
-                original: rangeNode,
-            }
+            const rangeNode: CellRangeNode = node as CellRangeNode;
+            return collapsedNodeFactory(rangeNode, "expression", []);
         case "NumberLiteral":
-            const numNode = node as NumberLiteralNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(numNode),
-                nodeType: "literal",
-                children: [],
-                original: numNode,
-            }
+            const numNode: NumberLiteralNode = node as NumberLiteralNode;
+            return collapsedNodeFactory(numNode, "literal", []);
         case "StringLiteral":
-            const stringNode = node as StringLiteralNode;
-            return {
-                type: "CollapsedNode",
-                label: nodeToString(stringNode),
-                nodeType: "literal",
-                children: [],
-                original: stringNode,
-            }
+            const stringNode: StringLiteralNode = node as StringLiteralNode;
+            return collapsedNodeFactory(stringNode, "literal", []);
         default:
             return {
                 type: "CollapsedNode",
