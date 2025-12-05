@@ -116,6 +116,7 @@ function App() {
    * Loads the imported sheets and displays the first sheet
    * @param importedSheets - Array of sheets with their data
    */
+  // TODO: Give / Use type of a cell
   const handleImport = useCallback((sheetsAsJavascriptArrays: {[key: string]: (any)[][]}) => {
     if (sheetsAsJavascriptArrays) {
       hfInstance.batch(() => {

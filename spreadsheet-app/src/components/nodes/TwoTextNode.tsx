@@ -7,7 +7,6 @@ import './TwoTextNode.css'
 export type TwoTextNode = Node<
 {
     formula: string,
-    output?: string,
 },
 'twoTextNode'
 >;

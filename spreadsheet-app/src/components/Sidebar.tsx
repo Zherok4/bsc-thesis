@@ -8,6 +8,7 @@ import { collapseNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
 import { HyperFormulaProvider } from './context';
 import type { HyperFormula } from 'hyperformula';
+import ReferenceNodeComponent from './nodes/referenceNode';
 
 export interface SidebarProps {
   ast?: ASTNode;
@@ -17,6 +18,7 @@ export interface SidebarProps {
 
 const nodeTypes = {
   twoTextNode: TwoTextNodeComponent,
+  ReferenceNode: ReferenceNodeComponent,
 };
 
 const initialNodes: Node[] = [
