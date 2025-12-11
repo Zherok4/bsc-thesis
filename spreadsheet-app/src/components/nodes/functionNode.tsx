@@ -13,11 +13,21 @@ export type FunctionNode = Node<
 'FunctionNode'
 >;
 
+function replaceAll(argFormulatoNameMap: Map<string, string>, target: string): string {
+    let result: string = target;
+    argFormulatoNameMap.forEach((name, formula) => {
+        result = result.replace(formula, name);
+    });
+    return result;
+}
+
 export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
+
     const sheetId: number | undefined = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(activeSheetName);
     }, [activeSheetName, hfInstance]);
+
     const output: string = useMemo<string>(() => {
         if (sheetId === undefined) {
             return '#SHEET?';
@@ -43,8 +53,20 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
             return '#ERROR';
         }
     }, [funFormula, sheetId, hfInstance]); 
+    
+    const argFormulaToNameMap: Map<string, string> = useMemo<Map<string, string>>(() => {
+        const map = new Map<string, string>();
+        argFormulas.forEach((formula, idx) => {
+            map.set(formula, `arg${idx}`);
+        })
+        return map;
+    }, [argFormulas]);
 
 
+
+    const formulaReplacedWithArgNames: string = useMemo<string>(() => {
+        return replaceAll(argFormulaToNameMap, funFormula);
+    }, [funFormula, argFormulaToNameMap]);
 
 
     return (
@@ -61,7 +83,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                 </div>
             
                 <div className="node-body">
-                    <div className="formula">{funFormula}</div>
+                    <div className="formula">"{formulaReplacedWithArgNames}"</div>
                     
                     <div className="args">
                         <span className="args-label">Arguments</span>
