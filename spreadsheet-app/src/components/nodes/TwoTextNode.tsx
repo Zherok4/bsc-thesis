@@ -56,8 +56,8 @@ export default function TwoTextNodeComponent(props: NodeProps<TwoTextNode>) {
             <p>{props.data.formula}</p>
             <p>{evaluatedOutput && "Output:"}</p>
             <p>{evaluatedOutput}</p>
-            <Handle type="source" position={Position.Bottom} />
-            <Handle type="target" position={Position.Top} />
+            <Handle type="source" position={Position.Right} />
+            <Handle type="target" position={Position.Left} />
         </div>
     );
 }

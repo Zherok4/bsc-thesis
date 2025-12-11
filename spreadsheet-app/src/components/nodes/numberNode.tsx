@@ -24,7 +24,7 @@ export default function NumberNodeComponent({data: {value}}: NodeProps<NumberNod
                 <div className="value-display">{value}</div>
             </div>
             </div>
-            <Handle type="source" position={Position.Bottom} />
+            <Handle type="source" position={Position.Right} />
         </div>
     )
 }

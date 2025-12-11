@@ -7,6 +7,12 @@ export interface Graph {
     edges: Edge[]
 }
 
+// Context for expansion state passed through the visitor
+export interface ExpansionContext {
+    expandedNodeIds: Set<string>;
+    onToggleExpand: (nodeId: string) => void;
+}
+
 let nodeIdCounter: number = 0;
 
 function generateNodeId(): string {
@@ -71,6 +77,25 @@ function createFunctionNode(funName: string, argFormulas: string[], funFormula: 
     } as Node
 }
 
+function createExpandableExpressionNode(
+    formula: string,
+    isExpanded: boolean,
+    onToggleExpand: (nodeId: string) => void
+): Node {
+    const nodeId = generateNodeId();
+    return {
+        id: nodeId,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {
+            formula,
+            isExpanded,
+            onToggleExpand,
+            nodeId,
+        },
+        type: "ExpandableExpressionNode",
+    } as Node
+}
+
 function createDefaultEdge(source: string, target: string, handleID?: string) : Edge {
     return {
         id: `${source}-${target}`,
@@ -121,13 +146,17 @@ export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID
         }
         case "FunctionCall":{
             const functionNode: FunctionCallNode = node as FunctionCallNode;
-            const createdNode: Node = createDefaultNode(nodeToString(node));
+            const funFormula: string = nodeToString(functionNode);
+            const argFormulas: string[] = functionNode.arguments.map(arg => nodeToString(arg));
+            const createdNode: Node = createFunctionNode(functionNode.name, argFormulas, funFormula);
             const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            const argumentNodes = functionNode.arguments;
-            argumentNodes.forEach((node) => visitAstNode(node, nodes, edges, createdNode.id));
-            break;}
+            functionNode.arguments.forEach((arg) => {
+                visitAstNode(arg, nodes, edges, createdNode.id);
+            });
+            break;
+        }
         case "CellReference":{
             const refNode: CellReferenceNode = node as CellReferenceNode;
             const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
@@ -138,34 +167,40 @@ export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID
         }
         case "CellRange":{
             const rangeNode: CellRangeNode = node as CellRangeNode;
-            const createdNode: Node = createDefaultNode(nodeToString(node));
+            const createdNode: Node = createRangeNode(
+                rangeNode.start.reference,
+                rangeNode.end.reference,
+                rangeNode.sheet
+            );
             const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            visitAstNode(rangeNode.start, nodes, edges, createdNode.id);
-            visitAstNode(rangeNode.end, nodes, edges, createdNode.id);
+            // Range node is a leaf - don't visit start/end as separate nodes
             break;
         }
         case "NumberLiteral":{
-            const createdNode: Node = createDefaultNode(nodeToString(node));
+            const numNode: NumberLiteralNode = node as NumberLiteralNode;
+            const createdNode: Node = createNumNode(numNode.value);
             const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
         }
-        case "StringLiteral":
-            const createdNode: Node = createDefaultNode(nodeToString(node));
+        case "StringLiteral": {
+            const strNode: StringLiteralNode = node as StringLiteralNode;
+            const createdNode: Node = createStringNode(strNode.value);
             const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
+        }
     }
 }
 
 export function visitCollapsedNode(
-    collapsedNode: CollapsedNode, 
-    nodes: Node[], 
-    edges: Edge[], 
+    collapsedNode: CollapsedNode,
+    nodes: Node[],
+    edges: Edge[],
     parentID: string,
     handleID?: string,
 ) {
@@ -244,11 +279,174 @@ export function visitCollapsedNode(
     }
 }
 
+// New visitor that supports expansion context
+export function visitCollapsedNodeWithExpansion(
+    collapsedNode: CollapsedNode,
+    nodes: Node[],
+    edges: Edge[],
+    parentID: string,
+    context: ExpansionContext,
+    handleID?: string,
+    collapsedNodeId?: string,
+) {
+    // Generate a stable ID for this collapsed node to track expansion state
+    const nodeCollapsedId = collapsedNodeId ?? `collapsed-${nodes.length}`;
+
+    switch(collapsedNode.original.type) {
+        case("Formula"): {
+            const createdNode: Node = createDefaultNode(collapsedNode.label);
+            nodes.push(createdNode);
+            collapsedNode.children.forEach((child, idx) => {
+                visitCollapsedNodeWithExpansion(
+                    child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-${idx}`
+                );
+            });
+            break;
+        }
+
+        case("CellReference"): {
+            const refNode: CellReferenceNode = collapsedNode.original as CellReferenceNode;
+            const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("CellRange"): {
+            const rangeNode: CellRangeNode = collapsedNode.original as CellRangeNode;
+            const startNode: CellReferenceNode = rangeNode.start;
+            const endNode: CellReferenceNode = rangeNode.end;
+            const createdNode: Node = createRangeNode(startNode.reference, endNode.reference, rangeNode.sheet);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("NumberLiteral"): {
+            const numLiteralNode: NumberLiteralNode = collapsedNode.original as NumberLiteralNode;
+            const createdNode: Node = createNumNode(numLiteralNode.value);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("StringLiteral"): {
+            const strLiteralNode: StringLiteralNode = collapsedNode.original as StringLiteralNode;
+            const createdNode: Node = createStringNode(strLiteralNode.value);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("FunctionCall"): {
+            const funNode: FunctionCallNode = collapsedNode.original as FunctionCallNode;
+            const funFormula: string = nodeToString(funNode);
+            const argFormulas: string[] = collapsedNode.children.map(child => child.label);
+            const createdNode: Node = createFunctionNode(funNode.name, argFormulas, funFormula);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            collapsedNode.children.forEach((child, idx) => {
+                visitCollapsedNodeWithExpansion(
+                    child, nodes, edges, createdNode.id, context, `arghandle-${idx}`, `${nodeCollapsedId}-arg${idx}`
+                );
+            });
+            break;
+        }
+
+        // Handle BinaryOp, UnaryOp, Percent - these can be expandable
+        case("BinaryOp"):
+        case("UnaryOp"):
+        case("Percent"): {
+            const isExpanded = context.expandedNodeIds.has(nodeCollapsedId);
+
+            if (collapsedNode.hasHiddenDetails && !isExpanded) {
+                // Create expandable node (collapsed state)
+                const createdNode: Node = createExpandableExpressionNode(
+                    collapsedNode.label,
+                    false,
+                    context.onToggleExpand
+                );
+                // Override the nodeId in data to use our stable collapsed ID
+                createdNode.data.nodeId = nodeCollapsedId;
+
+                const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+                nodes.push(createdNode);
+                edges.push(createdEdge);
+
+                // Still show important children (references, functions, ranges)
+                collapsedNode.children.forEach((child, idx) => {
+                    visitCollapsedNodeWithExpansion(
+                        child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-${idx}`
+                    );
+                });
+            } else if (collapsedNode.hasHiddenDetails && isExpanded) {
+                // Create expandable node (expanded state) - show full AST
+                const createdNode: Node = createExpandableExpressionNode(
+                    collapsedNode.label,
+                    true,
+                    context.onToggleExpand
+                );
+                createdNode.data.nodeId = nodeCollapsedId;
+
+                const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+                nodes.push(createdNode);
+                edges.push(createdEdge);
+
+                // When expanded, show the full AST subtree
+                visitAstNode(collapsedNode.original, nodes, edges, createdNode.id);
+            } else {
+                // No hidden details, just show as default node
+                const createdNode: Node = createDefaultNode(collapsedNode.label);
+                const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+                nodes.push(createdNode);
+                edges.push(createdEdge);
+                collapsedNode.children.forEach((child, idx) => {
+                    visitCollapsedNodeWithExpansion(
+                        child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-${idx}`
+                    );
+                });
+            }
+            break;
+        }
+
+        default: {
+            const createdNode: Node = createDefaultNode(collapsedNode.label);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            collapsedNode.children.forEach((child, idx) => {
+                visitCollapsedNodeWithExpansion(
+                    child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-${idx}`
+                );
+            });
+        }
+    }
+}
+
 // TODO: put visitMethods in an wrapper ==> visitMethod can now also have their individual arguments.
 export function toGraph<T extends ASTNode | CollapsedNode>(nodeToVisit: T, visitMethod: (visitedObject: T, nodes: Node[], edges: Edge[], parentID: string) => void): Graph {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     visitMethod(nodeToVisit, nodes, edges, "-1");
+    return {
+        nodes,
+        edges,
+    };
+}
+
+// New function that builds graph with expansion support
+export function toGraphWithExpansion(
+    collapsedNode: CollapsedNode,
+    context: ExpansionContext
+): Graph {
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    visitCollapsedNodeWithExpansion(collapsedNode, nodes, edges, "-1", context, undefined, "root");
     return {
         nodes,
         edges,

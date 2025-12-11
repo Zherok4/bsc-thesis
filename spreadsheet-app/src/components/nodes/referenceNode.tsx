@@ -51,7 +51,7 @@ export default function ReferenceNodeComponent({data: {reference, sheet}}: NodeP
                 </div>
                 <span className="sheet-name">{sheet || activeSheetName}</span>
             </div>
-            <Handle type="source" position={Position.Bottom} />
+            <Handle type="source" position={Position.Right} />
         </div>
     );
 }

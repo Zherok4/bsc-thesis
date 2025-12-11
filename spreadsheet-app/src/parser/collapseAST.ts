@@ -7,6 +7,8 @@ export interface CollapsedNode {
     nodeType: "function" | "expression" | "literal" | "reference";
     children: CollapsedNode[];
     original: ASTNode;
+    // For expandable nodes: stores the full subtree that was collapsed
+    hasHiddenDetails: boolean;
 }
 
 export function nodeToString(node: ASTNode): string {
@@ -56,80 +58,90 @@ export function nodeToString(node: ASTNode): string {
     }
 }
 
-function containsFunctionNode(node: ASTNode): boolean {
+// Recursively extract all important nodes (functions, references, ranges) from a subtree
+function extractImportantNodes(node: ASTNode): ASTNode[] {
     switch(node.type) {
-        case "Formula":
+        case "Formula": {
             const formulaNode = node as FormulaNode;
-            return containsFunctionNode(formulaNode.expression);
-        case "BinaryOp":
+            return extractImportantNodes(formulaNode.expression);
+        }
+        case "BinaryOp": {
             const binaryNode = node as BinaryOpNode;
-            return containsFunctionNode(binaryNode.left) || containsFunctionNode(binaryNode.right);
-        case "UnaryOp":
+            return [
+                ...extractImportantNodes(binaryNode.left),
+                ...extractImportantNodes(binaryNode.right)
+            ];
+        }
+        case "UnaryOp": {
             const unaryNode = node as UnaryOpNode;
-            return containsFunctionNode(unaryNode.operand);
-        case "Percent":
+            return extractImportantNodes(unaryNode.operand);
+        }
+        case "Percent": {
             const percentNode = node as PercentNode;
-            return containsFunctionNode(percentNode.operand);
+            return extractImportantNodes(percentNode.operand);
+        }
         case "FunctionCall":
-            return true;
         case "CellReference":
-            return false;
         case "CellRange":
-            return false;
+            // Important node found - return it
+            return [node];
         case "NumberLiteral":
-            return false;
         case "StringLiteral":
-            return false;
         case "BooleanLiteral":
-            return false;
+            // Literals are not important, return empty
+            return [];
+        default:
+            return [];
     }
 }
 
 export function collapseNode(node: ASTNode): CollapsedNode {
     switch(node.type) {
-        case "Formula": { 
+        case "Formula": {
             const formulaNode: FormulaNode = node as FormulaNode;
             return collapsedNodeFactory(formulaNode, "expression", [collapseNode(formulaNode.expression)]);
         }
-        case "BinaryOp":
+        case "BinaryOp": {
             const binaryNode: BinaryOpNode = node as BinaryOpNode;
-            if (!containsFunctionNode(binaryNode)) {
-                return collapsedNodeFactory(binaryNode, "expression", []);
-            } else {
-                const children: CollapsedNode[] = [collapseNode(binaryNode.left), collapseNode(binaryNode.right)]
-                return collapsedNodeFactory(binaryNode, "expression", children)
-            }
-        case "UnaryOp":
+            // Extract all important nodes from this subtree
+            const importantNodes = extractImportantNodes(binaryNode);
+            // Collapse each important node (which handles their own children)
+            const children: CollapsedNode[] = importantNodes.map(collapseNode);
+            // This expression has hidden arithmetic details
+            return collapsedNodeFactory(binaryNode, "expression", children, true);
+        }
+        case "UnaryOp": {
             const unaryNode: UnaryOpNode = node as UnaryOpNode;
-            if (!containsFunctionNode(unaryNode)) {
-                return collapsedNodeFactory(unaryNode, "expression", []);
-            } else {
-                const children: CollapsedNode[] = [collapseNode(unaryNode.operand)];
-                return collapsedNodeFactory(unaryNode, "expression", children);
-            }
-        case "Percent":
+            const importantNodes = extractImportantNodes(unaryNode);
+            const children: CollapsedNode[] = importantNodes.map(collapseNode);
+            return collapsedNodeFactory(unaryNode, "expression", children, true);
+        }
+        case "Percent": {
             const percentNode: PercentNode = node as PercentNode;
-            if (!containsFunctionNode(percentNode)) {
-                return collapsedNodeFactory(percentNode, "expression", []);
-            } else {
-                const children: CollapsedNode[] = [collapseNode(percentNode.operand)];
-                return collapsedNodeFactory(percentNode, "expression", children);
-            }
-        case "FunctionCall":
+            const importantNodes = extractImportantNodes(percentNode);
+            const children: CollapsedNode[] = importantNodes.map(collapseNode);
+            return collapsedNodeFactory(percentNode, "expression", children, true);
+        }
+        case "FunctionCall": {
             const functionNode: FunctionCallNode = node as FunctionCallNode;
             return collapsedNodeFactory(functionNode, "function", functionNode.arguments.map(collapseNode));
-        case "CellReference":
+        }
+        case "CellReference": {
             const refNode: CellReferenceNode = node as CellReferenceNode;
             return collapsedNodeFactory(refNode, "reference", []);
-        case "CellRange":
+        }
+        case "CellRange": {
             const rangeNode: CellRangeNode = node as CellRangeNode;
-            return collapsedNodeFactory(rangeNode, "expression", []);
-        case "NumberLiteral":
+            return collapsedNodeFactory(rangeNode, "reference", []);
+        }
+        case "NumberLiteral": {
             const numNode: NumberLiteralNode = node as NumberLiteralNode;
             return collapsedNodeFactory(numNode, "literal", []);
-        case "StringLiteral":
+        }
+        case "StringLiteral": {
             const stringNode: StringLiteralNode = node as StringLiteralNode;
             return collapsedNodeFactory(stringNode, "literal", []);
+        }
         default:
             return {
                 type: "CollapsedNode",
@@ -137,6 +149,7 @@ export function collapseNode(node: ASTNode): CollapsedNode {
                 nodeType: "expression",
                 children: [],
                 original: node,
+                hasHiddenDetails: false,
             }
     }
 }

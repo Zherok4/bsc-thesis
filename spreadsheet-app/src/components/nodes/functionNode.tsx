@@ -93,8 +93,8 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                     </div>
                 </div>
             </div>
-            {/* Output handle */}
-            <Handle type="source" position={Position.Bottom} />
+            {/* Output handle - Right for LR layout */}
+            <Handle type="source" position={Position.Right} />
         </div>
     );
 }

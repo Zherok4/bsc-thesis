@@ -1,10 +1,10 @@
 import { ReactFlow, Background, Controls, type ReactFlowInstance, useNodesState, useEdgesState, type Edge, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ASTNode } from '../parser';
-import { toGraph, resetNodeIdCounter, visitCollapsedNode } from '../parser/astToReactFlow';
-import { useEffect, useRef } from 'react';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext } from '../parser/astToReactFlow';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout } from '../parser/dagreLayout';
-import { collapseNode } from '../parser/collapseAST';
+import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
 import { HyperFormulaProvider } from './context';
 import type { HyperFormula } from 'hyperformula';
@@ -13,6 +13,7 @@ import RangeNodeComponent from './nodes/rangeNode';
 import NumberNodeComponent from './nodes/numberNode';
 import StringNodeComponent from './nodes/stringNode';
 import FunctionNodeComponent from './nodes/functionNode';
+import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
 
 export interface SidebarProps {
   ast?: ASTNode;
@@ -27,6 +28,7 @@ const nodeTypes = {
   NumberNode: NumberNodeComponent,
   StringNode: StringNodeComponent,
   FunctionNode: FunctionNodeComponent,
+  ExpandableExpressionNode: ExpandableExpressionNodeComponent,
 };
 
 const initialNodes: Node[] = [
@@ -57,20 +59,49 @@ export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarPro
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
+  // Memoize the collapsed tree so it doesn't recompute on expansion changes
+  const collapsedTree = useMemo<CollapsedNode | null>(() => {
+    if (ast === undefined) return null;
+    return collapseNode(ast);
+  }, [ast]);
+
+  // Toggle expansion handler
+  const handleToggleExpand = useCallback((nodeId: string) => {
+    setExpandedNodeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Build graph when collapsed tree or expansion state changes
   useEffect(() => {
-    if (ast === undefined) {
+    if (collapsedTree === null) {
       setNodes([]);
       setEdges([]);
     } else {
       resetNodeIdCounter();
-      const collapsedTree = collapseNode(ast);
-      const G = toGraph(collapsedTree, visitCollapsedNode);
+      const context: ExpansionContext = {
+        expandedNodeIds,
+        onToggleExpand: handleToggleExpand,
+      };
+      const G = toGraphWithExpansion(collapsedTree, context);
       const layoutedG = applyDagreLayout(G);
       setNodes(layoutedG.nodes);
       setEdges(layoutedG.edges);
     }
-  }, [ast, setNodes, setEdges]);
+  }, [collapsedTree, expandedNodeIds, handleToggleExpand, setNodes, setEdges]);
+
+  // Reset expanded nodes when AST changes
+  useEffect(() => {
+    setExpandedNodeIds(new Set());
+  }, [ast]);
 
   return (
     <div style={{ height: '100%', width: '100%' }}>

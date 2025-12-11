@@ -28,7 +28,7 @@ export default function StringNodeComponent({data: {value}}: NodeProps<StringNod
                 </div>
             </div>
             </div>
-            <Handle type="source" position={Position.Bottom} />
+            <Handle type="source" position={Position.Right} />
         </div>
     )
 }

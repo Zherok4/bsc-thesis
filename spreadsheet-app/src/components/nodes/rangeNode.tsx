@@ -82,7 +82,7 @@ export default function RangeNodeComponent({data: {startReference, endReference,
                     <span className="sheet-name">{sheet || activeSheetName}</span>
                 </div>
             </div>
-            <Handle type="source" position={Position.Bottom} />
+            <Handle type="source" position={Position.Right} />
         </div>
     )
 }
