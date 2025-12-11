@@ -71,13 +71,14 @@ function createFunctionNode(funName: string, argFormulas: string[], funFormula: 
     } as Node
 }
 
-function createDefaultEdge(source: string, target: string) : Edge {
+function createDefaultEdge(source: string, target: string, handleID?: string) : Edge {
     return {
         id: `${source}-${target}`,
         source,
         target,
         type: "straight",
-        label: ""
+        label: "",
+        targetHandle: handleID,
     } as Edge;
 };
 
@@ -161,7 +162,13 @@ export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID
     }
 }
 
-export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], edges: Edge[], parentID: string) {
+export function visitCollapsedNode(
+    collapsedNode: CollapsedNode, 
+    nodes: Node[], 
+    edges: Edge[], 
+    parentID: string,
+    handleID?: string,
+) {
     switch(collapsedNode.original.type) {
         case("Formula"): {
             const createdNode: Node = createDefaultNode(collapsedNode.label);
@@ -175,7 +182,7 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
         case("CellReference"): {
             const refNode: CellReferenceNode = collapsedNode.original as CellReferenceNode;
             const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
@@ -186,7 +193,7 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
             const startNode: CellReferenceNode = rangeNode.start;
             const endNode: CellReferenceNode = rangeNode.end;
             const createdNode: Node = createRangeNode(startNode.reference, endNode.reference, rangeNode.sheet);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
@@ -195,7 +202,7 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
         case("NumberLiteral"): {
             const numLiteralNode: NumberLiteralNode = collapsedNode.original as NumberLiteralNode;
             const createdNode: Node = createNumNode(numLiteralNode.value);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
@@ -204,7 +211,7 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
         case("StringLiteral"): {
             const strLiteralNode: StringLiteralNode = collapsedNode.original as StringLiteralNode;
             const createdNode: Node = createStringNode(strLiteralNode.value);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             break;
@@ -215,18 +222,18 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
             const funFormula: string = nodeToString(funNode);
             const argFormulas: string[] = collapsedNode.children.map(child => {return child.label;});
             const createdNode: Node = createFunctionNode(funNode.name, argFormulas, funFormula);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
-            collapsedNode.children.forEach(child => {
-                visitCollapsedNode(child, nodes, edges, createdNode.id);
+            collapsedNode.children.forEach((child, idx) => {
+                visitCollapsedNode(child, nodes, edges, createdNode.id, `arghandle-${idx}`);
             });
             break;
         }
 
         default:{
             const createdNode: Node = createDefaultNode(collapsedNode.label);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
             nodes.push(createdNode);
             edges.push(createdEdge);
             collapsedNode.children.forEach(child => {
@@ -237,6 +244,7 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
     }
 }
 
+// TODO: put visitMethods in an wrapper ==> visitMethod can now also have their individual arguments.
 export function toGraph<T extends ASTNode | CollapsedNode>(nodeToVisit: T, visitMethod: (visitedObject: T, nodes: Node[], edges: Edge[], parentID: string) => void): Graph {
     const nodes: Node[] = [];
     const edges: Edge[] = [];

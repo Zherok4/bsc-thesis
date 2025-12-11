@@ -71,7 +71,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                                     <Handle
                                         type="target"
                                         position={Position.Left}
-                                        id={`arg-${idx}`}
+                                        id={`arghandle-${idx}`}
                                         className="arg-handle"
                                         style={{
                                             position: "absolute",
