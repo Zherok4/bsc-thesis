@@ -32,24 +32,27 @@ export default function ReferenceNodeComponent({data: {reference, sheet}}: NodeP
 
     return (
         <div className="node-wrapper">
+            <div className="selected-indicator"></div>
             <div className="ref-node">
-                <span className="cell-ref">{reference}</span>
-                <span className="node-type">Cell</span>
-            </div>
-
-            <div className="node-body">
-                <div className="value-row">
-                    <span className="value-label">Value</span>
-                    <span className="value-display">{String(cellValue || "#Error")}</span>
+                <div className="node-header">
+                    <span className="cell-ref">{reference}</span>
+                    <span className="node-type">Cell</span>
                 </div>
-            </div>
 
-            <div className="node-footer">
-                <div className="sheet-icon">
-                    <span></span><span></span><span></span>
-                    <span></span><span></span><span></span>
+                <div className="node-body">
+                    <div className="value-row">
+                        <span className="value-label">Value</span>
+                        <span className="value-display">{String(cellValue ?? "")}</span>
+                    </div>
                 </div>
-                <span className="sheet-name">{sheet || activeSheetName}</span>
+
+                <div className="node-footer">
+                    <div className="sheet-icon">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span className="sheet-name">{sheet || activeSheetName}</span>
+                </div>
             </div>
             <Handle type="source" position={Position.Right} />
         </div>

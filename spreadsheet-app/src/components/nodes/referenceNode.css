@@ -13,25 +13,26 @@
 .cell-ref {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ref-accent);
   background: var(--ref-accent-light);
   padding: 2px 8px;
   border-radius: 4px;
 }
 
-.value-row {
+.ref-node .value-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
-.value-label {
+.ref-node .value-label {
   font-size: 11px;
   color: var(--text-tertiary);
 }
 
-.value-display {
+.ref-node .value-display {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
   font-weight: 500;
