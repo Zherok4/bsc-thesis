@@ -10,6 +10,7 @@ export type ExpandableExpressionNode = Node<
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
     nodeId: string,
+    isConnectedToFunctionArg?: boolean,
 },
 'ExpandableExpressionNode'
 >;
@@ -55,19 +56,33 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
         props.data.onToggleExpand(props.data.nodeId);
     };
 
+    if (!props.data.isExpanded) {
+        return (
+            <div className="expandable-expression-node minimal">
+                <button
+                    className="expand-toggle"
+                    onClick={handleToggle}
+                    title="Expand details"
+                >
+                    +
+                </button>
+                <Handle type="source" position={Position.Right} />
+                <Handle type="target" position={Position.Left} />
+            </div>
+        );
+    }
+
     return (
-        <div className={`expandable-expression-node ${props.data.isExpanded ? 'expanded' : 'collapsed'}`}>
+        <div className="expandable-expression-node expanded">
             <div className="node-header">
                 <button
                     className="expand-toggle"
                     onClick={handleToggle}
-                    title={props.data.isExpanded ? "Collapse details" : "Expand details"}
+                    title="Collapse details"
                 >
-                    {props.data.isExpanded ? '−' : '+'}
+                    −
                 </button>
-                <span className="expand-hint">
-                    {props.data.isExpanded ? 'Details shown' : 'Click + to expand'}
-                </span>
+                <span className="expand-hint">Details shown</span>
             </div>
             <div className="node-content">
                 <p className="label">Formula:</p>

@@ -9,6 +9,15 @@
     min-width: 150px;
 }
 
+.expandable-expression-node.minimal {
+    min-width: auto;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-style: dashed;
+}
+
 .expandable-expression-node.collapsed {
     border-style: dashed;
 }

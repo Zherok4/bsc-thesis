@@ -80,7 +80,8 @@ function createFunctionNode(funName: string, argFormulas: string[], funFormula: 
 function createExpandableExpressionNode(
     formula: string,
     isExpanded: boolean,
-    onToggleExpand: (nodeId: string) => void
+    onToggleExpand: (nodeId: string) => void,
+    isConnectedToFunctionArg: boolean = false
 ): Node {
     const nodeId = generateNodeId();
     return {
@@ -91,6 +92,7 @@ function createExpandableExpressionNode(
             isExpanded,
             onToggleExpand,
             nodeId,
+            isConnectedToFunctionArg,
         },
         type: "ExpandableExpressionNode",
     } as Node
@@ -363,13 +365,15 @@ export function visitCollapsedNodeWithExpansion(
         case("UnaryOp"):
         case("Percent"): {
             const isExpanded = context.expandedNodeIds.has(nodeCollapsedId);
+            const isConnectedToFunctionArg = handleID?.startsWith('arghandle-') ?? false;
 
             if (collapsedNode.hasHiddenDetails && !isExpanded) {
                 // Create expandable node (collapsed state)
                 const createdNode: Node = createExpandableExpressionNode(
                     collapsedNode.label,
                     false,
-                    context.onToggleExpand
+                    context.onToggleExpand,
+                    isConnectedToFunctionArg
                 );
                 // Override the nodeId in data to use our stable collapsed ID
                 createdNode.data.nodeId = nodeCollapsedId;
@@ -389,7 +393,8 @@ export function visitCollapsedNodeWithExpansion(
                 const createdNode: Node = createExpandableExpressionNode(
                     collapsedNode.label,
                     true,
-                    context.onToggleExpand
+                    context.onToggleExpand,
+                    isConnectedToFunctionArg
                 );
                 createdNode.data.nodeId = nodeCollapsedId;
 
@@ -397,8 +402,12 @@ export function visitCollapsedNodeWithExpansion(
                 nodes.push(createdNode);
                 edges.push(createdEdge);
 
-                // When expanded, show the full AST subtree
-                visitAstNode(collapsedNode.original, nodes, edges, createdNode.id);
+                // When expanded, show the collapsed children (which properly summarize arithmetic)
+                collapsedNode.children.forEach((child, idx) => {
+                    visitCollapsedNodeWithExpansion(
+                        child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-expanded-${idx}`
+                    );
+                });
             } else {
                 // No hidden details, just show as default node
                 const createdNode: Node = createDefaultNode(collapsedNode.label);
