@@ -67,7 +67,19 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                         <span className="args-label">Arguments</span>
                         {
                             argFormulas.map((formula, idx) => (
-                                <div key={idx} className="arg"> 
+                                <div key={idx} className="arg">
+                                    <Handle
+                                        type="target"
+                                        position={Position.Left}
+                                        id={`arg-${idx}`}
+                                        className="arg-handle"
+                                        style={{
+                                            position: "absolute",
+                                            left: "-16px",
+                                            top: "50%",
+                                            transform: "translateY(-50%)",
+                                        }}
+                                    />
                                     <span className="arg-label">{`arg${idx}`}</span>
                                     <span className="arg-value">{formula}</span>
                                 </div>
@@ -81,8 +93,8 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                     </div>
                 </div>
             </div>
+            {/* Output handle */}
             <Handle type="source" position={Position.Bottom} />
-            <Handle type="target" position={Position.Top} />
         </div>
     );
 }
