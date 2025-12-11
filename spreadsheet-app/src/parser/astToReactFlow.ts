@@ -1,6 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 import { nodeToString, type CollapsedNode } from "./collapseAST";
-import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, PercentNode, UnaryOpNode } from "./visitor";
+import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
 export interface Graph {
     nodes: Node[];
@@ -11,11 +11,11 @@ let nodeIdCounter: number = 0;
 
 function generateNodeId(): string {
     return `node_${nodeIdCounter++}`
-}
+};
 
 export function resetNodeIdCounter(): void {
     nodeIdCounter = 0;
-}
+};
 
 function createDefaultNode(label: string): Node {
     return {
@@ -24,15 +24,51 @@ function createDefaultNode(label: string): Node {
         data: {formula: label},
         type: "twoTextNode",
     } as Node;
-}
+};
 
-function createReferenceNode(reference: string, sheet?: string) {
+function createReferenceNode(reference: string, sheet?: string): Node {
     return {
         id: `${generateNodeId()}`,
         position: {x: 0, y: 100*nodeIdCounter},
         data: {reference, sheet},
         type: "ReferenceNode",
     } as Node;
+};
+
+function createRangeNode(startReference: string, endReference: string, sheet?: string): Node {
+    return {
+        id: `${generateNodeId()}`,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {startReference, endReference, sheet},
+        type: "RangeNode",
+    } as Node
+};
+
+function createNumNode(value: number): Node {
+    return {
+        id: `${generateNodeId()}`,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {value},
+        type: "NumberNode" ,
+    } as Node
+}
+
+function createStringNode(value: string): Node {
+    return {
+        id: `${generateNodeId()}`,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {value},
+        type: "StringNode" ,
+    } as Node
+}
+
+function createFunctionNode(funName: string, argFormulas: string[], funFormula: string): Node {
+    return {
+        id: `${generateNodeId()}`,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {funName, argFormulas, funFormula},
+        type: "FunctionNode",
+    } as Node
 }
 
 function createDefaultEdge(source: string, target: string) : Edge {
@@ -43,7 +79,7 @@ function createDefaultEdge(source: string, target: string) : Edge {
         type: "straight",
         label: ""
     } as Edge;
-}
+};
 
 export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {
     switch(node.type) {
@@ -135,12 +171,56 @@ export function visitCollapsedNode(collapsedNode: CollapsedNode, nodes: Node[], 
             });
             break;
         }
+
         case("CellReference"): {
             const refNode: CellReferenceNode = collapsedNode.original as CellReferenceNode;
             const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
             const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
             edges.push(createdEdge);
+            break;
+        }
+
+        case("CellRange"): {
+            const rangeNode: CellRangeNode = collapsedNode.original as CellRangeNode;
+            const startNode: CellReferenceNode = rangeNode.start;
+            const endNode: CellReferenceNode = rangeNode.end;
+            const createdNode: Node = createRangeNode(startNode.reference, endNode.reference, rangeNode.sheet);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("NumberLiteral"): {
+            const numLiteralNode: NumberLiteralNode = collapsedNode.original as NumberLiteralNode;
+            const createdNode: Node = createNumNode(numLiteralNode.value);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("StringLiteral"): {
+            const strLiteralNode: StringLiteralNode = collapsedNode.original as StringLiteralNode;
+            const createdNode: Node = createStringNode(strLiteralNode.value);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case("FunctionCall"): {
+            const funNode: FunctionCallNode = collapsedNode.original as FunctionCallNode;
+            const funFormula: string = nodeToString(funNode);
+            const argFormulas: string[] = collapsedNode.children.map(child => {return child.label;});
+            const createdNode: Node = createFunctionNode(funNode.name, argFormulas, funFormula);
+            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            collapsedNode.children.forEach(child => {
+                visitCollapsedNode(child, nodes, edges, createdNode.id);
+            });
             break;
         }
 

@@ -1,0 +1,99 @@
+@import './nodes.css';
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.func-symbol {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.func-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.formula {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--accent-light);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--node-border);
+}
+
+.args {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.args-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.arg {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    background: var(--accent-light);
+    border-radius: 4px;
+}
+
+.arg-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.arg-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+.result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--node-border);
+}
+
+.result-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.result-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.selected-indicator {
+    position: absolute;
+    inset: -2px;
+    border: 1.5px solid var(--func-accent);
+    border-radius: 9px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.node-wrapper:focus-within .selected-indicator {
+    opacity: 1;
+}

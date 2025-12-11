@@ -9,6 +9,10 @@ import TwoTextNodeComponent from './nodes/TwoTextNode';
 import { HyperFormulaProvider } from './context';
 import type { HyperFormula } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/referenceNode';
+import RangeNodeComponent from './nodes/rangeNode';
+import NumberNodeComponent from './nodes/numberNode';
+import StringNodeComponent from './nodes/stringNode';
+import FunctionNodeComponent from './nodes/functionNode';
 
 export interface SidebarProps {
   ast?: ASTNode;
@@ -19,6 +23,10 @@ export interface SidebarProps {
 const nodeTypes = {
   twoTextNode: TwoTextNodeComponent,
   ReferenceNode: ReferenceNodeComponent,
+  RangeNode: RangeNodeComponent,
+  NumberNode: NumberNodeComponent,
+  StringNode: StringNodeComponent,
+  FunctionNode: FunctionNodeComponent,
 };
 
 const initialNodes: Node[] = [

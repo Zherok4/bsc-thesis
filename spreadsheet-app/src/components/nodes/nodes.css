@@ -1,0 +1,148 @@
+/* Shared node styles and CSS variables */
+:root {
+  /* Base colors */
+  --node-bg: #ffffff;
+  --node-border: #e2e4e8;
+  --node-border-hover: #c9ccd1;
+  --text-primary: #24292e;
+  --text-secondary: #6a737d;
+  --text-tertiary: #959da5;
+  --accent-light: #f6f8fa;
+  --handle-border: #d1d5da;
+  --handle-bg: #ffffff;
+  --shadow: rgba(27, 31, 35, 0.04);
+
+  /* Node-specific accent colors */
+  --range-accent: #5c6bc0;
+  --range-accent-light: #e8eaf6;
+  --ref-accent: #2e7d32;
+  --ref-accent-light: #e8f5e9;
+  --number-accent: #0277bd;
+  --number-accent-light: #e1f5fe;
+  --string-accent: #d84315;
+  --string-accent-light: #fbe9e7;
+  --func-accent: #5a6872;
+  --func-accent-light: #f6f8fa;
+}
+
+/* Base node wrapper */
+.node-wrapper {
+  position: relative;
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px var(--shadow);
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.node-wrapper:hover {
+  border-color: var(--node-border-hover);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+/* Node header */
+.node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--node-border);
+}
+
+/* Node type label */
+.node-type {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Node body */
+.node-body {
+  padding: 10px 12px;
+}
+
+/* Node footer */
+.node-footer {
+  padding: 6px 12px;
+  border-top: 1px solid var(--node-border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sheet icon grid */
+.sheet-icon {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1px;
+  width: 12px;
+  height: 8px;
+}
+
+.sheet-icon span {
+  background: var(--text-tertiary);
+  border-radius: 0.5px;
+}
+
+/* Sheet name label */
+.sheet-name {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Handle styles */
+.handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--handle-bg);
+  border: 1.5px solid var(--handle-border);
+  border-radius: 50%;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.handle-top {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle-bottom {
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle-left {
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.handle-right {
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Selected indicator */
+.selected-indicator {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.node-wrapper:focus-within .selected-indicator {
+  opacity: 1;
+}
+
+
+

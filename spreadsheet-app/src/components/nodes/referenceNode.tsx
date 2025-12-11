@@ -15,9 +15,13 @@ export type ReferenceNode = Node<
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference 
 export default function ReferenceNodeComponent({data: {reference, sheet}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
-    const sheetId = useMemo<number | undefined>(() => {return hfInstance.getSheetId(sheet || activeSheetName)}, [sheet, activeSheetName, hfInstance]);
+    const sheetId = useMemo<number | undefined>(() => {
+        return hfInstance.getSheetId(sheet || activeSheetName)
+    }, [sheet, activeSheetName, hfInstance]);
     // TODO: Improve Error handling
-    const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)}, [reference, hfInstance]);
+    const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
+        return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
+    }, [reference, hfInstance]);
     const cellValue = useMemo<CellValue | undefined>(() => {
         if (!simpleCellAddress) {
             return undefined;
