@@ -50,7 +50,7 @@ export function nodeToString(node: ASTNode): string {
         }
         case "StringLiteral":{
             const stringNode = node as StringLiteralNode;
-            return stringNode.value
+            return `"${stringNode.value}"`;
         }
         default: {
             return "undefined";
