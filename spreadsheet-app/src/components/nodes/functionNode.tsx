@@ -83,7 +83,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                 </div>
             
                 <div className="node-body">
-                    <div className="formula">"{formulaReplacedWithArgNames}"</div>
+                    <div className="formula">{formulaReplacedWithArgNames}</div>
                     
                     <div className="args">
                         <span className="args-label">Arguments</span>
