@@ -77,6 +77,15 @@ function createFunctionNode(funName: string, argFormulas: string[], funFormula: 
     } as Node
 }
 
+function createResultNode(formula: string): Node {
+    return {
+        id: `${generateNodeId()}`,
+        position: {x: 0, y: 100*nodeIdCounter},
+        data: {formula},
+        type: "ResultNode",
+    } as Node
+}
+
 function createExpandableExpressionNode(
     formula: string,
     isExpanded: boolean,
@@ -208,7 +217,7 @@ export function visitCollapsedNode(
 ) {
     switch(collapsedNode.original.type) {
         case("Formula"): {
-            const createdNode: Node = createDefaultNode(collapsedNode.label);
+            const createdNode: Node = createResultNode(collapsedNode.label);
             nodes.push(createdNode);
             collapsedNode.children.forEach(child => {
                 visitCollapsedNode(child, nodes, edges, createdNode.id);
@@ -296,7 +305,7 @@ export function visitCollapsedNodeWithExpansion(
 
     switch(collapsedNode.original.type) {
         case("Formula"): {
-            const createdNode: Node = createDefaultNode(collapsedNode.label);
+            const createdNode: Node = createResultNode(collapsedNode.label);
             nodes.push(createdNode);
             collapsedNode.children.forEach((child, idx) => {
                 visitCollapsedNodeWithExpansion(

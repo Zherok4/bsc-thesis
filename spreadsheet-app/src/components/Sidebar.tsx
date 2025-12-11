@@ -14,6 +14,7 @@ import NumberNodeComponent from './nodes/numberNode';
 import StringNodeComponent from './nodes/stringNode';
 import FunctionNodeComponent from './nodes/functionNode';
 import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
+import ResultNodeComponent from './nodes/resultNode';
 
 export interface SidebarProps {
   ast?: ASTNode;
@@ -29,6 +30,7 @@ const nodeTypes = {
   StringNode: StringNodeComponent,
   FunctionNode: FunctionNodeComponent,
   ExpandableExpressionNode: ExpandableExpressionNodeComponent,
+  ResultNode: ResultNodeComponent,
 };
 
 const initialNodes: Node[] = [
