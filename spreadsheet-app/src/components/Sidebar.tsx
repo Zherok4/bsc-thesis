@@ -1,4 +1,4 @@
-import { ReactFlow, Background, Controls, type ReactFlowInstance, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange } from '@xyflow/react';
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { ASTNode } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext } from '../parser/astToReactFlow';
@@ -57,8 +57,8 @@ const initialEdges: Edge[] = [
   },
 ];
 
-export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarProps) {
-  const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
+  const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
@@ -67,6 +67,8 @@ export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarPro
   const [measuredDimensions, setMeasuredDimensions] = useState<NodeDimensionsMap>(new Map());
   const [needsRelayout, setNeedsRelayout] = useState(false);
   const layoutGenerationRef = useRef(0);
+  // Track if we should fitView (only on initial AST load, not on expansion changes)
+  const shouldFitViewRef = useRef(false);
 
   // Memoize the collapsed tree so it doesn't recompute on expansion changes
   const collapsedTree = useMemo<CollapsedNode | null>(() => {
@@ -149,8 +151,12 @@ export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarPro
       // Clear measured dimensions for new graph
       setMeasuredDimensions(new Map());
       setNeedsRelayout(false);
+      // Fit view only on initial graph build (when AST changes), not on expansion changes
+      if (shouldFitViewRef.current) {
+        setTimeout(() => fitView({ padding: 0.1 }), 0);
+      }
     }
-  }, [collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges]);
+  }, [collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges, fitView]);
 
   // Re-layout with measured dimensions when needed
   useEffect(() => {
@@ -193,24 +199,44 @@ export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarPro
       setNodes(layoutedG.nodes);
       setEdges(layoutedG.edges);
       setNeedsRelayout(false);
+      // Fit view only on initial graph build (when AST changes), not on expansion changes
+      if (shouldFitViewRef.current) {
+        setTimeout(() => fitView({ padding: 0.1 }), 0);
+        shouldFitViewRef.current = false;
+      }
     }, 50); // 50ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [needsRelayout, measuredDimensions, nodes.length, collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges]);
+  }, [needsRelayout, measuredDimensions, nodes.length, collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges, fitView]);
 
-  // Reset expanded nodes when AST changes
+  // Reset expanded nodes when AST changes and mark for fitView
   useEffect(() => {
     setExpandedNodeIds(new Set());
+    shouldFitViewRef.current = true;
   }, [ast]);
 
   return (
     <div style={{ height: '100%', width: '100%' }}>
       <HyperFormulaProvider hfInstance={hfInstance} activeSheetName={activeSheetName}>
-        <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={handleNodesChange}>
+        <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={handleNodesChange}
+        nodesDraggable={false}
+        >
           <Background />
           <Controls />
         </ReactFlow>
       </HyperFormulaProvider>
     </div>
+  );
+}
+
+export default function Sidebar(props: SidebarProps) {
+  return (
+    <ReactFlowProvider>
+      <SidebarInner {...props} />
+    </ReactFlowProvider>
   );
 }
