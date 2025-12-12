@@ -1,6 +1,8 @@
 import type { Edge, Node } from "@xyflow/react";
-import { nodeToString, type CollapsedNode } from "./collapseAST";
+import { collapseNode, nodeToString, type CollapsedNode } from "./collapseAST";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
+import { parseFormula } from "./visitor";
+import type { HyperFormula } from "hyperformula";
 
 export interface Graph {
     nodes: Node[];
@@ -11,6 +13,9 @@ export interface Graph {
 export interface ExpansionContext {
     expandedNodeIds: Set<string>;
     onToggleExpand: (nodeId: string) => void;
+    hfInstance: HyperFormula;
+    activeSheetName: string;
+    visitedCells?: Set<string>;  // For circular reference detection
 }
 
 let nodeIdCounter: number = 0;
@@ -32,11 +37,11 @@ function createDefaultNode(label: string): Node {
     } as Node;
 };
 
-function createReferenceNode(reference: string, sheet?: string): Node {
+function createReferenceNode(reference: string, sheet?: string, hasFormula: boolean = false): Node {
     return {
         id: `${generateNodeId()}`,
         position: {x: 0, y: 100*nodeIdCounter},
-        data: {reference, sheet},
+        data: {reference, sheet, hasFormula},
         type: "ReferenceNode",
     } as Node;
 };
@@ -117,6 +122,42 @@ function createDefaultEdge(source: string, target: string, handleID?: string) : 
         targetHandle: handleID,
     } as Edge;
 };
+
+// Helper to get a cell's formula as a CollapsedNode for expansion
+function getCellFormulaAsCollapsedNode(
+    reference: string,
+    sheet: string | undefined,
+    context: ExpansionContext
+): CollapsedNode | null {
+    try {
+        const sheetName = sheet || context.activeSheetName;
+        const sheetId = context.hfInstance.getSheetId(sheetName);
+        if (sheetId === undefined) {
+            return null;
+        }
+
+        const cellAddress = context.hfInstance.simpleCellAddressFromString(reference, sheetId);
+        if (!cellAddress) {
+            return null;
+        }
+
+        const formulaString = context.hfInstance.getCellFormula(cellAddress);
+        if (!formulaString) {
+            return null;
+        }
+
+        // Parse the formula and collapse it
+        const ast = parseFormula(formulaString);
+        if (!ast) {
+            return null;
+        }
+
+        return collapseNode(ast);
+    } catch (error) {
+        console.error(`Failed to parse formula for cell ${reference}:`, error);
+        return null;
+    }
+}
 
 export function visitAstNode(node: ASTNode, nodes: any[], edges: any[], parentID: string) {
     switch(node.type) {
@@ -317,10 +358,72 @@ export function visitCollapsedNodeWithExpansion(
 
         case("CellReference"): {
             const refNode: CellReferenceNode = collapsedNode.original as CellReferenceNode;
-            const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
-            nodes.push(createdNode);
-            edges.push(createdEdge);
+            const cellId = `${refNode.sheet || context.activeSheetName}:${refNode.reference}`;
+
+            // Check for circular reference
+            const visitedCells = context.visitedCells || new Set<string>();
+            if (visitedCells.has(cellId)) {
+                // Circular reference detected - create non-expandable node
+                const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
+                const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+                nodes.push(createdNode);
+                edges.push(createdEdge);
+                break;
+            }
+
+            // Try to get cell's formula for expansion
+            const cellFormula = getCellFormulaAsCollapsedNode(refNode.reference, refNode.sheet, context);
+
+            if (cellFormula) {
+                // Cell has a formula - create reference node + expandable node
+                // Use cellId in the expansion ID to make it unique per cell reference
+                const cellExpandId = `${nodeCollapsedId}-${cellId}`;
+                const isExpanded = context.expandedNodeIds.has(cellExpandId);
+
+                // Create the cell reference node (with hasFormula=true for left handle)
+                const refCreatedNode: Node = createReferenceNode(refNode.reference, refNode.sheet, true);
+                const refEdge: Edge = createDefaultEdge(refCreatedNode.id, parentID, handleID);
+                nodes.push(refCreatedNode);
+                edges.push(refEdge);
+
+                // Create an expandable expression node connected to the reference
+                const expandableNode: Node = createExpandableExpressionNode(
+                    cellFormula.label,
+                    isExpanded,
+                    context.onToggleExpand,
+                    false
+                );
+                expandableNode.data.nodeId = cellExpandId;
+
+                const expandableEdge: Edge = createDefaultEdge(expandableNode.id, refCreatedNode.id);
+                nodes.push(expandableNode);
+                edges.push(expandableEdge);
+
+                if (isExpanded) {
+                    // Recursively visit the cell's formula children with circular ref protection
+                    const childContext: ExpansionContext = {
+                        ...context,
+                        visitedCells: new Set([...visitedCells, cellId])
+                    };
+
+                    // cellFormula wraps a FormulaNode, which has one child: the expression
+                    // We want to visit the expression's children, not the formula's children
+                    const expression = cellFormula.children[0];
+                    if (expression) {
+                        expression.children.forEach((child, idx) => {
+                            visitCollapsedNodeWithExpansion(
+                                child, nodes, edges, expandableNode.id, childContext, undefined, `${cellExpandId}-${idx}`
+                            );
+                        });
+                    }
+                }
+            } else {
+                // No formula - create regular reference node
+                const createdNode: Node = createReferenceNode(refNode.reference, refNode.sheet);
+                const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+                nodes.push(createdNode);
+                edges.push(createdEdge);
+            }
             break;
         }
 
@@ -336,11 +439,11 @@ export function visitCollapsedNodeWithExpansion(
         }
 
         case("NumberLiteral"): {
-            const numLiteralNode: NumberLiteralNode = collapsedNode.original as NumberLiteralNode;
-            const createdNode: Node = createNumNode(numLiteralNode.value);
-            const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
-            nodes.push(createdNode);
-            edges.push(createdEdge);
+            //const numLiteralNode: NumberLiteralNode = collapsedNode.original as NumberLiteralNode;
+            //const createdNode: Node = createNumNode(numLiteralNode.value);
+            //const createdEdge: Edge = createDefaultEdge(createdNode.id, parentID, handleID);
+            //nodes.push(createdNode);
+            //edges.push(createdEdge);
             break;
         }
 
@@ -414,7 +517,7 @@ export function visitCollapsedNodeWithExpansion(
                 // When expanded, show the collapsed children (which properly summarize arithmetic)
                 collapsedNode.children.forEach((child, idx) => {
                     visitCollapsedNodeWithExpansion(
-                        child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-expanded-${idx}`
+                        child, nodes, edges, createdNode.id, context, undefined, `${nodeCollapsedId}-${idx}`
                     );
                 });
             } else {

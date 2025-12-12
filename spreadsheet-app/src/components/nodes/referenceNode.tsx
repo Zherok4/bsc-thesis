@@ -9,11 +9,12 @@ export type ReferenceNode = Node<
 {
     reference: string,
     sheet?: string,
+    hasFormula?: boolean,
 },
 'ReferenceNode'
 >;
-// TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference 
-export default function ReferenceNodeComponent({data: {reference, sheet}}: NodeProps<ReferenceNode>): JSX.Element {
+// TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
+export default function ReferenceNodeComponent({data: {reference, sheet, hasFormula}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(sheet || activeSheetName)
@@ -54,6 +55,7 @@ export default function ReferenceNodeComponent({data: {reference, sheet}}: NodeP
                     <span className="sheet-name">{sheet || activeSheetName}</span>
                 </div>
             </div>
+            {hasFormula && <Handle type="target" position={Position.Left} />}
             <Handle type="source" position={Position.Right} />
         </div>
     );

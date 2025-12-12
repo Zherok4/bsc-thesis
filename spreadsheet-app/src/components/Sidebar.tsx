@@ -92,13 +92,15 @@ export default function Sidebar({ ast, hfInstance, activeSheetName }: SidebarPro
       const context: ExpansionContext = {
         expandedNodeIds,
         onToggleExpand: handleToggleExpand,
+        hfInstance,
+        activeSheetName,
       };
       const G = toGraphWithExpansion(collapsedTree, context);
       const layoutedG = applyDagreLayout(G);
       setNodes(layoutedG.nodes);
       setEdges(layoutedG.edges);
     }
-  }, [collapsedTree, expandedNodeIds, handleToggleExpand, setNodes, setEdges]);
+  }, [collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges]);
 
   // Reset expanded nodes when AST changes
   useEffect(() => {
