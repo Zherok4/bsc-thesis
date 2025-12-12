@@ -8,7 +8,7 @@ export type TwoTextNode = Node<
 {
     formula: string,
 },
-'twoTextNode'
+'TwoTextNode'
 >;
 
 export default function TwoTextNodeComponent(props: NodeProps<TwoTextNode>) {

@@ -33,7 +33,7 @@ function createDefaultNode(label: string): Node {
         id: `${generateNodeId()}`,
         position: {x: 0, y: 100*nodeIdCounter},
         data: {formula: label},
-        type: "twoTextNode",
+        type: "TwoTextNode",
     } as Node;
 };
 

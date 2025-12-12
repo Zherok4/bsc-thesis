@@ -34,7 +34,7 @@ function getNodeDimensions(node: Node): { width: number; height: number } {
             // Literal nodes are compact
             return { width: 100, height: 70 };
         }
-        case "twoTextNode": {
+        case "TwoTextNode": {
             // Two text nodes (formula + output)
             const data = node.data as { formula?: string };
             const formulaLength = data.formula?.length || 0;

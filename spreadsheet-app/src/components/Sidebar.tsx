@@ -16,14 +16,32 @@ import FunctionNodeComponent from './nodes/functionNode';
 import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
 import ResultNodeComponent from './nodes/resultNode';
 
+/**
+ * Props for the Sidebar component that renders an AST as a ReactFlow graph.
+ */
 export interface SidebarProps {
+  /** The AST to visualize. When undefined, the graph is cleared. */
   ast?: ASTNode;
+  /** HyperFormula instance for formula evaluation */
   hfInstance: HyperFormula;
+  /** Name of the active spreadsheet sheet */
   activeSheetName: string;
 }
 
+const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
+const LAYOUT_DEBOUNCE_MS = 50;
+const FIT_VIEW_PADDING = 0.1;
+const DIMENSION_CHANGE_THRESHOLD = 1;
+
+const hasDimensionChanged = (
+  existing: { width: number; height: number } | undefined,
+  newDims: { width: number; height: number }
+) => !existing ||
+  Math.abs(existing.width - newDims.width) > DIMENSION_CHANGE_THRESHOLD ||
+  Math.abs(existing.height - newDims.height) > DIMENSION_CHANGE_THRESHOLD;
+
 const nodeTypes = {
-  twoTextNode: TwoTextNodeComponent,
+  TwoTextNode: TwoTextNodeComponent,
   ReferenceNode: ReferenceNodeComponent,
   RangeNode: RangeNodeComponent,
   NumberNode: NumberNodeComponent,
@@ -33,50 +51,22 @@ const nodeTypes = {
   ResultNode: ResultNodeComponent,
 };
 
-const initialNodes: Node[] = [
-  {
-    id: 'n1',
-    position: { x: 0, y: 0 },
-    data: { label: 'Node 1' },
-    type: 'input',
-  },
-  {
-    id: 'n2',
-    position: { x: 100, y: 100 },
-    data: { label: 'Node 2' },
-  },
-];
-
-const initialEdges: Edge[] = [
-  {
-    id: 'n1-n2',
-    source: 'n1',
-    target: 'n2',
-    type: 'step',
-    label: 'connects with',
-  },
-];
-
 function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
-  // Track measured node dimensions for accurate layout
   const [measuredDimensions, setMeasuredDimensions] = useState<NodeDimensionsMap>(new Map());
   const [needsRelayout, setNeedsRelayout] = useState(false);
-  const layoutGenerationRef = useRef(0);
-  // Track if we should fitView (only on initial AST load, not on expansion changes)
-  const shouldFitViewRef = useRef(false);
+  const layoutVersionRef = useRef(0);
+  const fitViewOnNextRenderRef = useRef(false);
 
-  // Memoize the collapsed tree so it doesn't recompute on expansion changes
   const collapsedTree = useMemo<CollapsedNode | null>(() => {
     if (ast === undefined) return null;
     return collapseNode(ast);
   }, [ast]);
 
-  // Toggle expansion handler
   const handleToggleExpand = useCallback((nodeId: string) => {
     setExpandedNodeIds(prev => {
       const next = new Set(prev);
@@ -89,12 +79,22 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
     });
   }, []);
 
-  // Handle node changes, capturing dimension measurements
+  const buildGraph = useCallback((tree: CollapsedNode, dimensions?: NodeDimensionsMap) => {
+    resetNodeIdCounter();
+    const context: ExpansionContext = {
+      expandedNodeIds,
+      onToggleExpand: handleToggleExpand,
+      hfInstance,
+      activeSheetName,
+    };
+    const graph = toGraphWithExpansion(tree, context);
+    return applyDagreLayout(graph, dimensions);
+  }, [expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName]);
+
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
-    // Apply default changes first
+    
     onNodesChange(changes);
 
-    // Check for dimension changes
     const dimensionChanges = changes.filter(
       (change): change is NodeDimensionChange =>
         change.type === 'dimensions' &&
@@ -110,10 +110,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
           const existing = next.get(change.id);
           const newDims = change.dimensions!;
 
-          // Only update if dimensions actually changed (avoid unnecessary re-layouts)
-          if (!existing ||
-            Math.abs(existing.width - newDims.width) > 1 ||
-            Math.abs(existing.height - newDims.height) > 1) {
+          if (hasDimensionChanged(existing, newDims)) {
             next.set(change.id, { width: newDims.width, height: newDims.height });
             hasChanges = true;
           }
@@ -128,91 +125,61 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
     }
   }, [onNodesChange]);
 
-  // Build graph when collapsed tree or expansion state changes
   useEffect(() => {
     if (collapsedTree === null) {
       setNodes([]);
       setEdges([]);
       setMeasuredDimensions(new Map());
-    } else {
-      layoutGenerationRef.current += 1;
-      resetNodeIdCounter();
-      const context: ExpansionContext = {
-        expandedNodeIds,
-        onToggleExpand: handleToggleExpand,
-        hfInstance,
-        activeSheetName,
-      };
-      const G = toGraphWithExpansion(collapsedTree, context);
-      // Initial layout with estimated dimensions
-      const layoutedG = applyDagreLayout(G);
-      setNodes(layoutedG.nodes);
-      setEdges(layoutedG.edges);
-      // Clear measured dimensions for new graph
-      setMeasuredDimensions(new Map());
-      setNeedsRelayout(false);
-      // Fit view only on initial graph build (when AST changes), not on expansion changes
-      if (shouldFitViewRef.current) {
-        setTimeout(() => fitView({ padding: 0.1 }), 0);
-      }
+      return;
     }
-  }, [collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges, fitView]);
 
-  // Re-layout with measured dimensions when needed
+    layoutVersionRef.current += 1;
+    const layoutedGraph = buildGraph(collapsedTree);
+    setNodes(layoutedGraph.nodes);
+    setEdges(layoutedGraph.edges);
+    setMeasuredDimensions(new Map());
+    setNeedsRelayout(false);
+
+    if (fitViewOnNextRenderRef.current) {
+      setTimeout(() => fitView({ padding: FIT_VIEW_PADDING }), 0);
+    }
+  }, [collapsedTree, buildGraph, setNodes, setEdges, fitView]);
+
   useEffect(() => {
     if (!needsRelayout || measuredDimensions.size === 0) {
       return;
     }
 
-    // Check if we have measurements for all (or most) nodes
     const measurementCoverage = measuredDimensions.size / nodes.length;
-
-    // Only re-layout if we have measurements for at least 80% of nodes
-    if (measurementCoverage < 0.8) {
+    if (measurementCoverage < MEASUREMENT_COVERAGE_THRESHOLD) {
       return;
     }
 
-    // Capture current layout generation to detect stale updates
-    const currentGeneration = layoutGenerationRef.current;
+    const currentGeneration = layoutVersionRef.current;
 
-    // Debounce the re-layout to batch dimension changes
     const timeoutId = setTimeout(() => {
-      // Check if layout generation changed (new graph was built)
-      if (layoutGenerationRef.current !== currentGeneration) {
+      if (layoutVersionRef.current !== currentGeneration) {
         return;
       }
-
-      // Rebuild the graph structure (needed for fresh node references)
       if (collapsedTree === null) return;
 
-      resetNodeIdCounter();
-      const context: ExpansionContext = {
-        expandedNodeIds,
-        onToggleExpand: handleToggleExpand,
-        hfInstance,
-        activeSheetName,
-      };
-      const G = toGraphWithExpansion(collapsedTree, context);
-
-      // Re-layout with measured dimensions
-      const layoutedG = applyDagreLayout(G, measuredDimensions);
-      setNodes(layoutedG.nodes);
-      setEdges(layoutedG.edges);
+      const layoutedGraph = buildGraph(collapsedTree, measuredDimensions);
+      setNodes(layoutedGraph.nodes);
+      setEdges(layoutedGraph.edges);
       setNeedsRelayout(false);
-      // Fit view only on initial graph build (when AST changes), not on expansion changes
-      if (shouldFitViewRef.current) {
-        setTimeout(() => fitView({ padding: 0.1 }), 0);
-        shouldFitViewRef.current = false;
+
+      if (fitViewOnNextRenderRef.current) {
+        setTimeout(() => fitView({ padding: FIT_VIEW_PADDING }), 0);
+        fitViewOnNextRenderRef.current = false;
       }
-    }, 50); // 50ms debounce
+    }, LAYOUT_DEBOUNCE_MS);
 
     return () => clearTimeout(timeoutId);
-  }, [needsRelayout, measuredDimensions, nodes.length, collapsedTree, expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, setNodes, setEdges, fitView]);
+  }, [needsRelayout, measuredDimensions, nodes.length, collapsedTree, buildGraph, setNodes, setEdges, fitView]);
 
-  // Reset expanded nodes when AST changes and mark for fitView
   useEffect(() => {
     setExpandedNodeIds(new Set());
-    shouldFitViewRef.current = true;
+    fitViewOnNextRenderRef.current = true;
   }, [ast]);
 
   return (
