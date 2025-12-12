@@ -2,6 +2,8 @@ import dagre from "dagre";
 import type { Node } from "@xyflow/react";
 import type { Graph } from "./astToReactFlow";
 
+export type NodeDimensionsMap = Map<string, { width: number; height: number }>;
+
 // Estimate node dimensions based on node type and data
 function getNodeDimensions(node: Node): { width: number; height: number } {
     const baseWidth = 180;
@@ -54,12 +56,14 @@ function getNodeDimensions(node: Node): { width: number; height: number } {
 
 export function applyDagreLayout(
     result: Graph,
+    measuredDimensions?: NodeDimensionsMap,
 ) : Graph {
     const options = {
         direction: "LR",  // Left-to-Right: better for edges connecting to left-side handles
-        nodeSep: 80,      // Increased vertical separation between nodes
-        rankSep: 120,     // Increased horizontal separation between ranks
+        nodeSep: 50,      // Increased vertical separation between nodes
+        rankSep: 20,     // Increased horizontal separation between ranks
         edgeSep: 20,      // Increased edge separation
+        align: "DL",
     };
 
     const {nodes, edges} = result;
@@ -77,7 +81,8 @@ export function applyDagreLayout(
     const nodeDimensions = new Map<string, { width: number; height: number }>();
 
     nodes.forEach((node) => {
-        const dimensions = getNodeDimensions(node);
+        // Use measured dimensions if available, otherwise estimate
+        const dimensions = measuredDimensions?.get(node.id) ?? getNodeDimensions(node);
         nodeDimensions.set(node.id, dimensions);
         dagreGraph.setNode(node.id, { width: dimensions.width, height: dimensions.height });
     });
