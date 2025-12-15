@@ -5,6 +5,31 @@
   min-width: 140px;
 }
 
+/* Edit mode indicator - pulsing glow animation */
+.node-wrapper.editing {
+  border-color: var(--edit-mode-border);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.5), 0 0 12px rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* Cell reference badge styling when being edited */
+.cell-ref.editing {
+  background: var(--edit-mode-border);
+  color: white;
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+
+
 .ref-node .handle:hover {
   border-color: var(--ref-accent);
   background: var(--ref-accent-light);

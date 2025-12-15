@@ -76,12 +76,12 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     }, [simpleCellAddress, hfInstance]);
 
     return (
-        <div className="node-wrapper">
+        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
             <div className="selected-indicator"></div>
             <div className="ref-node">
                 <div className="node-header">
                     <div
-                        className="cell-ref"
+                        className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
                         onDoubleClick={e => handleDoubleClick(e)}
                         title="double click to change Reference"
                     >
