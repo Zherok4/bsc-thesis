@@ -64,7 +64,7 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
                     onClick={handleToggle}
                     title="Expand details"
                 >
-                    +
+                    ...
                 </button>
                 <Handle type="source" position={Position.Right} />
                 <Handle type="target" position={Position.Left} />

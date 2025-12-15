@@ -3,6 +3,7 @@ import { collapseNode, nodeToString, type CollapsedNode } from "./collapseAST";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 import { parseFormula } from "./visitor";
 import type { HyperFormula } from "hyperformula";
+import type { Dispatch, SetStateAction } from "react";
 
 export interface Graph {
     nodes: Node[];
@@ -16,6 +17,9 @@ export interface ExpansionContext {
     hfInstance: HyperFormula;
     activeSheetName: string;
     visitedCells?: Set<string>;  // For circular reference detection
+    isEditModeActive: boolean;
+    /** setEditMode assumes that true indicates active and false inactive mode*/
+    setEditMode: Dispatch<SetStateAction<boolean>>;
 }
 
 let nodeIdCounter: number = 0;

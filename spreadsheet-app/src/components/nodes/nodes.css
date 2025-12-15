@@ -23,6 +23,16 @@
   --string-accent-light: #fbe9e7;
   --func-accent: #5a6872;
   --func-accent-light: #f6f8fa;
+
+  /* Edit mode */
+  --edit-mode-border: #f59e0b;
+}
+
+/* Edit mode indicator for graph container */
+.edit-mode-active {
+  border: 3px solid var(--edit-mode-border);
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
 /* Base node wrapper */

@@ -1,12 +1,13 @@
 import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import './nodes/nodes.css';
 import type { ASTNode } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
-import { HyperFormulaProvider } from './context';
+import { HyperFormulaProvider, GraphEditModeContext } from './context';
 import type { HyperFormula } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/referenceNode';
 import RangeNodeComponent from './nodes/rangeNode';
@@ -26,6 +27,8 @@ export interface SidebarProps {
   hfInstance: HyperFormula;
   /** Name of the active spreadsheet sheet */
   activeSheetName: string;
+  /** Address of the currently selected cell */
+  selectedCell: {row: number, col: number} | null;
 }
 
 const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
@@ -51,11 +54,15 @@ const nodeTypes = {
   ResultNode: ResultNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
+
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
+
+  const [isEditModeActive, setEditMode] = useState<boolean>(false);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 
   const [measuredDimensions, setMeasuredDimensions] = useState<NodeDimensionsMap>(new Map());
   const [needsRelayout, setNeedsRelayout] = useState(false);
@@ -86,6 +93,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
       onToggleExpand: handleToggleExpand,
       hfInstance,
       activeSheetName,
+      isEditModeActive,
+      setEditMode,
     };
     const graph = toGraphWithExpansion(tree, context);
     return applyDagreLayout(graph, dimensions);
@@ -126,6 +135,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
   }, [onNodesChange]);
 
   useEffect(() => {
+    if (isEditModeActive) return;
+
     if (collapsedTree === null) {
       setNodes([]);
       setEdges([]);
@@ -182,20 +193,41 @@ function SidebarInner({ ast, hfInstance, activeSheetName }: SidebarProps) {
     fitViewOnNextRenderRef.current = true;
   }, [ast]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditModeActive) {
+        setEditMode(false);
+        setEditingNodeId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditModeActive, setEditMode]);
+
   return (
-    <div style={{ height: '100%', width: '100%' }}>
-      <HyperFormulaProvider hfInstance={hfInstance} activeSheetName={activeSheetName}>
-        <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={handleNodesChange}
-        nodesDraggable={false}
+    <div style={{ height: '100%', width: '100%' }} className={isEditModeActive ? 'edit-mode-active' : ''}>
+      <GraphEditModeContext.Provider 
+        value={{ isEditModeActive, setEditMode, editingNodeId, setEditingNodeId}}
+      >
+        <HyperFormulaProvider 
+          hfInstance={hfInstance} 
+          activeSheetName={activeSheetName} 
+          selectedCell={selectedCell}
         >
-          <Background />
-          <Controls />
-        </ReactFlow>
-      </HyperFormulaProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={handleNodesChange}
+            nodesDraggable={false}
+            zoomOnDoubleClick={false}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
+        </HyperFormulaProvider>
+      </GraphEditModeContext.Provider>
     </div>
   );
 }

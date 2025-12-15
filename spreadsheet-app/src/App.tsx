@@ -39,6 +39,7 @@ function App() {
 
 
   const selectedCellValueAST: FormulaNode | undefined = useMemo(() => {
+    // TODO: prevent unnecessary parsing when in editing mode =>
     if (isFormula(selectedCellValue)) {
       try {
         const ast: FormulaNode = parseFormula(selectedCellValue);
@@ -169,7 +170,12 @@ function App() {
           />
         </div>
         <div className="sidebar-container">
-          <Sidebar ast={selectedCellValueAST} hfInstance={hfInstance} activeSheetName={activeSheetName}/>
+          <Sidebar 
+          ast={selectedCellValueAST} 
+          hfInstance={hfInstance} 
+          activeSheetName={activeSheetName}
+          selectedCell={selectedCell}
+          />
         </div>
       </div>
     </div>
