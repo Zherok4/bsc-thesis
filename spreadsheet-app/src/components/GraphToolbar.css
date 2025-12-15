@@ -1,0 +1,52 @@
+.graph-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  background: var(--node-bg, #ffffff);
+  border: 1px solid var(--node-border, #e2e4e8);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 1px 4px var(--shadow, rgba(27, 31, 35, 0.08));
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary, #6a737d);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-button:hover {
+  background: var(--accent-light, #f6f8fa);
+  color: var(--text-primary, #24292e);
+}
+
+.toolbar-button.editMode {
+  background: var(--edit-mode-border, #f59e0b);
+  color: white;
+}
+
+.toolbar-button.editMode:hover {
+  background: #e68f00;
+  color: white;
+}
+
+.toolbar-button.previewMode {
+  background: #1a42e8;
+  color: white;
+}
+
+.toolbar-button.previewMode:hover {
+  background: #1138d4;
+  color: white;
+}

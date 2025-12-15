@@ -16,6 +16,7 @@ import StringNodeComponent from './nodes/stringNode';
 import FunctionNodeComponent from './nodes/functionNode';
 import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
 import ResultNodeComponent from './nodes/resultNode';
+import GraphToolbar from './GraphToolbar';
 
 /**
  * Props for the Sidebar component that renders an AST as a ReactFlow graph.
@@ -206,7 +207,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: Sideba
   }, [isEditModeActive, setEditMode]);
 
   return (
-    <div style={{ height: '100%', width: '100%' }} className={isEditModeActive ? 'edit-mode-active' : ''}>
+    <div style={{ height: '100%', width: '100%' }} className={isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}>
       <GraphEditModeContext.Provider 
         value={{ isEditModeActive, setEditMode, editingNodeId, setEditingNodeId}}
       >
@@ -225,6 +226,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: Sideba
           >
             <Background />
             <Controls />
+            <GraphToolbar />
           </ReactFlow>
         </HyperFormulaProvider>
       </GraphEditModeContext.Provider>

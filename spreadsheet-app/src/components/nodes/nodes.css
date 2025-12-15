@@ -26,6 +26,7 @@
 
   /* Edit mode */
   --edit-mode-border: #f59e0b;
+  --preview-mode-border: #1a42e8;
 }
 
 /* Edit mode indicator for graph container */
@@ -34,6 +35,13 @@
   border-radius: 4px;
   box-sizing: border-box;
 }
+
+.preview-mode-active {
+  border: 3px solid var(--preview-mode-border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
 
 /* Base node wrapper */
 .node-wrapper {
