@@ -15,9 +15,25 @@ export type ReferenceNode = Node<
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
 export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula}}: NodeProps<ReferenceNode>): JSX.Element {
-    const { hfInstance, activeSheetName, selectedCell }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, setEditMode, editingNodeId, setEditingNodeId }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
+
+    const sheetId = useMemo<number | undefined>(() => {
+        return hfInstance.getSheetId(sheet || activeSheetName)
+    }, [sheet, activeSheetName, hfInstance]);
+    // TODO: Improve Error handling
+    const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
+        return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
+    }, [reference, hfInstance]);
+    
+    const cellValue = useMemo<CellValue | undefined>(() => {
+        if (!simpleCellAddress) {
+            return undefined;
+        } else {
+            return hfInstance.getCellValue(simpleCellAddress);
+        }
+    }, [simpleCellAddress, hfInstance]);
 
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -34,6 +50,16 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             setEditingNodeId(id);
         }
     }, [setEditMode, isEditModeActive, isThisNodeBeingEdited, setEditingNodeId, id]);
+
+    const handleSimpleClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (simpleCellAddress) {
+            const {row, col} = simpleCellAddress;
+            scrollToCell(row, col, sheet);
+            highlightCells(row, col, row, col, sheet);
+        }
+    }, [simpleCellAddress, scrollToCell, sheet]);
 
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
@@ -59,26 +85,10 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
 
     }, [selectedCell, activeSheetName, isEditModeActive, editingNodeId]);
 
-    const sheetId = useMemo<number | undefined>(() => {
-        return hfInstance.getSheetId(sheet || activeSheetName)
-    }, [sheet, activeSheetName, hfInstance]);
-    // TODO: Improve Error handling
-    const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
-        return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
-    }, [reference, hfInstance]);
-    
-    const cellValue = useMemo<CellValue | undefined>(() => {
-        if (!simpleCellAddress) {
-            return undefined;
-        } else {
-            return hfInstance.getCellValue(simpleCellAddress);
-        }
-    }, [simpleCellAddress, hfInstance]);
-
     return (
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
             <div className="selected-indicator"></div>
-            <div className="ref-node">
+            <div className="ref-node" onClick={(e) => handleSimpleClick(e)}>
                 <div className="node-header">
                     <div
                         className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}

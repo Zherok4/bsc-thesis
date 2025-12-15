@@ -30,6 +30,9 @@ export interface SidebarProps {
   activeSheetName: string;
   /** Address of the currently selected cell */
   selectedCell: {row: number, col: number} | null;
+  /** scrollToCell Calback to move viewport to corresponding cell */
+  scrollToCell: (row: number, col: number, sheet?: string) => void;
+  highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
 }
 
 const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
@@ -55,7 +58,7 @@ const nodeTypes = {
   ResultNode: ResultNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -199,6 +202,9 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: Sideba
       if (e.key === 'Escape' && isEditModeActive) {
         setEditMode(false);
         setEditingNodeId(null);
+        if (selectedCell !== null) {
+          scrollToCell(selectedCell.row, selectedCell.col, activeSheetName)
+        }
       }
     };
 
@@ -209,12 +215,15 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell }: Sideba
   return (
     <div style={{ height: '100%', width: '100%' }} className={isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}>
       <GraphEditModeContext.Provider 
+      // TODO create API function for swithcing edit mode
         value={{ isEditModeActive, setEditMode, editingNodeId, setEditingNodeId}}
       >
         <HyperFormulaProvider 
           hfInstance={hfInstance} 
           activeSheetName={activeSheetName} 
           selectedCell={selectedCell}
+          scrollToCell={scrollToCell}
+          highlightCells={highlightCells}
         >
           <ReactFlow
             nodes={nodes}

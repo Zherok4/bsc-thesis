@@ -1,10 +1,14 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { HyperFormula } from 'hyperformula';
 
+
+// TODO: make a uniform handler 
 export interface HyperFormulaContextValue {
   hfInstance: HyperFormula;
   activeSheetName: string;
   selectedCell: {row: number, col: number} | null;
+  scrollToCell: (row: number, col: number, sheet?: string) => void;
+  highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
 }
 
 const HyperFormulaContext = createContext<HyperFormulaContextValue | undefined>(undefined);
@@ -13,6 +17,8 @@ export interface HyperFormulaProviderProps {
   hfInstance: HyperFormula;
   activeSheetName: string;
   selectedCell: {row: number, col: number} | null;
+  scrollToCell: (row: number, col: number, sheet?: string) => void;
+  highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   children: ReactNode;
 }
 
@@ -20,10 +26,14 @@ export function HyperFormulaProvider({
   hfInstance,
   activeSheetName,
   selectedCell,
+  scrollToCell,
+  highlightCells,
   children
 }: HyperFormulaProviderProps) {
   return (
-    <HyperFormulaContext.Provider value={{ hfInstance, activeSheetName, selectedCell }}>
+    <HyperFormulaContext.Provider 
+    value={{ hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells}}
+    >
       {children}
     </HyperFormulaContext.Provider>
   );

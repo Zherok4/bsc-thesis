@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, act } from 'react'
 import './App.css'
 import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
@@ -51,6 +51,7 @@ function App() {
       }
     }
   }, [selectedCellValue]);
+
   /**
    * updateSelectionState is triggered if:
    * - cell is selected in the Datatable
@@ -67,6 +68,10 @@ function App() {
   ) => {
     setSelectedCellValue(value);
     setSelectedCell({row, col});
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.clearHighlight();
+    }
   }, []);
 
   /**
@@ -108,6 +113,27 @@ function App() {
    */
   const handleSheetChange = useCallback((sheetName: string) => {
     setActiveSheetName(sheetName);
+  }, []);
+
+  /** scrollToCell is triggered if:
+   *  - user clicks on a cell reference node
+   * 
+   *  moves the viewport of the handsontable spreadsheet to the corresponding cell
+   */
+  const scrollToCell = useCallback((row: number, col: number, sheet?: string) => {
+    if (sheet !== undefined) {
+      handleSheetChange(sheet);
+    }
+    datatableRef.current?.scrollToCell(row, col);
+  }, [handleSheetChange]);
+
+  /** highlightCells assumes that the highlight should be in the activeSheet */
+  const highlightCells = useCallback((startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => {
+    const currentDatatable = datatableRef.current;
+
+    if (currentDatatable) {
+      currentDatatable.highlightCells(startRow, startCol, endRow, endCol, sheet);
+    }
   }, []);
 
   /**
@@ -175,6 +201,8 @@ function App() {
           hfInstance={hfInstance} 
           activeSheetName={activeSheetName}
           selectedCell={selectedCell}
+          scrollToCell={scrollToCell}
+          highlightCells={highlightCells}
           />
         </div>
       </div>
