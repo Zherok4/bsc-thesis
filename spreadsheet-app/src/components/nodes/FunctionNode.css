@@ -63,6 +63,7 @@
 
 .arg-label {
     font-size: 11px;
+    padding-right: 5px;
     color: var(--text-tertiary);
 }
 

@@ -4,6 +4,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { evaluateFormula } from "../../utils";
 import './FunctionNode.css';
+import { getParameterName } from "../../data/functionParameters";
 
 export type FunctionNode = Node<
 {
@@ -94,7 +95,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                                             id={`arghandle-${idx}`}
                                             className="arg-handle"
                                         />
-                                        <span className="arg-label">{`arg${idx}`}</span>
+                                        <span className="arg-label">{getParameterName(funName, idx)}</span>
                                         {constantValue && (
                                             <span className="arg-value">{constantValue}</span>
                                         )}
