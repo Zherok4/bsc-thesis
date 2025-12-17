@@ -1,31 +1,27 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { type JSX } from "react";
 import { Handle, Position } from "@xyflow/react";
-import './stringNode.css';
+import './NumberNode.css';
 
-export type StringNode = Node<
+export type NumberNode = Node<
 {
-    value: string,
+    value: number,
 },
-'StringNode'
+'NumberNode'
 >;
 
-export default function StringNodeComponent({data: {value}}: NodeProps<StringNode>): JSX.Element {
+export default function NumberNodeComponent({data: {value}}: NodeProps<NumberNode>): JSX.Element {
     return (
         <div className="node-wrapper">
             <div className="selected-indicator"></div>
-            <div className="literal-node string-node">
+            <div className="literal-node number-node">
             <div className="node-header">
-                <span className="type-badge">Str</span>
+                <span className="type-badge">Num</span>
                 <span className="node-type">Literal</span>
             </div>
             
             <div className="node-body">
-                <div className="value-display">
-                    <span className="quote">"</span>
-                    <span>{value}</span>
-                    <span className="quote">"</span>
-                </div>
+                <div className="value-display">{value}</div>
             </div>
             </div>
             <Handle type="source" position={Position.Right} />

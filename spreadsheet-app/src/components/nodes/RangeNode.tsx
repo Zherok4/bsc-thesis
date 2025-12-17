@@ -3,7 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useMemo, type JSX } from "react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import type { SimpleCellAddress } from "hyperformula";
-import "./rangeNode.css"
+import "./RangeNode.css"
 
 export type RangeNode = Node<
 {

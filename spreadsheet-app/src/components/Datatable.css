@@ -1,0 +1,8 @@
+/* Datatable sheet visibility styles */
+.sheet-hidden {
+    display: none;
+}
+
+.sheet-visible {
+    display: block;
+}

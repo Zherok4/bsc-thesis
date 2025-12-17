@@ -1,15 +1,19 @@
 import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
-import { memo, useCallback, useImperativeHandle, useRef, useMemo, useEffect } from 'react';
+import { memo, useCallback, useImperativeHandle, useRef, useMemo, useEffect, type JSX } from 'react';
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
+import './Datatable.css';
 
 registerAllModules();
 
 const DEFAULT_COL_WIDTH : number = 110;
 const HIGHLIGHT_CLASS = 'cell-highlight';
 
+/**
+ * Represents a range of highlighted cells
+ */
 interface HighlightRange {
     startRow: number;
     startCol: number;
@@ -18,23 +22,53 @@ interface HighlightRange {
     sheetName: string;
 }
 
+/**
+ * Props for the Datatable component
+ */
 interface DatatableProps {
+    /** Callback invoked when a cell is selected */
     onCellSelect: (value: string, row: number, col: number) => void;
-    hfInstance : (HyperFormula);
-    activeSheetName : string;
+    /** HyperFormula instance for formula calculations */
+    hfInstance: HyperFormula;
+    /** Name of the currently active sheet */
+    activeSheetName: string;
+    /** Version counter to trigger re-renders when sheets change */
     sheetsVersion?: number;
+    /** Ref for imperative handle access */
     ref?: React.Ref<DatatableHandle>;
 }
+
+/**
+ * Imperative handle interface for controlling the Datatable externally
+ */
 export interface DatatableHandle {
+    /** Update a cell's value at the specified position */
     updateCell: (newValue: string, row: number, col: number) => void;
+    /** Select a cell at the specified position */
     selectCell: (row: number, col: number) => void;
+    /** Load data into the active sheet */
     loadData: (data: (string | number | null)[][]) => void;
+    /** Scroll the viewport to show a specific cell */
     scrollToCell: (row: number, col: number) => void;
+    /** Highlight a range of cells, optionally on a specific sheet */
     highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
+    /** Clear all cell highlights */
     clearHighlight: () => void;
 }
 
-const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, ref} : DatatableProps) => {
+/**
+ * Spreadsheet data table component using Handsontable.
+ * Renders multiple sheets with formula support via HyperFormula.
+ * Exposes imperative methods for external control of cell selection and highlighting.
+ *
+ * @param props - Component props
+ * @param props.onCellSelect - Handler for cell selection events
+ * @param props.hfInstance - HyperFormula instance for calculations
+ * @param props.activeSheetName - Currently active sheet name
+ * @param props.sheetsVersion - Version counter for sheet updates
+ * @param props.ref - Imperative handle ref
+ */
+const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, ref}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
 
@@ -136,14 +170,13 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
         },
     }), [activeSheetName]);
 
-    // TODO: Write documentation
-    const createAfterSelectionHandler = useCallback((sheetName: string) => {
+    const createAfterSelectionHandler = useCallback((sheetName: string): (startRow: number, startColumn: number, _endRow: number, _endCol: number) => void => {
         return (
             startRow: number,
             startColumn: number,
             _endRow: number,
             _endCol: number
-        ) => {
+        ): void => {
             if (sheetName !== activeSheetName) return;
 
             const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
@@ -156,15 +189,11 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
         }}
     , [onCellSelect, activeSheetName]);
 
-    // TODO: Write documentation
-    // afterEdit hook ==> also an Edit can change current Value State
+    // TODO: afterEdit hook ==> also an Edit can change current Value State
     return (sheetNames.map((sheetName: string) => (
-        <div 
-            key = {sheetName}
-            className="hottable-container"
-            style = {{
-                display: sheetName === activeSheetName ? 'block' : 'none',
-            }}
+        <div
+            key={sheetName}
+            className={`hottable-container ${sheetName === activeSheetName ? 'sheet-visible' : 'sheet-hidden'}`}
         >
             <HotTable
                 ref = {(el) => {

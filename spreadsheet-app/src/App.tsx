@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, act } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import './App.css'
 import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';

@@ -1,6 +1,7 @@
 import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
+import './Sidebar.css';
 import type { ASTNode } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -9,13 +10,13 @@ import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
 import { HyperFormulaProvider, GraphEditModeContext } from './context';
 import type { HyperFormula } from 'hyperformula';
-import ReferenceNodeComponent from './nodes/referenceNode';
-import RangeNodeComponent from './nodes/rangeNode';
-import NumberNodeComponent from './nodes/numberNode';
-import StringNodeComponent from './nodes/stringNode';
-import FunctionNodeComponent from './nodes/functionNode';
+import ReferenceNodeComponent from './nodes/ReferenceNode';
+import RangeNodeComponent from './nodes/RangeNode';
+import NumberNodeComponent from './nodes/NumberNode';
+import StringNodeComponent from './nodes/StringNode';
+import FunctionNodeComponent from './nodes/FunctionNode';
 import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
-import ResultNodeComponent from './nodes/resultNode';
+import ResultNodeComponent from './nodes/ResultNode';
 import GraphToolbar from './GraphToolbar';
 
 /**
@@ -213,7 +214,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
   }, [isEditModeActive, setEditMode]);
 
   return (
-    <div style={{ height: '100%', width: '100%' }} className={isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}>
+    <div className={`sidebar-inner ${isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
       <GraphEditModeContext.Provider 
       // TODO create API function for swithcing edit mode
         value={{ isEditModeActive, setEditMode, editingNodeId, setEditingNodeId}}

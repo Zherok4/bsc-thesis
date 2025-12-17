@@ -1,17 +1,27 @@
 import './TopBar.css';
-import { useRef } from 'react';
-import type { Sheet } from './SheetTabs';
+import { useRef, type JSX } from 'react';
 import ExcelJS from 'exceljs';
 
+/**
+ * Props for the TopBar component
+ */
 interface TopBarProps {
+    /** Callback invoked when an Excel file is successfully imported */
     onImport: (sheetsAsJavascriptArrays: {[key: string]: (ExcelJS.CellValue)[][]}) => void;
 }
 
+/**
+ * Top navigation bar component with file import functionality.
+ * Allows users to import Excel files (.xlsx, .xls) into the spreadsheet.
+ *
+ * @param props - Component props
+ * @param props.onImport - Callback to handle imported spreadsheet data
+ */
 // TODO: Convert so that it uses HyperFormula Engine
-const TopBar = ({ onImport } : TopBarProps) => {
+const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const readXlsxWorkbookFromFile = async (file: File) => {
+    const readXlsxWorkbookFromFile = async (file: File): Promise<ExcelJS.Workbook> => {
         const workbook = new ExcelJS.Workbook();
         const arrayBuffer = await file.arrayBuffer();
         await workbook.xlsx.load(arrayBuffer);
@@ -19,15 +29,15 @@ const TopBar = ({ onImport } : TopBarProps) => {
         return workbook;
     }
 
-    const convertXlsxWorkbookToJavascriptArrays = (workbook: ExcelJS.Workbook) => {
+    const convertXlsxWorkbookToJavascriptArrays = (workbook: ExcelJS.Workbook): {[key: string]: (ExcelJS.CellValue)[][]} => {
         const workbookData: {[key: string]: (ExcelJS.CellValue)[][]} = {};
 
         workbook.eachSheet((worksheet: ExcelJS.Worksheet) => {
             const sheetDimensions: ExcelJS.Range = worksheet.dimensions;
-            const sheetData: any[] = [];
+            const sheetData: ExcelJS.CellValue[][] = [];
 
             for (let rowNum: number = sheetDimensions.top; rowNum <= sheetDimensions.bottom; rowNum++) {
-                const rowData: any[] = []
+                const rowData: ExcelJS.CellValue[] = []
 
                 for (let colNum = sheetDimensions.left; colNum <= sheetDimensions.right; colNum++) {
                     const cell: ExcelJS.Cell = worksheet.getCell(rowNum, colNum)
@@ -45,7 +55,7 @@ const TopBar = ({ onImport } : TopBarProps) => {
         return workbookData;
     }
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -59,7 +69,7 @@ const TopBar = ({ onImport } : TopBarProps) => {
         }
     }
 
-    const handleButtonClick = () => {
+    const handleButtonClick = (): void => {
         fileInputRef.current?.click();
     };
 
@@ -70,7 +80,7 @@ const TopBar = ({ onImport } : TopBarProps) => {
                 type="file"
                 accept=".xlsx,.xls"
                 onChange={handleFileChange}
-                style={{ display: 'none' }}
+                className="top-bar__hidden-input"
             />
             <button
                 className="top-bar__import-button"

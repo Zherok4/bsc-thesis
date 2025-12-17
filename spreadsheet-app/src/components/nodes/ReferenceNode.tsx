@@ -1,9 +1,9 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type GraphEditModeContextValue } from "../context";
 import type { CellValue, SimpleCellAddress } from "hyperformula";
-import "./referenceNode.css"
+import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
 {
@@ -25,7 +25,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     // TODO: Improve Error handling
     const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
         return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
-    }, [reference, hfInstance]);
+    }, [reference, sheetId, hfInstance]);
     
     const cellValue = useMemo<CellValue | undefined>(() => {
         if (!simpleCellAddress) {
@@ -83,7 +83,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             return reference;
         }
 
-    }, [selectedCell, activeSheetName, isEditModeActive, editingNodeId]);
+    }, [selectedCell, activeSheetName, isEditModeActive, isThisNodeBeingEdited, reference, hfInstance]);
 
     return (
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>

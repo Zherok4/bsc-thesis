@@ -54,6 +54,13 @@
     border-radius: 4px;
 }
 
+.arg-handle {
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .arg-label {
     font-size: 11px;
     color: var(--text-tertiary);
