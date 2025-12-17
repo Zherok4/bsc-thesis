@@ -1,8 +1,38 @@
 @import './nodes.css';
 
-/* Range node specific styles */
+/* Range node specific styles - stacked effect */
 .range-node {
-  min-width: 156px;
+  padding: 8px 12px;
+}
+
+.range-node > .sheet-name {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Horizontal layout */
+.range-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.range-left {
+  display: flex;
+  align-items: center;
+  padding-right: 12px;
+  border-right: 1px solid var(--node-border);
+}
+
+.range-right {
+  display: flex;
+  align-items: center;
 }
 
 .handle:hover {
@@ -12,8 +42,8 @@
 
 .range-ref {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--range-accent);
   background: var(--range-accent-light);
   padding: 2px 8px;
@@ -27,110 +57,11 @@
   opacity: 0.6;
 }
 
-.range-node .node-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.range-preview {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.range-visual {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 8px;
-  background: var(--accent-light);
-  border-radius: 4px;
-  border: 1px solid var(--node-border);
-}
-
-.range-cell {
-  width: 24px;
-  height: 4px;
-  background: var(--range-accent-light);
-  border-radius: 1px;
-}
-
-.range-cell:first-child,
-.range-cell:last-child {
-  background: var(--range-accent);
-  opacity: 0.5;
-}
-
-.range-dots {
-  display: flex;
-  justify-content: center;
-  gap: 2px;
-  padding: 2px 0;
-}
-
-.range-dots span {
-  width: 2px;
-  height: 2px;
-  background: var(--text-tertiary);
-  border-radius: 50%;
-}
-
-.range-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-}
-
-.stat-label {
-  color: var(--text-tertiary);
-}
-
-.stat-value {
+.range-preview-value {
   font-family: 'IBM Plex Mono', monospace;
-  color: var(--text-primary);
-}
-
-.dimensions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--node-border);
-}
-
-.dim {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dim-label {
-  font-size: 10px;
-  color: var(--text-tertiary);
-}
-
-.dim-value {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 500;
-  color: var(--range-accent);
-  background: var(--range-accent-light);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-/* Range node sheet icon accent */
-.range-node .sheet-icon span:nth-child(1),
-.range-node .sheet-icon span:nth-child(4) {
-  background: var(--range-accent);
+  color: var(--text-primary);
 }
 
 /* Range node selected indicator */

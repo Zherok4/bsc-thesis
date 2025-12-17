@@ -22,6 +22,26 @@ function replaceAll(argFormulatoNameMap: Map<string, string>, target: string): s
     return result;
 }
 
+/**
+ * Checks if a formula is a constant value (number or string literal).
+ * Returns the constant value if it is, otherwise returns null.
+ */
+function getConstantValue(formula: string): string | null {
+    const trimmed = formula.trim();
+
+    // Check for number (including negatives and decimals)
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    // Check for string literal (wrapped in double quotes)
+    if (/^".*"$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    return null;
+}
+
 export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
 
@@ -52,30 +72,35 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
             <div className="func-node">
                 <div className="node-header">
                     <div className="header-left">
-                    <span className="func-symbol">ƒ</span>
+                    <span className="func-symbol">ƒ|</span>
                     <span className="func-name">{funName}</span>
                     </div>
-                    <span className="node-type">Function</span>
+                    
                 </div>
             
                 <div className="node-body">
-                    <div className="formula">{formulaReplacedWithArgNames}</div>
+                    
                     
                     <div className="args">
                         <span className="args-label">Arguments</span>
                         {
-                            argFormulas.map((formula, idx) => (
-                                <div key={idx} className="arg">
-                                    <Handle
-                                        type="target"
-                                        position={Position.Left}
-                                        id={`arghandle-${idx}`}
-                                        className="arg-handle"
-                                    />
-                                    <span className="arg-label">{`arg${idx}`}</span>
-                                    <span className="arg-value">{formula}</span>
-                                </div>
-                            ))
+                            argFormulas.map((formula, idx) => {
+                                const constantValue = getConstantValue(formula);
+                                return (
+                                    <div key={idx} className="arg">
+                                        <Handle
+                                            type="target"
+                                            position={Position.Left}
+                                            id={`arghandle-${idx}`}
+                                            className="arg-handle"
+                                        />
+                                        <span className="arg-label">{`arg${idx}`}</span>
+                                        {constantValue && (
+                                            <span className="arg-value">{constantValue}</span>
+                                        )}
+                                    </div>
+                                );
+                            })
                         }
                     </div>
                     

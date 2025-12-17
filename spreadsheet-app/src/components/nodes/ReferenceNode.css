@@ -2,7 +2,37 @@
 
 /* Reference node specific styles */
 .ref-node {
-  min-width: 140px;
+  padding: 8px 12px;
+}
+
+/* New horizontal layout */
+.ref-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ref-left {
+  display: flex;
+  align-items: center;
+  padding-right: 12px;
+  border-right: 1px solid var(--node-border);
+}
+
+.ref-node > .sheet-name {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.ref-right {
+  display: flex;
+  align-items: center;
 }
 
 /* Edit mode indicator - pulsing glow animation */
@@ -28,8 +58,6 @@
   animation: pulse-badge 1.5s ease-in-out infinite;
 }
 
-
-
 .ref-node .handle:hover {
   border-color: var(--ref-accent);
   background: var(--ref-accent-light);
@@ -37,7 +65,7 @@
 
 .cell-ref {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ref-accent);
   background: var(--ref-accent-light);
@@ -46,28 +74,11 @@
   cursor: pointer;
 }
 
-.ref-node .value-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.ref-node .value-label {
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
 .ref-node .value-display {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text-primary);
-}
-
-/* Reference node sheet icon accent */
-.ref-node .sheet-icon span:first-child {
-  background: var(--ref-accent);
 }
 
 /* Reference node selected indicator */

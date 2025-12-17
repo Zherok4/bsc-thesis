@@ -89,30 +89,19 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)}>
-                <div className="node-header">
-                    <div
-                        className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
-                        onDoubleClick={e => handleDoubleClick(e)}
-                        title="double click to change Reference"
-                    >
-                        {internalReference}
+                <span className="sheet-name">{sheet || activeSheetName}</span>
+                <div className="ref-content">
+                    <div className="ref-left">
+                        <div
+                            className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
+                            onDoubleClick={e => handleDoubleClick(e)}
+                            title="double click to change Reference">
+                            {internalReference}
+                        </div>
                     </div>
-                    <span className="node-type">Cell</span>
-                </div>
-
-                <div className="node-body">
-                    <div className="value-row">
-                        <span className="value-label">Value</span>
+                    <div className="ref-right">
                         <span className="value-display">{String(cellValue ?? "")}</span>
                     </div>
-                </div>
-
-                <div className="node-footer">
-                    <div className="sheet-icon">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-                    <span className="sheet-name">{sheet || activeSheetName}</span>
                 </div>
             </div>
             {hasFormula && <Handle type="target" position={Position.Left} />}
