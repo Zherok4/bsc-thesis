@@ -101,11 +101,11 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                     </div>
                     <div className="ref-right">
                         <span className="value-display">{String(cellValue ?? "")}</span>
+                        <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>
             </div>
             {hasFormula && <Handle type="target" position={Position.Left} />}
-            <Handle type="source" position={Position.Right} />
         </div>
     );
 }

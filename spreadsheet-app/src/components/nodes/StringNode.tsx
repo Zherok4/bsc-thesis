@@ -25,10 +25,10 @@ export default function StringNodeComponent({data: {value}}: NodeProps<StringNod
                     <span className="quote">"</span>
                     <span>{value}</span>
                     <span className="quote">"</span>
+                    <Handle type="source" position={Position.Right} className="value-handle" />
                 </div>
             </div>
             </div>
-            <Handle type="source" position={Position.Right} />
         </div>
     )
 }

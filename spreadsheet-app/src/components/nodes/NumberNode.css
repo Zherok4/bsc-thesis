@@ -1,4 +1,7 @@
 @import './nodes.css';
+.number-node {
+      position: relative;
+}
 
 .number-node .type-badge {
       font-family: 'IBM Plex Mono', monospace;

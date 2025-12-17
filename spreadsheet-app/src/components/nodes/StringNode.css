@@ -13,6 +13,7 @@
 }
 
 .string-node .value-display {
+      position: relative;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 13px;
       color: var(--string-accent);
@@ -24,6 +25,7 @@
       align-items: center;
       gap: 2px;
 }
+
 
 .string-node .quote {
       color: var(--text-tertiary);

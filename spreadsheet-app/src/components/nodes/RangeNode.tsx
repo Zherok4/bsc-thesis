@@ -58,10 +58,10 @@ export default function RangeNodeComponent({data: {startReference, endReference,
                     </div>
                     <div className="range-right">
                         <span className="range-preview-value">{numRows * numCols} cells</span>
+                        <Handle type="source" position={Position.Right} className="value-handle" />
                     </div>
                 </div>
             </div>
-            <Handle type="source" position={Position.Right} />
         </div>
     )
 }

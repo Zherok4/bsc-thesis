@@ -148,6 +148,14 @@
   transform: translateY(-50%);
 }
 
+/* Value handle - positioned relative to output value */
+.value-handle {
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* Selected indicator */
 .selected-indicator {
   position: absolute;

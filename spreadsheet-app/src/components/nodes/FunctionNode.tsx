@@ -107,11 +107,10 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                     <div className="result">
                         <span className="result-label">Result</span>
                         <span className="result-value">{output || '—'}</span>
+                        <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>
             </div>
-            {/* Output handle - Right for LR layout */}
-            <Handle type="source" position={Position.Right} />
         </div>
     );
 }
