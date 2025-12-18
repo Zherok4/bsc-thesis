@@ -1,9 +1,15 @@
 import type { NodeProps, Node } from "@xyflow/react"
 import { Handle, Position } from "@xyflow/react";
-import { useMemo } from "react";
+import { useMemo, useCallback, type JSX } from "react";
 import { useHyperFormula } from "../context";
 import { evaluateFormula } from "../../utils";
 import './ExpandableExpressionNode.css'
+
+/** Represents a variable in the math expression with its name and current value */
+interface ExpressionVariable {
+    name: string;
+    value: string;
+}
 
 export type ExpandableExpressionNode = Node<
 {
@@ -11,63 +17,87 @@ export type ExpandableExpressionNode = Node<
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
     nodeId: string,
+    variables?: ExpressionVariable[],
     isConnectedToFunctionArg?: boolean,
 },
 'ExpandableExpressionNode'
 >;
 
-export default function ExpandableExpressionNodeComponent(props: NodeProps<ExpandableExpressionNode>) {
+/**
+ * A compact math expression node that displays the formula and allows
+ * expansion via double-click to show additional details.
+ */
+export default function ExpandableExpressionNodeComponent(props: NodeProps<ExpandableExpressionNode>): JSX.Element {
     const { hfInstance, activeSheetName } = useHyperFormula();
+    const { formula, isExpanded, onToggleExpand, nodeId, variables = [] } = props.data;
+
+    const MAX_FORMULA_LENGTH = 30;
 
     const evaluatedOutput = useMemo(
-        () => evaluateFormula(props.data.formula, hfInstance, activeSheetName),
-        [props.data.formula, hfInstance, activeSheetName]
+        () => evaluateFormula(formula, hfInstance, activeSheetName),
+        [formula, hfInstance, activeSheetName]
     );
 
-    const handleToggle = () => {
-        props.data.onToggleExpand(props.data.nodeId);
-    };
+    const displayFormula = useMemo(() => {
+        const cleaned = formula.trim().replace(/\s+/g, ' ');
+        if (!isExpanded && cleaned.length > MAX_FORMULA_LENGTH) {
+            return cleaned.slice(0, MAX_FORMULA_LENGTH) + '…';
+        }
+        return cleaned;
+    }, [formula, isExpanded]);
 
-    if (!props.data.isExpanded) {
-        return (
-            <div className="expandable-expression-node minimal">
-                <button
-                    className="expand-toggle"
-                    onClick={handleToggle}
-                    title="Expand details"
-                >
-                    ...
-                </button>
-                <Handle type="source" position={Position.Right} />
-                <Handle type="target" position={Position.Left} />
-            </div>
-        );
-    }
+    const handleDoubleClick = useCallback(() => {
+        onToggleExpand(nodeId);
+    }, [onToggleExpand, nodeId]);
 
     return (
-        <div className="expandable-expression-node expanded">
-            <div className="node-header">
-                <button
-                    className="expand-toggle"
-                    onClick={handleToggle}
-                    title="Collapse details"
-                >
-                    −
-                </button>
-                <span className="expand-hint">Details shown</span>
+        <div
+            className={`math-expression-node ${isExpanded ? 'expanded' : ''}`}
+            onDoubleClick={handleDoubleClick}
+        >
+            <div className="math-expression-header">
+                <span className="math-formula" title={formula}>{displayFormula}</span>
+                <span className="math-label">Math Expression</span>
             </div>
-            <div className="node-content">
-                <p className="label">Formula:</p>
-                <p className="value">{props.data.formula}</p>
-                {evaluatedOutput && (
-                    <>
-                        <p className="label">Output:</p>
-                        <p className="value">{evaluatedOutput}</p>
-                    </>
-                )}
+
+            <div className="math-expression-body">
+                <div className="math-inputs">
+                    {variables.map((variable) => (
+                        <div key={variable.name} className="math-variable">
+                            <Handle
+                                type="target"
+                                position={Position.Left}
+                                id={`var-${variable.name}`}
+                                className="math-handle-input"
+                            />
+                            <span className="variable-name">{variable.name}</span>
+                            <span className="variable-value">{variable.value}</span>
+                        </div>
+                    ))}
+                    {variables.length === 0 && (
+                        <div className="math-variable">
+                            <Handle
+                                type="target"
+                                position={Position.Left}
+                                id="input"
+                                className="math-handle-input"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <div className="math-output">
+                    <span className="output-label">Result:</span>
+                    <span className="value-display">{evaluatedOutput || '-'}</span>
+                    <Handle
+                        type="source"
+                        position={Position.Right}
+                        id="output"
+                        className="math-handle-output"
+                    />
+                </div>
             </div>
-            <Handle type="source" position={Position.Right} />
-            <Handle type="target" position={Position.Left} />
+
         </div>
     );
 }

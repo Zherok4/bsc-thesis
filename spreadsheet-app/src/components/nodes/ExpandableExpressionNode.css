@@ -1,78 +1,173 @@
-.expandable-expression-node {
-    padding: 10px 14px;
+@import './nodes.css';
+
+/* Math Expression Node accent color */
+:root {
+    --math-accent: #5a6872;
+    --math-accent-light: #f6f8fa;
+}
+
+/* Math Expression Node */
+.math-expression-node {
+    position: relative;
+    background: var(--node-bg);
+    border: 1px solid var(--node-border);
     border-radius: 6px;
-    background: white;
-    color: black;
-    border: 2px solid #6366f1;
-    font-family: system-ui, sans-serif;
-    font-size: 14px;
-    min-width: 150px;
+    box-shadow: 0 1px 2px var(--shadow);
+    min-width: 120px;
+    font-family: system-ui, -apple-system, sans-serif;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.2s ease;
 }
 
-.expandable-expression-node.minimal {
-    min-width: auto;
-    padding: 4px;
+.math-expression-node:hover {
+    border-color: var(--node-border-hover);
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+/* Header with formula and label */
+.math-expression-header {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--node-border);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border-style: dashed;
+    flex-direction: column;
+    gap: 1px;
 }
 
-.expandable-expression-node.collapsed {
-    border-style: dashed;
+.math-formula {
+    font-family: 'IBM Plex Mono', 'SF Mono', Monaco, monospace;
+    font-size: 10px;
+    letter-spacing: -0.03em;
+    word-spacing: -0.15em;
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
-.expandable-expression-node.expanded {
-    border-style: solid;
-    background: #f8f7ff;
+.math-label {
+    font-size: 9px;
+    color: var(--math-accent);
+    text-transform: capitalize;
 }
 
-.expandable-expression-node .node-header {
+/* Body with inputs and output */
+.math-expression-body {
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+/* Input variables section */
+.math-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.math-variable {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #e5e5e5;
 }
 
-.expandable-expression-node .expand-toggle {
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    border: 1px solid #6366f1;
-    background: #6366f1;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
+.math-handle-input {
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.variable-name {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    min-width: 28px;
+}
+
+.variable-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-primary);
+    background: var(--accent-light);
+    padding: 1px 4px;
+    border-radius: 3px;
+    min-width: 28px;
+    text-align: center;
+}
+
+/* Output section */
+.math-output {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
+    padding-right: 4px;
 }
 
-.expandable-expression-node .expand-toggle:hover {
-    background: #4f46e5;
+.output-label {
+    font-size: 10px;
+    color: var(--math-accent);
+    white-space: nowrap;
+    margin-right: 4px;
 }
 
-.expandable-expression-node .expand-hint {
-    font-size: 11px;
-    color: #888;
-    font-style: italic;
-}
-
-.expandable-expression-node .node-content p {
-    margin: 4px 0;
-}
-
-.expandable-expression-node .node-content .label {
+.output-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-primary);
     font-weight: 500;
-    color: #666;
-    font-size: 12px;
 }
 
-.expandable-expression-node .node-content .value {
-    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+.math-handle-output {
+    position: absolute;
+    right: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Expanded state details */
+.math-expression-details {
+    padding: 6px 10px;
+    border-top: 1px solid var(--node-border);
+    background: var(--accent-light);
+    border-radius: 0 0 6px 6px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-label {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+}
+
+.detail-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Expanded state indicator */
+.math-expression-node.expanded {
+    border-color: var(--math-accent);
+}
+
+/* Selected indicator */
+.math-expression-node .selected-indicator {
+    position: absolute;
+    inset: -2px;
+    border: 1.5px solid var(--math-accent);
+    border-radius: 9px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.math-expression-node:focus-within .selected-indicator {
+    opacity: 1;
 }
