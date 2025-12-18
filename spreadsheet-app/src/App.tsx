@@ -136,6 +136,14 @@ function App() {
     }
   }, []);
 
+  const handleClearHighlight = useCallback(() => {
+    const currentDatatable = datatableRef.current;
+
+    if (currentDatatable) {
+      currentDatatable.clearHighlight();
+    }
+  }, []);
+
   /**
    * handleImport is triggered when:
    * - User imports an Excel file via the TopBar
@@ -203,6 +211,7 @@ function App() {
           selectedCell={selectedCell}
           scrollToCell={scrollToCell}
           highlightCells={highlightCells}
+          clearHighlight={handleClearHighlight}
           />
         </div>
       </div>

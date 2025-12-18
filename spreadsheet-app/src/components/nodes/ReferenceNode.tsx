@@ -15,7 +15,7 @@ export type ReferenceNode = Node<
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
 export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula}}: NodeProps<ReferenceNode>): JSX.Element {
-    const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, setEditMode, editingNodeId, setEditingNodeId }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
 
@@ -59,7 +59,16 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             scrollToCell(row, col, sheet);
             highlightCells(row, col, row, col, sheet);
         }
-    }, [simpleCellAddress, scrollToCell, sheet]);
+    }, [simpleCellAddress, scrollToCell, highlightCells, sheet]);
+
+    const handleMouseOver = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (simpleCellAddress) {
+            const {row, col} = simpleCellAddress;
+            highlightCells(row, col, row, col, sheet);
+        }
+    }, [simpleCellAddress, highlightCells, sheet]);
 
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
@@ -88,7 +97,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     return (
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
             <div className="selected-indicator"></div>
-            <div className="ref-node" onClick={(e) => handleSimpleClick(e)}>
+            <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
                 <span className="sheet-name">{sheet || activeSheetName}</span>
                 <div className="ref-content">
                     <div className="ref-left">
@@ -100,7 +109,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                         </div>
                     </div>
                     <div className="ref-right">
-                        <span className="value-display">{String(cellValue ?? "")}</span>
+                        <span className="node-result-value">{String(cellValue ?? "")}</span>
                         <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>

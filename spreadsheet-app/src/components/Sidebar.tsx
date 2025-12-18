@@ -35,6 +35,7 @@ export interface SidebarProps {
   /** scrollToCell Calback to move viewport to corresponding cell */
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
+  clearHighlight: () => void;
 }
 
 const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
@@ -61,7 +62,7 @@ const nodeTypes = {
   BinOpNode: BinOpNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -227,6 +228,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
           selectedCell={selectedCell}
           scrollToCell={scrollToCell}
           highlightCells={highlightCells}
+          clearHighlight={clearHighlight}
         >
           <ReactFlow
             nodes={nodes}

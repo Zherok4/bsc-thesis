@@ -41,6 +41,17 @@
     word-spacing: -0.15em;
     color: var(--text-primary);
     font-weight: 500;
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.math-expression-node.expanded .math-formula {
+    white-space: normal;
+    overflow: visible;
+    max-width: none;
+    text-overflow: clip;
 }
 
 .math-label {
@@ -111,12 +122,6 @@
     margin-right: 4px;
 }
 
-.output-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-primary);
-    font-weight: 500;
-}
 
 .math-handle-output {
     position: absolute;

@@ -64,7 +64,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--node-border);
 }
 
@@ -78,12 +78,12 @@
 
 /* Node body */
 .node-body {
-  padding: 10px 12px;
+  padding: 4px 4px;
 }
 
 /* Node footer */
 .node-footer {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-top: 1px solid var(--node-border);
   display: flex;
   align-items: center;
@@ -170,5 +170,12 @@
   opacity: 1;
 }
 
+/* Unified result value styling for all nodes */
+.node-result-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
 
 

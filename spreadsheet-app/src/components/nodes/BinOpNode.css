@@ -24,7 +24,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 30px;
-    color: var(--text-tertiary);
+    color: var(--handle-border);
     z-index: 0;
     pointer-events: none;
 }

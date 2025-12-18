@@ -30,7 +30,7 @@ export default function ResultNodeComponent({data: {formula}}: NodeProps<ResultN
                 </div>
 
                 <div className="node-body">
-                    <div className="value-display">{output || '—'}</div>
+                    <div className="node-result-value">{output || '—'}</div>
                 </div>
             </div>
             <Handle type="target" position={Position.Left} />

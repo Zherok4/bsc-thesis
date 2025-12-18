@@ -56,7 +56,7 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
             onDoubleClick={handleDoubleClick}
         >
             <div className="math-expression-header">
-                <span className="math-formula" title={formula}>{displayFormula}</span>
+                <span className="math-formula" title={formula}>{formula}</span>
                 <span className="math-label">Math Expression</span>
             </div>
 
@@ -88,7 +88,7 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
 
                 <div className="math-output">
                     <span className="output-label">Result:</span>
-                    <span className="value-display">{evaluatedOutput || '-'}</span>
+                    <span className="node-result-value">{evaluatedOutput || '-'}</span>
                     <Handle
                         type="source"
                         position={Position.Right}

@@ -87,12 +87,6 @@
     color: var(--text-tertiary);
 }
 
-.result-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
 
 .selected-indicator {
     position: absolute;

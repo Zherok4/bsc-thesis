@@ -83,7 +83,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                     
                     
                     <div className="args">
-                        <span className="args-label">Arguments</span>
+                        <span className="args-label">{argFormulas.length > 0 && "Arguments"}</span>
                         {
                             argFormulas.map((formula, idx) => {
                                 const constantValue = getConstantValue(formula);
@@ -107,7 +107,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                     
                     <div className="result">
                         <span className="result-label">Result</span>
-                        <span className="result-value">{output || '—'}</span>
+                        <span className="node-result-value">{output || '—'}</span>
                         <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>

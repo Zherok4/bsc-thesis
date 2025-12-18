@@ -218,6 +218,7 @@ function handleStringLiteral(params: HandlerParams): void {
 /**
  * Handles FunctionCall nodes
  */
+// TODO: create custom handles for certain functions: false(), true(), if(), ifs(), vlookup(), xlookup()
 function handleFunctionCall(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
         params;
