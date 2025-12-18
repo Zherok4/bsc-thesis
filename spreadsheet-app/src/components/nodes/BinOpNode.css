@@ -1,0 +1,73 @@
+@import './nodes.css';
+
+/* Binary operation accent color */
+:root {
+    --binop-accent: #5c5b5f;
+    --binop-accent-light: #ede9fe;
+}
+
+.binop-node-wrapper {
+    width: 38px;
+    height: 38px;
+}
+
+.binop-node {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Operator centered in background */
+.binop-operator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    color: var(--text-tertiary);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Input handles container - stacked vertically on left */
+.binop-inputs {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    box-sizing: border-box;
+}
+
+.binop-operand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    flex: 1;
+    z-index: 1;
+}
+
+.binop-handle-input {
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.binop-handle-output {
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Constants displayed over operator */
+.binop-constant {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-primary);
+    z-index: 1;
+}

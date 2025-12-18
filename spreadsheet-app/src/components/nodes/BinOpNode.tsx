@@ -1,0 +1,131 @@
+import type { Node, NodeProps } from "@xyflow/react";
+import { type JSX } from "react";
+import { Handle, Position } from "@xyflow/react";
+import './BinOpNode.css';
+
+export type BinOpNode = Node<
+{
+    operator: string;
+    leftConstant?: string;
+    rightConstant?: string;
+},
+'BinOpNode'
+>;
+
+/**
+ * Maps raw operator symbols to display-friendly versions
+ */
+function getDisplayOperator(operator: string): string {
+    switch (operator) {
+        case "*": return "×";
+        case "/": return "÷";
+        case ">=": return "≥";
+        case "<=": return "≤";
+        default: return operator;
+    }
+}
+
+/**
+ * Abbreviates large numbers for compact display.
+ * E.g., 200000 -> "200K", 1500000 -> "1.5M"
+ */
+function abbreviateNumber(value: string): string {
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+
+    const absNum = Math.abs(num);
+    const sign = num < 0 ? "-" : "";
+
+    if (absNum >= 1_000_000_000) {
+        const abbreviated = absNum / 1_000_000_000;
+        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "B";
+    }
+    if (absNum >= 1_000_000) {
+        const abbreviated = absNum / 1_000_000;
+        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "M";
+    }
+    if (absNum >= 10_000) {
+        const abbreviated = absNum / 1_000;
+        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "K";
+    }
+
+    return value;
+}
+
+/**
+ * Truncates a string in the middle if it exceeds maxLength.
+ * E.g., "20000000B" with maxLength 6 -> "20...B"
+ */
+function truncateMiddle(str: string, maxLength: number = 5): string {
+    if (str.length <= maxLength) return str;
+
+    const keepChars = maxLength - 2; // subtract 2 for ".."
+    const startChars = Math.ceil(keepChars / 2);
+    const endChars = Math.floor(keepChars / 2);
+
+    return str.slice(0, startChars) + ".." + str.slice(-endChars);
+}
+
+/**
+ * Formats a constant for display: abbreviates and truncates if needed.
+ */
+function formatConstant(value: string): { display: string; full: string } {
+    const abbreviated = abbreviateNumber(value);
+    return {
+        display: truncateMiddle(abbreviated),
+        full: value
+    };
+}
+
+/**
+ * A compact node representing a binary operation with two inputs and one output.
+ * Displays the operator symbol in the center and shows constants inline.
+ */
+export default function BinOpNodeComponent({ data: { operator, leftConstant, rightConstant } }: NodeProps<BinOpNode>): JSX.Element {
+    const hasConstants = leftConstant || rightConstant;
+
+    return (
+        <div className={`node-wrapper binop-node-wrapper`}>
+            <div className="selected-indicator"></div>
+            <div className="binop-node">
+                <div className="binop-inputs">
+                    <div className="binop-operand">
+                        <Handle
+                            type="target"
+                            position={Position.Left}
+                            id="left-operand"
+                            className="binop-handle-input"
+                        />
+                        {leftConstant && (
+                            <span className="binop-constant" title={leftConstant}>
+                                {formatConstant(leftConstant).display}
+                            </span>
+                        )}
+                    </div>
+                    <div className="binop-operand">
+                            <Handle
+                                type="target"
+                                position={Position.Left}
+                                id="right-operand"
+                                className="binop-handle-input"
+                            />
+                        {rightConstant && (
+                            <span className="binop-constant" title={rightConstant}>
+                                {formatConstant(rightConstant).display}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <span className="binop-operator">{getDisplayOperator(operator)}</span>
+
+                <Handle
+                    type="source"
+                    position={Position.Right}
+                    id="result"
+                    className="binop-handle binop-handle-output"
+                />
+            </div>
+        </div>
+    );
+}

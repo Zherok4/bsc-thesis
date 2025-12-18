@@ -7,7 +7,7 @@ type ParamGenerator = (index: number) => string;
 
 const FUNCTION_PARAMETERS: Record<string, ParamGenerator> = {
   // Fixed arguments
-  "IF": (i) => ["logical_test", "value_if_true", "value_if_false"][i] ?? `arg${i}`,
+  "IF": (i) => ["condition", "value_if_true", "value_if_false"][i] ?? `arg${i}`,
   "VLOOKUP": (i) => ["lookup_value", "table_array", "col_index_num", "range_lookup"][i] ?? `arg${i}`,
   "HLOOKUP": (i) => ["lookup_value", "table_array", "row_index_num", "range_lookup"][i] ?? `arg${i}`,
   "INDEX": (i) => ["array", "row_num", "col_num"][i] ?? `arg${i}`,

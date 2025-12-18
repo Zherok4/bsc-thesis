@@ -142,3 +142,22 @@ export function createExpandableExpressionNode(
         type: "ExpandableExpressionNode",
     };
 }
+
+/**
+ * Creates a binary operation node
+ * @param operator - The operator symbol (e.g., "+", "-", "*", "/")
+ * @param leftConstant - Optional constant value for left operand
+ * @param rightConstant - Optional constant value for right operand
+ */
+export function createBinOpNode(
+    operator: string,
+    leftConstant?: string,
+    rightConstant?: string
+): Node {
+    return {
+        id: generateNodeId(),
+        position: { x: 0, y: 100 * getNodeIdCounter() },
+        data: { operator, leftConstant, rightConstant },
+        type: "BinOpNode",
+    };
+}

@@ -1,14 +1,18 @@
 import type { Edge, Node } from "@xyflow/react";
 import { nodeToString, type CollapsedNode } from "../../collapseAST";
 import type {
+    ASTNode,
+    BinaryOpNode,
     CellRangeNode,
     CellReferenceNode,
     FunctionCallNode,
+    NumberLiteralNode,
     StringLiteralNode,
 } from "../../visitor";
 import { createDefaultEdge } from "../edgeFactory";
 import { getCellFormulaAsCollapsedNode } from "../helpers/cellFormulaHelper";
 import {
+    createBinOpNode,
     createDefaultNode,
     createExpandableExpressionNode,
     createFunctionNode,
@@ -241,7 +245,75 @@ function handleFunctionCall(params: HandlerParams): void {
 }
 
 /**
- * Handles expandable expression nodes (BinaryOp, UnaryOp, Percent)
+ * Gets the constant value from an AST node if it's a literal.
+ * Returns undefined for non-constant nodes.
+ */
+function getConstantValue(node: ASTNode): string | undefined {
+    if (node.type === "NumberLiteral") {
+        return String((node as NumberLiteralNode).value);
+    }
+    if (node.type === "StringLiteral") {
+        return `"${(node as StringLiteralNode).value}"`;
+    }
+    return undefined;
+}
+
+/**
+ * If in the BinaryOp no other BinaryOp is direct child than we use an BinaryOpNode else it is an math expression
+ * and therfore use an Expandable Node.
+ */
+function handleBinaryOp(params: HandlerParams): void {
+    const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
+        params;
+
+    const binaryNode = collapsedNode.original as BinaryOpNode;
+
+    if (binaryNode.left.type === "BinaryOp" || binaryNode.right.type === "BinaryOp") {
+        handleExpandableExpression(params);
+    } else {
+        const leftConstant = getConstantValue(binaryNode.left);
+        const rightConstant = getConstantValue(binaryNode.right);
+
+        const createdNode = createBinOpNode(binaryNode.operator, leftConstant, rightConstant);
+        const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
+        nodes.push(createdNode);
+        edges.push(createdEdge);
+
+        // When a constant exists, it's not in collapsedNode.children
+        // So we need to determine which handle each child connects to
+        let childIdx = 0;
+
+        // Visit left operand only if not a constant
+        if (!leftConstant && collapsedNode.children[childIdx]) {
+            visitCollapsedNodeWithExpansion(
+                collapsedNode.children[childIdx],
+                nodes,
+                edges,
+                createdNode.id,
+                context,
+                "left-operand",
+                `${collapsedNodeId}-left`
+            );
+            childIdx++;
+        }
+
+        // Visit right operand only if not a constant
+        if (!rightConstant && collapsedNode.children[childIdx]) {
+            visitCollapsedNodeWithExpansion(
+                collapsedNode.children[childIdx],
+                nodes,
+                edges,
+                createdNode.id,
+                context,
+                "right-operand",
+                `${collapsedNodeId}-right`
+            );
+        }
+    }
+}
+
+/**
+ * Handles expandable expression nodes (UnaryOp, Percent)
  */
 function handleExpandableExpression(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
@@ -386,6 +458,9 @@ export function visitCollapsedNodeWithExpansion(
             break;
 
         case "BinaryOp":
+            handleBinaryOp(params);
+            break;
+
         case "UnaryOp":
         case "Percent":
             handleExpandableExpression(params);
