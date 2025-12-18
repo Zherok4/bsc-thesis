@@ -3,6 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type GraphEditModeContextValue } from "../context";
 import type { CellValue, SimpleCellAddress } from "hyperformula";
+import { truncateMiddle } from "./utils";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -98,7 +99,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
-                <span className="sheet-name">{sheet || activeSheetName}</span>
+                <span className="sheet-name" title={sheet || activeSheetName}>{truncateMiddle(sheet || activeSheetName, 12)}</span>
                 <div className="ref-content">
                     <div className="ref-left">
                         <div

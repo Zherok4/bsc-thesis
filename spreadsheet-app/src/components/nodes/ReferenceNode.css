@@ -2,7 +2,7 @@
 
 /* Reference node specific styles */
 .ref-node {
-  padding: 8px 12px;
+  padding: 4px 4px;
 }
 
 /* New horizontal layout */
@@ -10,13 +10,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
 }
 
 .ref-left {
   display: flex;
   align-items: center;
-  padding-right: 12px;
+  padding-right: 4px;
   border-right: 1px solid var(--node-border);
 }
 
@@ -70,7 +70,7 @@
   font-weight: 600;
   color: var(--ref-accent);
   background: var(--ref-accent-light);
-  padding: 2px 8px;
+  padding: 2px 2px;
   border-radius: 4px;
   cursor: pointer;
 }

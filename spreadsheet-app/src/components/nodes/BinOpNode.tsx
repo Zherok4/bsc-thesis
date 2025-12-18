@@ -1,6 +1,7 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { type JSX } from "react";
 import { Handle, Position } from "@xyflow/react";
+import { truncateMiddle } from "./utils";
 import './BinOpNode.css';
 
 export type BinOpNode = Node<
@@ -52,19 +53,6 @@ function abbreviateNumber(value: string): string {
     return value;
 }
 
-/**
- * Truncates a string in the middle if it exceeds maxLength.
- * E.g., "20000000B" with maxLength 6 -> "20...B"
- */
-function truncateMiddle(str: string, maxLength: number = 5): string {
-    if (str.length <= maxLength) return str;
-
-    const keepChars = maxLength - 2; // subtract 2 for ".."
-    const startChars = Math.ceil(keepChars / 2);
-    const endChars = Math.floor(keepChars / 2);
-
-    return str.slice(0, startChars) + ".." + str.slice(-endChars);
-}
 
 /**
  * Formats a constant for display: abbreviates and truncates if needed.
@@ -72,7 +60,7 @@ function truncateMiddle(str: string, maxLength: number = 5): string {
 function formatConstant(value: string): { display: string; full: string } {
     const abbreviated = abbreviateNumber(value);
     return {
-        display: truncateMiddle(abbreviated),
+        display: truncateMiddle(abbreviated, 5),
         full: value
     };
 }

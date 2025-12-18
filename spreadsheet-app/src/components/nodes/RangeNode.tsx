@@ -3,6 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { type CellValue, type SimpleCellAddress } from "hyperformula";
+import { truncateMiddle } from "./utils";
 import "./RangeNode.css"
 
 export type RangeNode = Node<
@@ -79,7 +80,7 @@ export default function RangeNodeComponent({data: {startReference, endReference,
         <div className="node-wrapper">
             <div className="selected-indicator"></div>
             <div className="range-node" onClick={handleClick} onMouseOver={handleMouseOver} onMouseLeave={clearHighlight}>
-                <span className="sheet-name">{sheet || activeSheetName}</span>
+                <span className="sheet-name" title={sheet || activeSheetName}>{truncateMiddle(sheet || activeSheetName, 18)}</span>
                 <div className="range-content">
                     <div className="range-left">
                         <span className="range-ref">

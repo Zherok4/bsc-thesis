@@ -36,7 +36,7 @@
 
 .math-formula {
     font-family: 'IBM Plex Mono', 'SF Mono', Monaco, monospace;
-    font-size: 10px;
+    font-size: 14px;
     letter-spacing: -0.03em;
     word-spacing: -0.15em;
     color: var(--text-primary);
@@ -91,14 +91,14 @@
 }
 
 .variable-name {
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-tertiary);
     min-width: 28px;
 }
 
 .variable-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-primary);
     background: var(--accent-light);
     padding: 1px 4px;
@@ -112,11 +112,11 @@
     position: relative;
     display: flex;
     align-items: center;
-    padding-right: 4px;
+    
 }
 
 .output-label {
-    font-size: 10px;
+    font-size: 14px;
     color: var(--math-accent);
     white-space: nowrap;
     margin-right: 4px;
@@ -152,7 +152,7 @@
 
 .detail-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 14px;
     color: var(--text-primary);
     font-weight: 500;
 }

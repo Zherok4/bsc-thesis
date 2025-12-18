@@ -79,6 +79,7 @@
 /* Node body */
 .node-body {
   padding: 4px 4px;
+  
 }
 
 /* Node footer */
@@ -151,7 +152,7 @@
 /* Value handle - positioned relative to output value */
 .value-handle {
   position: absolute;
-  right: -16px;
+  right: -8px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -176,6 +177,7 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  padding-right: 4px;
 }
 
 

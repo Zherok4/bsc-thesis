@@ -14,7 +14,7 @@
 
 .func-name {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text-primary);
     letter-spacing: -0.01em;
@@ -22,7 +22,7 @@
 
 .formula {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-secondary);
     background: var(--accent-light);
     padding: 6px 8px;
@@ -56,20 +56,20 @@
 
 .arg-handle {
     position: absolute;
-    left: -16px;
+    left: -8px;
     top: 50%;
     transform: translateY(-50%);
 }
 
 .arg-label {
-    font-size: 11px;
+    font-size: 14px;
     padding-right: 5px;
     color: var(--text-tertiary);
 }
 
 .arg-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-primary);
 }
 
@@ -83,7 +83,7 @@
 }
 
 .result-label {
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-tertiary);
 }
 
