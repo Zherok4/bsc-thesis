@@ -11,14 +11,21 @@ export type ReferenceNode = Node<
     reference: string,
     sheet?: string,
     hasFormula?: boolean,
+    /** Whether this node is currently expanded (only relevant when hasFormula is true) */
+    isExpanded?: boolean,
+    /** Callback to toggle expansion state */
+    onToggleExpand?: (nodeId: string) => void,
+    /** Stable ID used for tracking expansion state */
+    expansionNodeId?: string,
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, setEditMode, editingNodeId, setEditingNodeId }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
+    const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(sheet || activeSheetName)
@@ -51,6 +58,13 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             setEditingNodeId(id);
         }
     }, [setEditMode, isEditModeActive, isThisNodeBeingEdited, setEditingNodeId, id]);
+
+    const handleExpandToggle = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isExpandable && onToggleExpand && expansionNodeId) {
+            onToggleExpand(expansionNodeId);
+        }
+    }, [isExpandable, onToggleExpand, expansionNodeId]);
 
     const handleSimpleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -96,12 +110,21 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     }, [selectedCell, activeSheetName, isEditModeActive, isThisNodeBeingEdited, reference, hfInstance]);
 
     return (
-        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`}>
+        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
                 <span className="sheet-name" title={sheet || activeSheetName}>{truncateMiddle(sheet || activeSheetName, 12)}</span>
                 <div className="ref-content">
                     <div className="ref-left">
+                        {isExpandable && (
+                            <button
+                                className={`expand-toggle ${isExpanded ? 'expanded' : ''}`}
+                                onClick={handleExpandToggle}
+                                title={isExpanded ? 'Collapse formula' : 'Expand formula'}
+                            >
+                                {isExpanded ? '−' : '+'}
+                            </button>
+                        )}
                         <div
                             className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
                             onDoubleClick={e => handleDoubleClick(e)}

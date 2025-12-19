@@ -80,3 +80,45 @@
 .ref-node .selected-indicator {
   border: 1.5px solid var(--ref-accent);
 }
+
+/* Expand/collapse toggle button */
+.expand-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-right: 4px;
+  border: 1px solid var(--node-border);
+  border-radius: 4px;
+  background: var(--node-bg);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.expand-toggle:hover {
+  background: var(--ref-accent-light);
+  border-color: var(--ref-accent);
+  color: var(--ref-accent);
+}
+
+.expand-toggle.expanded {
+  background: var(--ref-accent);
+  border-color: var(--ref-accent);
+  color: white;
+}
+
+.expand-toggle.expanded:hover {
+  background: var(--ref-accent);
+  filter: brightness(1.1);
+}
+
+/* Expanded state indicator for the node wrapper */
+.node-wrapper.expanded {
+  box-shadow: 0 0 0 1px var(--ref-accent), 0 2px 8px rgba(0, 0, 0, 0.1);
+}

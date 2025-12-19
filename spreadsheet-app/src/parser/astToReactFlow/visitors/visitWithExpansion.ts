@@ -104,7 +104,7 @@ function handleCellReference(params: HandlerParams): void {
 }
 
 /**
- * Handles a cell reference that contains a formula (creates expandable content)
+ * Handles a cell reference that contains a formula (creates expandable reference node)
  */
 function handleCellReferenceWithFormula(
     params: HandlerParams,
@@ -119,29 +119,22 @@ function handleCellReferenceWithFormula(
     const cellExpandId = `${collapsedNodeId}-${cellId}`;
     const isExpanded = context.expandedNodeIds.has(cellExpandId);
 
-    // Create the cell reference node (with hasFormula=true for left handle)
+    // Create the cell reference node with expansion support
     const refCreatedNode = createReferenceNode(
         refNode.reference,
         refNode.sheet,
-        true
+        true,
+        {
+            isExpanded,
+            onToggleExpand: context.onToggleExpand,
+            expansionNodeId: cellExpandId,
+        }
     );
     const refEdge = createDefaultEdge(refCreatedNode.id, parentID, handleID);
     nodes.push(refCreatedNode);
     edges.push(refEdge);
 
-    // Create an expandable expression node connected to the reference
-    const expandableNode = createExpandableExpressionNode(
-        cellFormula.label,
-        isExpanded,
-        context.onToggleExpand,
-        false
-    );
-    expandableNode.data.nodeId = cellExpandId;
-
-    const expandableEdge = createDefaultEdge(expandableNode.id, refCreatedNode.id);
-    nodes.push(expandableNode);
-    edges.push(expandableEdge);
-
+    // When expanded, connect children directly to the reference node
     if (isExpanded) {
         // Recursively visit the cell's formula children with circular ref protection
         const childContext: ExpansionContext = {
@@ -149,22 +142,19 @@ function handleCellReferenceWithFormula(
             visitedCells: new Set([...visitedCells, cellId]),
         };
 
-        // cellFormula wraps a FormulaNode, which has one child: the expression
-        // We want to visit the expression's children, not the formula's children
-        const expression = cellFormula.children[0];
-        if (expression) {
-            expression.children.forEach((child, idx) => {
-                visitCollapsedNodeWithExpansion(
-                    child,
-                    nodes,
-                    edges,
-                    expandableNode.id,
-                    childContext,
-                    undefined,
-                    `${cellExpandId}-${idx}`
-                );
-            });
-        }
+        // cellFormula wraps a FormulaNode - visit its children (the top-level expressions)
+        // This properly handles all formula types: references, functions, binary ops, etc.
+        cellFormula.children.forEach((child, idx) => {
+            visitCollapsedNodeWithExpansion(
+                child,
+                nodes,
+                edges,
+                refCreatedNode.id,
+                childContext,
+                undefined,
+                `${cellExpandId}-${idx}`
+            );
+        });
     }
 }
 

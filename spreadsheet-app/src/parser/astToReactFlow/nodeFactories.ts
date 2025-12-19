@@ -20,20 +20,43 @@ export function createDefaultNode(label: string): Node {
 }
 
 /**
+ * Configuration for expandable reference nodes
+ */
+interface ReferenceExpansionConfig {
+    /** Whether this node is currently expanded */
+    isExpanded: boolean;
+    /** Callback to toggle expansion state */
+    onToggleExpand: (nodeId: string) => void;
+    /** Stable ID used for tracking expansion state */
+    expansionNodeId: string;
+}
+
+/**
  * Creates a cell reference node
  * @param reference - The cell reference (e.g., "A1", "B2")
  * @param sheet - Optional sheet name for cross-sheet references
  * @param hasFormula - Whether the referenced cell contains a formula (enables left handle)
+ * @param expansionConfig - Optional expansion configuration (only used when hasFormula is true)
  */
 export function createReferenceNode(
     reference: string,
     sheet?: string,
-    hasFormula: boolean = false
+    hasFormula: boolean = false,
+    expansionConfig?: ReferenceExpansionConfig
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { reference, sheet, hasFormula },
+        data: {
+            reference,
+            sheet,
+            hasFormula,
+            ...(hasFormula && expansionConfig ? {
+                isExpanded: expansionConfig.isExpanded,
+                onToggleExpand: expansionConfig.onToggleExpand,
+                expansionNodeId: expansionConfig.expansionNodeId,
+            } : {}),
+        },
         type: "ReferenceNode",
     };
 }
