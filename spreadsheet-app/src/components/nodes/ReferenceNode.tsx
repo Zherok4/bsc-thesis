@@ -27,9 +27,15 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
+
+    const residingSheet = useMemo<string>(() => {
+        return sheet || activeSheetName;
+    }, []);
+
     const sheetId = useMemo<number | undefined>(() => {
-        return hfInstance.getSheetId(sheet || activeSheetName)
-    }, [sheet, activeSheetName, hfInstance]);
+        return hfInstance.getSheetId(residingSheet);
+    }, [hfInstance]);
+
     // TODO: Improve Error handling
     const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
         return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
@@ -113,7 +119,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
-                <span className="sheet-name" title={sheet || activeSheetName}>{truncateMiddle(sheet || activeSheetName, 12)}</span>
+                <span className="sheet-name" title={residingSheet}>{truncateMiddle(residingSheet, 12)}</span>
                 <div className="ref-content">
                     <div className="ref-left">
                         {isExpandable && (
