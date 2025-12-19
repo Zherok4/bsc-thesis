@@ -3,6 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useMemo, useCallback, type JSX } from "react";
 import { useHyperFormula } from "../context";
 import { evaluateFormula } from "../../utils";
+import { abbreviateNumber } from "./utils";
 import './ExpandableExpressionNode.css'
 
 /** Represents a variable in the math expression with its name and current value */
@@ -52,7 +53,7 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
 
     return (
         <div
-            className={`math-expression-node ${isExpanded ? 'expanded' : ''}`}
+            className={`math-expression-node ${isExpanded ? 'expanded' : 'minimized'}`}
             onDoubleClick={handleDoubleClick}
         >
             <div className="math-expression-header">
@@ -88,7 +89,7 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
 
                 <div className="math-output">
                     <span className="output-label">Result:</span>
-                    <span className="node-result-value">{evaluatedOutput || '-'}</span>
+                    <span className="node-result-value" title={evaluatedOutput}>{evaluatedOutput ? abbreviateNumber(evaluatedOutput) : '-'}</span>
                     <Handle
                         type="source"
                         position={Position.Right}

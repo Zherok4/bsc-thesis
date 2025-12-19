@@ -13,7 +13,6 @@
     border: 1px solid var(--node-border);
     border-radius: 6px;
     box-shadow: 0 1px 2px var(--shadow);
-    min-width: 120px;
     font-family: system-ui, -apple-system, sans-serif;
     cursor: grab;
     user-select: none;
@@ -52,6 +51,14 @@
     overflow: visible;
     max-width: none;
     text-overflow: clip;
+}
+
+.expanded {
+    max-width: none;
+}
+
+.minimized {
+    max-width: 140px;
 }
 
 .math-label {

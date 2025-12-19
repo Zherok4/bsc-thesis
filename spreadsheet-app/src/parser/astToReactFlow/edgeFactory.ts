@@ -22,5 +22,7 @@ export function createDefaultEdge(
         type: "simplebezier",
         label: "",
         targetHandle: handleID,
+        style: { strokeWidth: 2, stroke: 'lightgrey'},
+        animated: true,
     };
 }

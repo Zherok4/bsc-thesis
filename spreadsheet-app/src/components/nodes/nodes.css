@@ -113,12 +113,11 @@
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* Handle styles */
-.handle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: var(--handle-bg);
+/* Handle styles - override React Flow defaults */
+.react-flow__handle {
+  width: 7px;
+  height: 7px;
+  
   border: 1.5px solid var(--handle-border);
   border-radius: 50%;
   z-index: 10;

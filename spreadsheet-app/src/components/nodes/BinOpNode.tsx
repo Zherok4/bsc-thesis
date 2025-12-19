@@ -1,7 +1,7 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { type JSX } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { truncateMiddle } from "./utils";
+import { abbreviateNumber, truncateMiddle } from "./utils";
 import './BinOpNode.css';
 
 export type BinOpNode = Node<
@@ -25,34 +25,6 @@ function getDisplayOperator(operator: string): string {
         default: return operator;
     }
 }
-
-/**
- * Abbreviates large numbers for compact display.
- * E.g., 200000 -> "200K", 1500000 -> "1.5M"
- */
-function abbreviateNumber(value: string): string {
-    const num = parseFloat(value);
-    if (isNaN(num)) return value;
-
-    const absNum = Math.abs(num);
-    const sign = num < 0 ? "-" : "";
-
-    if (absNum >= 1_000_000_000) {
-        const abbreviated = absNum / 1_000_000_000;
-        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "B";
-    }
-    if (absNum >= 1_000_000) {
-        const abbreviated = absNum / 1_000_000;
-        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "M";
-    }
-    if (absNum >= 10_000) {
-        const abbreviated = absNum / 1_000;
-        return sign + (abbreviated % 1 === 0 ? abbreviated.toFixed(0) : abbreviated.toFixed(1)) + "K";
-    }
-
-    return value;
-}
-
 
 /**
  * Formats a constant for display: abbreviates and truncates if needed.
