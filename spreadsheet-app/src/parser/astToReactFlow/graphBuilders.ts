@@ -1,7 +1,8 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { CollapsedNode } from "../collapseAST";
 import type { ASTNode } from "../visitor";
-import type { ExpansionContext, Graph } from "./types";
+import { mergeDuplicateReferences } from "./mergeReferences";
+import type { ExpansionContext, Graph, MergeConfig } from "./types";
 import { visitCollapsedNodeWithExpansion } from "./visitors";
 
 /**
@@ -41,11 +42,13 @@ export function toGraph<T extends ASTNode | CollapsedNode>(
  *
  * @param collapsedNode - The collapsed AST node to convert
  * @param context - Expansion context with state and callbacks
+ * @param mergeConfig - Optional configuration for merging duplicate reference nodes
  * @returns A Graph containing nodes and edges
  */
 export function toGraphWithExpansion(
     collapsedNode: CollapsedNode,
-    context: ExpansionContext
+    context: ExpansionContext,
+    mergeConfig?: MergeConfig
 ): Graph {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
@@ -58,8 +61,16 @@ export function toGraphWithExpansion(
         undefined,
         "root"
     );
-    return {
-        nodes,
-        edges,
-    };
+
+    const graph: Graph = { nodes, edges };
+
+    // Apply reference merging if enabled
+    if (mergeConfig?.enabled) {
+        return mergeDuplicateReferences(graph, {
+            maxDistance: mergeConfig.maxDistance,
+            activeSheetName: context.activeSheetName,
+        });
+    }
+
+    return graph;
 }

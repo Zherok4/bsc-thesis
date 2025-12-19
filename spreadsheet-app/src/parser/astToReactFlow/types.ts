@@ -11,6 +11,16 @@ export interface Graph {
 }
 
 /**
+ * Configuration for merging duplicate reference nodes
+ */
+export interface MergeConfig {
+    /** Whether to merge duplicate references */
+    enabled: boolean;
+    /** Maximum edge distance for merging (nodes must be within N edges to merge) */
+    maxDistance: number;
+}
+
+/**
  * Context passed through visitor functions for expansion state management
  */
 export interface ExpansionContext {

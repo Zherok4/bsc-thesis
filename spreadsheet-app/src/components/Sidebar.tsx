@@ -3,7 +3,7 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode } from '../parser';
-import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext } from '../parser/astToReactFlow';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
@@ -94,6 +94,12 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
     });
   }, []);
 
+  /** Configuration for merging duplicate reference nodes */
+  const mergeConfig: MergeConfig = useMemo(() => ({
+    enabled: true,
+    maxDistance: 5,
+  }), []);
+
   const buildGraph = useCallback((tree: CollapsedNode, dimensions?: NodeDimensionsMap) => {
     resetNodeIdCounter();
     const context: ExpansionContext = {
@@ -104,9 +110,9 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
       isEditModeActive,
       setEditMode,
     };
-    const graph = toGraphWithExpansion(tree, context);
+    const graph = toGraphWithExpansion(tree, context, mergeConfig);
     return applyDagreLayout(graph, dimensions);
-  }, [expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName]);
+  }, [expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, mergeConfig]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     

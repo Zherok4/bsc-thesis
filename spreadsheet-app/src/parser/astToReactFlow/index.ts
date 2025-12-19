@@ -12,7 +12,7 @@
  */
 
 // Types
-export type { Graph, ExpansionContext } from "./types";
+export type { Graph, ExpansionContext, MergeConfig } from "./types";
 
 // ID generation utilities
 export { resetNodeIdCounter, generateNodeId, getNodeIdCounter } from "./idGenerator";
@@ -41,3 +41,6 @@ export {
 
 // Graph builders (primary API)
 export { toGraph, toGraphWithExpansion } from "./graphBuilders";
+
+// Reference merging
+export { mergeDuplicateReferences } from "./mergeReferences";
