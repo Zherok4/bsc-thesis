@@ -184,3 +184,43 @@ export function createBinOpNode(
         type: "BinOpNode",
     };
 }
+
+/**
+ * Configuration for conditional node branch expansion
+ */
+interface ConditionalExpansionConfig {
+    /** Callback to toggle branch expansion */
+    onToggleBranchExpand: (branchId: string) => void;
+    /** Array of expansion IDs for each branch */
+    branchExpansionIds: string[];
+    /** Array of expanded branch indices */
+    expandedBranchIndices: number[];
+}
+
+/**
+ * Creates a conditional node for IF or IFS functions
+ * @param funName - The function name ('IF' or 'IFS')
+ * @param argFormulas - Array of formula strings for each argument
+ * @param funFormula - The complete function formula string
+ * @param expansionConfig - Configuration for branch expansion
+ */
+export function createConditionalNode(
+    funName: 'IF' | 'IFS',
+    argFormulas: string[],
+    funFormula: string,
+    expansionConfig: ConditionalExpansionConfig
+): Node {
+    return {
+        id: generateNodeId(),
+        position: { x: 0, y: 100 * getNodeIdCounter() },
+        data: {
+            funName,
+            argFormulas,
+            funFormula,
+            onToggleBranchExpand: expansionConfig.onToggleBranchExpand,
+            branchExpansionIds: expansionConfig.branchExpansionIds,
+            expandedBranchIndices: expansionConfig.expandedBranchIndices,
+        },
+        type: "ConditionalNode",
+    };
+}

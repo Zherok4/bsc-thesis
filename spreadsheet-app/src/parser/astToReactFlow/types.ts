@@ -38,4 +38,6 @@ export interface ExpansionContext {
     isEditModeActive: boolean;
     /** Setter for edit mode state (true = active, false = inactive) */
     setEditMode: Dispatch<SetStateAction<boolean>>;
+    /** Whether this node is part of an inactive conditional branch (for graying out) */
+    isInactivePath?: boolean;
 }

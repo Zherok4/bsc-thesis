@@ -1,0 +1,333 @@
+@import './nodes.css';
+
+/* Conditional node specific variables */
+/* TODO: change orange color to other color because orange is the editing color */
+.conditional-node {
+    --condition-bg: #fef3c7;
+    --condition-border: #f59e0b;
+    --true-accent: #10b981;
+    --false-accent: #ef4444;
+    --inactive-opacity: 0.5;
+}
+
+/* Header styling - matches FunctionNode */
+.conditional-node .header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.conditional-node .func-symbol {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.conditional-node .func-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* Condition section - distinct visual styling */
+.condition-section {
+    background: var(--condition-bg);
+    border: 1px solid var(--condition-border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+}
+
+.section-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.condition-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.condition-handle {
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.condition-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: auto;
+}
+
+.condition-badge.truthy {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--true-accent);
+}
+
+.condition-badge.falsy {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--false-accent);
+}
+
+.condition-badge.skipped {
+    background: rgba(107, 114, 128, 0.15);
+    color: var(--text-tertiary);
+    text-decoration: line-through;
+}
+
+/* Branches section */
+.branches-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.branch {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    padding-left: 28px;
+    background: var(--accent-light);
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.branch.branch-active-true {
+    border-left-color: var(--true-accent);
+    opacity: 1;
+}
+
+.branch.branch-active-false {
+    border-left-color: var(--false-accent);
+    opacity: 1;
+}
+
+.branch.branch-inactive {
+    border-left-color: var(--node-border);
+    opacity: var(--inactive-opacity);
+    background: transparent;
+    filter: grayscale(50%);
+}
+
+.branch.branch-inactive .arg-label {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+}
+
+.branch.branch-inactive .arg-value {
+    color: var(--text-tertiary);
+}
+
+.branch.branch-inactive .expand-toggle {
+    opacity: 0.7;
+}
+
+.branch.branch-inactive .arg-handle {
+    opacity: 0.5;
+}
+
+/* Expand toggle button - reuse ReferenceNode pattern */
+.expand-toggle {
+    position: absolute;
+    left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: var(--node-bg);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.expand-toggle:hover {
+    background: var(--accent-light);
+    border-color: var(--func-accent);
+    color: var(--func-accent);
+}
+
+.expand-toggle.expanded {
+    background: var(--func-accent);
+    border-color: var(--func-accent);
+    color: white;
+}
+
+.expand-toggle.expanded:hover {
+    filter: brightness(1.1);
+}
+
+/* Argument handle positioning */
+.branch .arg-handle {
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.arg-label {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    padding-right: 5px;
+}
+
+.arg-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-left: auto;
+}
+
+/* Result section */
+.conditional-node .result {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--node-border);
+}
+
+.conditional-node .result-label {
+    font-size: 14px;
+    color: var(--text-tertiary);
+}
+
+/* Branch result handle - positioned on active branch */
+.branch-result-handle {
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Selected indicator */
+.conditional-node .selected-indicator {
+    position: absolute;
+    inset: -2px;
+    border: 1.5px solid var(--func-accent);
+    border-radius: 9px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.node-wrapper:focus-within .selected-indicator {
+    opacity: 1;
+}
+
+/* ============================================
+   IFS Mode Specific Styles
+   ============================================ */
+
+.ifs-pairs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ifs-pair {
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    padding: 4px 0;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.ifs-pair.pair-active {
+    border-left-color: var(--true-accent);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.ifs-pair.pair-falsy {
+    border-left-color: var(--false-accent);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.ifs-pair.pair-inactive {
+    opacity: var(--inactive-opacity);
+    border-left-color: var(--node-border);
+    filter: grayscale(50%);
+}
+
+.ifs-pair.pair-inactive .arg-label {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+}
+
+.ifs-pair.pair-inactive .arg-value {
+    color: var(--text-tertiary);
+}
+
+.ifs-pair.pair-inactive .condition-badge {
+    opacity: 0.7;
+}
+
+.ifs-pair.pair-inactive .expand-toggle {
+    opacity: 0.7;
+}
+
+.ifs-pair.pair-inactive .arg-handle,
+.ifs-pair.pair-inactive .condition-handle {
+    opacity: 0.5;
+}
+
+.ifs-condition {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    padding-left: 12px;
+    background: var(--condition-bg);
+    border-bottom: 1px solid var(--node-border);
+}
+
+.ifs-condition .condition-handle {
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.ifs-value {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    padding-left: 28px;
+}
+
+.ifs-value .arg-handle {
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.ifs-value .expand-toggle {
+    left: 4px;
+}

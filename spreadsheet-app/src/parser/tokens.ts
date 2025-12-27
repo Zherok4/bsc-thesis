@@ -8,7 +8,7 @@ export const WhiteSpace: TokenType = createToken({
 });
 
 export const Equal: TokenType = createToken({
-    name: "Equals",
+    name: "Equal",
     pattern: /=/
 });
 

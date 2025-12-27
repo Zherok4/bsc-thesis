@@ -18,6 +18,7 @@ import FunctionNodeComponent from './nodes/FunctionNode';
 import ExpandableExpressionNodeComponent from './nodes/ExpandableExpressionNode';
 import ResultNodeComponent from './nodes/ResultNode';
 import BinOpNodeComponent from './nodes/BinOpNode';
+import ConditionalNodeComponent from './nodes/ConditionalNode';
 import GraphToolbar from './GraphToolbar';
 
 /**
@@ -60,6 +61,7 @@ const nodeTypes = {
   ExpandableExpressionNode: ExpandableExpressionNodeComponent,
   ResultNode: ResultNodeComponent,
   BinOpNode: BinOpNodeComponent,
+  ConditionalNode: ConditionalNodeComponent,
 };
 
 function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: SidebarProps) {

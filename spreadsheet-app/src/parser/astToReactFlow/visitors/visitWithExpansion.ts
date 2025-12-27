@@ -13,6 +13,7 @@ import { createDefaultEdge } from "../edgeFactory";
 import { getCellFormulaAsCollapsedNode } from "../helpers/cellFormulaHelper";
 import {
     createBinOpNode,
+    createConditionalNode,
     createDefaultNode,
     createExpandableExpressionNode,
     createFunctionNode,
@@ -22,6 +23,7 @@ import {
     createStringNode,
 } from "../nodeFactories";
 import type { ExpansionContext } from "../types";
+import { evaluateFormula } from "../../../utils";
 
 /**
  * Parameters passed to individual node type handlers
@@ -208,8 +210,26 @@ function handleStringLiteral(params: HandlerParams): void {
 /**
  * Handles FunctionCall nodes
  */
-// TODO: create custom handles for certain functions: false(), true(), if(), ifs(), vlookup(), xlookup()
+// TODO: create custom handles for certain functions: false(), true(), vlookup(), xlookup()
 function handleFunctionCall(params: HandlerParams): void {
+    const { collapsedNode } = params;
+    const funNode = collapsedNode.original as FunctionCallNode;
+    const funName = funNode.name.toUpperCase();
+
+    // Route to specialized handlers for IF/IFS
+    if (funName === 'IF' || funName === 'IFS') {
+        handleConditionalFunctionCall(params, funName as 'IF' | 'IFS');
+        return;
+    }
+
+    // Generic function handling
+    handleGenericFunctionCall(params);
+}
+
+/**
+ * Handles generic function calls (non-conditional)
+ */
+function handleGenericFunctionCall(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
         params;
 
@@ -233,6 +253,170 @@ function handleFunctionCall(params: HandlerParams): void {
             `${collapsedNodeId}-arg${idx}`
         );
     });
+}
+
+/**
+ * Determines if a condition result is truthy for IF/IFS evaluation.
+ */
+function isTruthyCondition(result: string): boolean {
+    const upper = result.toUpperCase();
+    return upper === 'TRUE' || (upper !== 'FALSE' && upper !== '0' && upper !== '' && !upper.startsWith('#'));
+}
+
+/**
+ * Handles IF and IFS function calls with specialized ConditionalNode.
+ * Implements collapsing logic: only visits active branches or manually expanded branches.
+ */
+function handleConditionalFunctionCall(
+    params: HandlerParams,
+    funName: 'IF' | 'IFS'
+): void {
+    const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
+        params;
+
+    const funNode = collapsedNode.original as FunctionCallNode;
+    const funFormula = nodeToString(funNode);
+    const argFormulas = collapsedNode.children.map((child) => child.label);
+
+    // Generate expansion IDs for each branch
+    // For IF: 2 branches (true, false)
+    // For IFS: N/2 branches (one per condition-value pair)
+    const branchCount = funName === 'IF' ? 2 : Math.floor(argFormulas.length / 2);
+    const branchExpansionIds: string[] = [];
+    const expandedBranchIndices: number[] = [];
+
+    for (let i = 0; i < branchCount; i++) {
+        const branchId = `${collapsedNodeId}-branch-${i}`;
+        branchExpansionIds.push(branchId);
+        if (context.expandedNodeIds.has(branchId)) {
+            expandedBranchIndices.push(i);
+        }
+    }
+
+    // Evaluate condition(s) to determine active branch
+    let activeBranchIndex = -1;
+    if (funName === 'IF') {
+        // IF: evaluate the first argument (condition)
+        const conditionFormula = argFormulas[0];
+        const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
+        activeBranchIndex = isTruthyCondition(conditionResult) ? 0 : 1;
+    } else {
+        // IFS: find the first truthy condition
+        for (let i = 0; i < branchCount; i++) {
+            const conditionFormula = argFormulas[i * 2]; // conditions are at even indices
+            const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
+            if (isTruthyCondition(conditionResult)) {
+                activeBranchIndex = i;
+                break;
+            }
+        }
+    }
+
+    const createdNode = createConditionalNode(funName, argFormulas, funFormula, {
+        onToggleBranchExpand: context.onToggleExpand,
+        branchExpansionIds,
+        expandedBranchIndices,
+    });
+    const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
+    nodes.push(createdNode);
+    edges.push(createdEdge);
+
+    // Visit children selectively based on collapse state
+    if (funName === 'IF') {
+        // IF structure: [condition, value_if_true, value_if_false]
+        // Always visit condition (index 0)
+        if (collapsedNode.children[0]) {
+            visitCollapsedNodeWithExpansion(
+                collapsedNode.children[0],
+                nodes,
+                edges,
+                createdNode.id,
+                context,
+                `arghandle-0`,
+                `${collapsedNodeId}-arg0`
+            );
+        }
+
+        // Visit true branch (index 1) if active OR manually expanded
+        const isTrueBranchActive = activeBranchIndex === 0;
+        const isTrueBranchExpanded = expandedBranchIndices.includes(0);
+        const shouldVisitTrueBranch = isTrueBranchActive || isTrueBranchExpanded;
+        if (shouldVisitTrueBranch && collapsedNode.children[1]) {
+            // If branch is expanded but not active, mark children as inactive path
+            const trueBranchContext = !isTrueBranchActive && isTrueBranchExpanded
+                ? { ...context, isInactivePath: true }
+                : context;
+            visitCollapsedNodeWithExpansion(
+                collapsedNode.children[1],
+                nodes,
+                edges,
+                createdNode.id,
+                trueBranchContext,
+                `arghandle-1`,
+                `${collapsedNodeId}-arg1`
+            );
+        }
+
+        // Visit false branch (index 2) if active OR manually expanded
+        const isFalseBranchActive = activeBranchIndex === 1;
+        const isFalseBranchExpanded = expandedBranchIndices.includes(1);
+        const shouldVisitFalseBranch = isFalseBranchActive || isFalseBranchExpanded;
+        if (shouldVisitFalseBranch && collapsedNode.children[2]) {
+            // If branch is expanded but not active, mark children as inactive path
+            const falseBranchContext = !isFalseBranchActive && isFalseBranchExpanded
+                ? { ...context, isInactivePath: true }
+                : context;
+            visitCollapsedNodeWithExpansion(
+                collapsedNode.children[2],
+                nodes,
+                edges,
+                createdNode.id,
+                falseBranchContext,
+                `arghandle-2`,
+                `${collapsedNodeId}-arg2`
+            );
+        }
+    } else {
+        // IFS structure: [cond1, val1, cond2, val2, ...]
+        for (let pairIndex = 0; pairIndex < branchCount; pairIndex++) {
+            const conditionIdx = pairIndex * 2;
+            const valueIdx = pairIndex * 2 + 1;
+            const isPairActive = pairIndex === activeBranchIndex;
+            const isPairExpanded = expandedBranchIndices.includes(pairIndex);
+
+            // Always visit condition - conditions are never marked as inactive
+            // (they provide context about why a path was not taken)
+            if (collapsedNode.children[conditionIdx]) {
+                visitCollapsedNodeWithExpansion(
+                    collapsedNode.children[conditionIdx],
+                    nodes,
+                    edges,
+                    createdNode.id,
+                    context,
+                    `arghandle-${conditionIdx}`,
+                    `${collapsedNodeId}-arg${conditionIdx}`
+                );
+            }
+
+            // Visit value only if this is the active pair OR manually expanded
+            const shouldVisitValue = isPairActive || isPairExpanded;
+            if (shouldVisitValue && collapsedNode.children[valueIdx]) {
+                // If pair is expanded but not active, mark children as inactive path
+                const valueContext = !isPairActive && isPairExpanded
+                    ? { ...context, isInactivePath: true }
+                    : context;
+                visitCollapsedNodeWithExpansion(
+                    collapsedNode.children[valueIdx],
+                    nodes,
+                    edges,
+                    createdNode.id,
+                    valueContext,
+                    `arghandle-${valueIdx}`,
+                    `${collapsedNodeId}-arg${valueIdx}`
+                );
+            }
+        }
+    }
 }
 
 /**
@@ -392,6 +576,7 @@ function handleDefault(params: HandlerParams): void {
  * - Node expansion/collapse
  * - Circular reference detection
  * - Cell formula expansion
+ * - Inactive path styling for conditional branches
  *
  * @param collapsedNode - The collapsed node to visit
  * @param nodes - Array to collect created nodes
@@ -412,6 +597,9 @@ export function visitCollapsedNodeWithExpansion(
 ): void {
     // Generate a stable ID for this collapsed node to track expansion state
     const nodeCollapsedId = collapsedNodeId ?? `collapsed-${nodes.length}`;
+
+    // Track node count before handler to identify newly created nodes
+    const nodeCountBefore = nodes.length;
 
     const params: HandlerParams = {
         collapsedNode,
@@ -459,5 +647,15 @@ export function visitCollapsedNodeWithExpansion(
 
         default:
             handleDefault(params);
+    }
+
+    // If on an inactive path, add className to all newly created nodes
+    if (context.isInactivePath) {
+        for (let i = nodeCountBefore; i < nodes.length; i++) {
+            const node = nodes[i];
+            node.className = node.className
+                ? `${node.className} inactive-path`
+                : 'inactive-path';
+        }
     }
 }

@@ -179,4 +179,14 @@
   padding-right: 4px;
 }
 
+/* Inactive path styling - for nodes on collapsed conditional branches */
+.react-flow__node.inactive-path {
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
+
+.react-flow__node.inactive-path .react-flow__handle {
+  opacity: 0.5;
+}
+
 
