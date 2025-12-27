@@ -3,7 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type GraphEditModeContextValue } from "../context";
 import type { CellValue, SimpleCellAddress } from "hyperformula";
-import { truncateMiddle } from "./utils";
+import { getSheetColorStyle } from "../../utils/sheetColors";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -34,7 +34,11 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
-    }, [hfInstance]);
+    }, [hfInstance, residingSheet]);
+
+    const sheetColorStyle = useMemo<React.CSSProperties>(() => {
+        return getSheetColorStyle(sheetId ?? 0);
+    }, [sheetId]);
 
     // TODO: Improve Error handling
     const simpleCellAddress = useMemo<SimpleCellAddress | undefined>(() => {
@@ -116,10 +120,9 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     }, [selectedCell, activeSheetName, isEditModeActive, isThisNodeBeingEdited, reference, hfInstance]);
 
     return (
-        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`}>
+        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`} style={sheetColorStyle}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
-                <span className="sheet-name" title={residingSheet}>{truncateMiddle(residingSheet, 12)}</span>
                 <div className="ref-content">
                     <div className="ref-left">
                         {isExpandable && (

@@ -1,6 +1,7 @@
 import './SheetTabs.css';
 import type { JSX } from 'react';
 import { HyperFormula } from 'hyperformula';
+import { getSheetColors } from '../utils/sheetColors';
 
 /**
  * Represents a spreadsheet sheet with its data
@@ -39,15 +40,23 @@ const SheetTabs = ({hfInstance, activeSheetId, onSheetChange }: SheetTabsProps):
     return (
         <div className="sheet-tabs">
             <div className="sheet-tabs__container">
-                {(hfInstance.getSheetNames()).map((sheetName) => (
-                    <button
-                        key={hfInstance.getSheetId(sheetName)}
-                        className={`sheet-tabs__tab ${sheetName === activeSheetId ? 'sheet-tabs__tab--active' : ''}`}
-                        onClick={() => onSheetChange(sheetName)}
-                    >
-                        {sheetName}
-                    </button>
-                ))}
+                {(hfInstance.getSheetNames()).map((sheetName) => {
+                    const sheetId = hfInstance.getSheetId(sheetName) ?? 0;
+                    const { accent } = getSheetColors(sheetId);
+                    return (
+                        <button
+                            key={sheetId}
+                            className={`sheet-tabs__tab ${sheetName === activeSheetId ? 'sheet-tabs__tab--active' : ''}`}
+                            onClick={() => onSheetChange(sheetName)}
+                        >
+                            <span
+                                className="sheet-tabs__color-bar"
+                                style={{ backgroundColor: accent }}
+                            />
+                            {sheetName}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

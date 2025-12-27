@@ -29,6 +29,17 @@
     height: 28px;
     display: flex;
     align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.sheet-tabs__color-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    border-radius: 2px 2px 0 0;
 }
 
 .sheet-tabs__tab:hover {

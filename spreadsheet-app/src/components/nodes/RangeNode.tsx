@@ -3,7 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { type CellValue, type SimpleCellAddress } from "hyperformula";
-import { truncateMiddle } from "./utils";
+import { getSheetColorStyle } from "../../utils/sheetColors";
 import "./RangeNode.css"
 
 export type RangeNode = Node<
@@ -17,8 +17,19 @@ export type RangeNode = Node<
 
 export default function RangeNodeComponent({data: {startReference, endReference, sheet}}: NodeProps<RangeNode>): JSX.Element {
     const { hfInstance, activeSheetName, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
-    const sheetId = useMemo<number | undefined>(() => {return hfInstance.getSheetId(sheet || activeSheetName)}, [sheet, activeSheetName, hfInstance]);
-        // TODO: Improve Error handling
+
+    const residingSheet = useMemo<string>(() => {
+        return sheet || activeSheetName;
+    }, []);
+    const sheetId = useMemo<number | undefined>(() => {
+        return hfInstance.getSheetId(residingSheet)
+    }, [hfInstance, residingSheet]);
+
+    const sheetColorStyle = useMemo<React.CSSProperties>(() => {
+        return getSheetColorStyle(sheetId ?? 0);
+    }, [sheetId]);
+
+    // TODO: Improve Error handling
     const simpleCellAddressStart: SimpleCellAddress | undefined = useMemo<SimpleCellAddress | undefined>(() => {
         return hfInstance.simpleCellAddressFromString(startReference, sheetId || 0)
     }, [startReference, hfInstance]);
@@ -77,10 +88,9 @@ export default function RangeNodeComponent({data: {startReference, endReference,
 
 
     return (
-        <div className="node-wrapper">
+        <div className="node-wrapper" style={sheetColorStyle}>
             <div className="selected-indicator"></div>
             <div className="range-node" onClick={handleClick} onMouseOver={handleMouseOver} onMouseLeave={clearHighlight}>
-                <span className="sheet-name" title={sheet || activeSheetName}>{truncateMiddle(sheet || activeSheetName, 18)}</span>
                 <div className="range-content">
                     <div className="range-left">
                         <span className="range-ref">

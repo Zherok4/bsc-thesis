@@ -20,16 +20,6 @@
   border-right: 1px solid var(--node-border);
 }
 
-.ref-node > .sheet-name {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-family: 'IBM Plex Mono', monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin-bottom: 4px;
-  display: block;
-}
-
 .ref-right {
   position: relative;
   display: flex;
@@ -60,16 +50,16 @@
 }
 
 .ref-node .handle:hover {
-  border-color: var(--ref-accent);
-  background: var(--ref-accent-light);
+  border-color: var(--sheet-accent);
+  background: var(--sheet-accent-light);
 }
 
 .cell-ref {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 14px;
   font-weight: 600;
-  color: var(--ref-accent);
-  background: var(--ref-accent-light);
+  color: var(--sheet-accent);
+  background: var(--sheet-accent-light);
   padding: 2px 2px;
   border-radius: 4px;
   cursor: pointer;
@@ -78,7 +68,7 @@
 
 /* Reference node selected indicator */
 .ref-node .selected-indicator {
-  border: 1.5px solid var(--ref-accent);
+  border: 1.5px solid var(--sheet-accent);
 }
 
 /* Expand/collapse toggle button */
@@ -102,23 +92,23 @@
 }
 
 .expand-toggle:hover {
-  background: var(--ref-accent-light);
-  border-color: var(--ref-accent);
-  color: var(--ref-accent);
+  background: var(--sheet-accent-light);
+  border-color: var(--sheet-accent);
+  color: var(--sheet-accent);
 }
 
 .expand-toggle.expanded {
-  background: var(--ref-accent);
-  border-color: var(--ref-accent);
+  background: var(--sheet-accent);
+  border-color: var(--sheet-accent);
   color: white;
 }
 
 .expand-toggle.expanded:hover {
-  background: var(--ref-accent);
+  background: var(--sheet-accent);
   filter: brightness(1.1);
 }
 
 /* Expanded state indicator for the node wrapper */
 .node-wrapper.expanded {
-  box-shadow: 0 0 0 1px var(--ref-accent), 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 1px var(--sheet-accent), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
