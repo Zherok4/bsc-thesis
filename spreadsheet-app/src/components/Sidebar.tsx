@@ -37,6 +37,10 @@ export interface SidebarProps {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  /** Set the viewed cell highlight (dotted border) in the spreadsheet */
+  setViewedCellHighlight: (row: number, col: number, sheet: string) => void;
+  /** Clear the viewed cell highlight */
+  clearViewedCellHighlight: () => void;
 }
 
 const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
@@ -64,7 +68,7 @@ const nodeTypes = {
   ConditionalNode: ConditionalNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -79,10 +83,54 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
   const layoutVersionRef = useRef(0);
   const fitViewOnNextRenderRef = useRef(false);
 
+  /** The AST that is currently synced/displayed in the graph */
+  const [syncedAst, setSyncedAst] = useState<ASTNode | undefined>(ast);
+
+  /** The cell position that is currently synced/displayed in the graph */
+  const [syncedCell, setSyncedCell] = useState<{row: number, col: number, sheet: string} | null>(
+    selectedCell ? { row: selectedCell.row, col: selectedCell.col, sheet: activeSheetName } : null
+  );
+
+  /** Whether there is a pending sync (incoming ast differs from synced ast) */
+  const hasPendingSync = ast !== syncedAst;
+
+  /** The cell address currently being viewed in the graph */
+  const currentCellAddress = useMemo<string | null>(() => {
+    if (!syncedCell) return null;
+    const sheetId = hfInstance.getSheetId(syncedCell.sheet);
+    if (sheetId === undefined) return null;
+    const address = { sheet: sheetId, row: syncedCell.row, col: syncedCell.col };
+    return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+  }, [syncedCell, hfInstance]);
+
+  /** The cell address to sync to, shown in the sync button (only if cell has a formula) */
+  const pendingCellAddress = useMemo<string | null>(() => {
+    if (!hasPendingSync || !selectedCell || !ast) return null;
+    const sheetId = hfInstance.getSheetId(activeSheetName);
+    if (sheetId === undefined) return null;
+    const address = { sheet: sheetId, row: selectedCell.row, col: selectedCell.col };
+    return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+  }, [hasPendingSync, selectedCell, ast, hfInstance, activeSheetName]);
+
+  /** Sync the graph to the current cell's AST */
+  const handleSync = useCallback(() => {
+    setSyncedAst(ast);
+    if (selectedCell) {
+      const newSyncedCell = { row: selectedCell.row, col: selectedCell.col, sheet: activeSheetName };
+      setSyncedCell(newSyncedCell);
+      setViewedCellHighlight(newSyncedCell.row, newSyncedCell.col, newSyncedCell.sheet);
+    } else {
+      setSyncedCell(null);
+      clearViewedCellHighlight();
+    }
+    setExpandedNodeIds(new Set());
+    fitViewOnNextRenderRef.current = true;
+  }, [ast, selectedCell, activeSheetName, setViewedCellHighlight, clearViewedCellHighlight]);
+
   const collapsedTree = useMemo<CollapsedNode | null>(() => {
-    if (ast === undefined) return null;
-    return collapseNode(ast);
-  }, [ast]);
+    if (syncedAst === undefined) return null;
+    return collapseNode(syncedAst);
+  }, [syncedAst]);
 
   const handleToggleExpand = useCallback((nodeId: string) => {
     setExpandedNodeIds(prev => {
@@ -204,10 +252,6 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
     return () => clearTimeout(timeoutId);
   }, [needsRelayout, measuredDimensions, nodes.length, collapsedTree, buildGraph, setNodes, setEdges, fitView]);
 
-  useEffect(() => {
-    setExpandedNodeIds(new Set());
-    fitViewOnNextRenderRef.current = true;
-  }, [ast]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -248,7 +292,12 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
           >
             <Background />
             <Controls />
-            <GraphToolbar />
+            <GraphToolbar
+              currentCellAddress={currentCellAddress}
+              hasPendingSync={hasPendingSync}
+              pendingCellAddress={pendingCellAddress}
+              onSync={handleSync}
+            />
           </ReactFlow>
         </HyperFormulaProvider>
       </GraphEditModeContext.Provider>

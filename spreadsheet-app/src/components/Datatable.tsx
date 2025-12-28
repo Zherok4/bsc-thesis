@@ -10,6 +10,7 @@ registerAllModules();
 
 const DEFAULT_COL_WIDTH : number = 110;
 const HIGHLIGHT_CLASS = 'cell-highlight';
+const VIEWED_CELL_CLASS = 'cell-viewed';
 
 /**
  * Represents a range of highlighted cells
@@ -19,6 +20,15 @@ interface HighlightRange {
     startCol: number;
     endRow: number;
     endCol: number;
+    sheetName: string;
+}
+
+/**
+ * Represents the cell currently being viewed in the graph
+ */
+interface ViewedCell {
+    row: number;
+    col: number;
     sheetName: string;
 }
 
@@ -54,6 +64,10 @@ export interface DatatableHandle {
     highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
     /** Clear all cell highlights */
     clearHighlight: () => void;
+    /** Set the viewed cell highlight (dotted border) for the cell being displayed in the graph */
+    setViewedCellHighlight: (row: number, col: number, sheet: string) => void;
+    /** Clear the viewed cell highlight */
+    clearViewedCellHighlight: () => void;
 }
 
 /**
@@ -71,6 +85,7 @@ export interface DatatableHandle {
 const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, ref}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
+    const currentViewedCell = useRef<ViewedCell | null>(null);
 
     const sheetNames = useMemo(() => {
         return hfInstance.getSheetNames();
@@ -85,6 +100,29 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
             }
         });
     }, [hfInstance, sheetNames])
+
+    /** Re-apply viewed cell highlight when switching back to the sheet containing it */
+    useEffect(() => {
+        const viewed = currentViewedCell.current;
+        if (!viewed || viewed.sheetName !== activeSheetName) return;
+
+        // Small delay to ensure Handsontable has rendered
+        const timeoutId = setTimeout(() => {
+            const hotTableRef = hotTableRefsMap.current.get(viewed.sheetName);
+            const hotInstance = hotTableRef?.hotInstance;
+            if (hotInstance) {
+                const existingMeta = hotInstance.getCellMeta(viewed.row, viewed.col).className;
+                const existingClass = typeof existingMeta === 'string' ? existingMeta : '';
+                if (!existingClass.includes(VIEWED_CELL_CLASS)) {
+                    const newClass = existingClass ? `${existingClass} ${VIEWED_CELL_CLASS}` : VIEWED_CELL_CLASS;
+                    hotInstance.setCellMeta(viewed.row, viewed.col, 'className', newClass);
+                    hotInstance.render();
+                }
+            }
+        }, 50);
+
+        return () => clearTimeout(timeoutId);
+    }, [activeSheetName]);
 
     useImperativeHandle(ref, () => ({
         updateCell: (newValue: string, row: number, col: number) => {
@@ -167,6 +205,48 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
                 hotInstance.render();
             }
             currentHighlight.current = null;
+        },
+        setViewedCellHighlight: (row: number, col: number, sheet: string) => {
+            // First clear the previous viewed cell highlight
+            const prevViewed = currentViewedCell.current;
+            if (prevViewed) {
+                const prevHotTableRef = hotTableRefsMap.current.get(prevViewed.sheetName);
+                const prevHotInstance = prevHotTableRef?.hotInstance;
+                if (prevHotInstance) {
+                    const existingMeta = prevHotInstance.getCellMeta(prevViewed.row, prevViewed.col).className;
+                    const existingClass = typeof existingMeta === 'string' ? existingMeta : '';
+                    const newClass = existingClass.replace(VIEWED_CELL_CLASS, '').trim();
+                    prevHotInstance.setCellMeta(prevViewed.row, prevViewed.col, 'className', newClass);
+                    prevHotInstance.render();
+                }
+            }
+
+            // Set the new viewed cell highlight
+            const hotTableRef = hotTableRefsMap.current.get(sheet);
+            const hotInstance = hotTableRef?.hotInstance;
+            if (hotInstance) {
+                const existingMeta = hotInstance.getCellMeta(row, col).className;
+                const existingClass = typeof existingMeta === 'string' ? existingMeta : '';
+                const newClass = existingClass ? `${existingClass} ${VIEWED_CELL_CLASS}` : VIEWED_CELL_CLASS;
+                hotInstance.setCellMeta(row, col, 'className', newClass);
+                hotInstance.render();
+                currentViewedCell.current = { row, col, sheetName: sheet };
+            }
+        },
+        clearViewedCellHighlight: () => {
+            const viewed = currentViewedCell.current;
+            if (!viewed) return;
+
+            const hotTableRef = hotTableRefsMap.current.get(viewed.sheetName);
+            const hotInstance = hotTableRef?.hotInstance;
+            if (hotInstance) {
+                const existingMeta = hotInstance.getCellMeta(viewed.row, viewed.col).className;
+                const existingClass = typeof existingMeta === 'string' ? existingMeta : '';
+                const newClass = existingClass.replace(VIEWED_CELL_CLASS, '').trim();
+                hotInstance.setCellMeta(viewed.row, viewed.col, 'className', newClass);
+                hotInstance.render();
+            }
+            currentViewedCell.current = null;
         },
     }), [activeSheetName]);
 

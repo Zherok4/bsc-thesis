@@ -67,10 +67,10 @@ export default function RangeNodeComponent({data: {startReference, endReference,
             const endRow = Math.max(simpleCellAddressStart.row, simpleCellAddressEnd.row);
             const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
 
-            scrollToCell(startRow, startCol, sheet);
-            highlightCells(startRow, startCol, endRow, endCol, sheet);
+            scrollToCell(startRow, startCol, residingSheet);
+            highlightCells(startRow, startCol, endRow, endCol, residingSheet);
         }
-    }, [simpleCellAddressStart, simpleCellAddressEnd, scrollToCell, highlightCells, sheet]);
+    }, [simpleCellAddressStart, simpleCellAddressEnd, scrollToCell, highlightCells, residingSheet]);
 
     const handleMouseOver = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -81,9 +81,9 @@ export default function RangeNodeComponent({data: {startReference, endReference,
             const endRow = Math.max(simpleCellAddressStart.row, simpleCellAddressEnd.row);
             const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
 
-            highlightCells(startRow, startCol, endRow, endCol, sheet);
+            highlightCells(startRow, startCol, endRow, endCol, residingSheet);
         }
-    }, [simpleCellAddressStart, simpleCellAddressEnd, highlightCells, sheet]);
+    }, [simpleCellAddressStart, simpleCellAddressEnd, highlightCells, residingSheet]);
 
 
 

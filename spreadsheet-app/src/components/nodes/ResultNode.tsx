@@ -15,9 +15,13 @@ export type ResultNode = Node<
 export default function ResultNodeComponent({data: {formula}}: NodeProps<ResultNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
 
+    const residingSheet = useMemo<string>(() => {
+        return activeSheetName;
+    }, []);
+
     const output = useMemo<string>(
-        () => evaluateFormula(formula, hfInstance, activeSheetName),
-        [formula, hfInstance, activeSheetName]
+        () => evaluateFormula(formula, hfInstance, residingSheet),
+        [formula, hfInstance, residingSheet]
     );
 
     return (

@@ -122,21 +122,26 @@ function IfModeContent({
     branchExpansionIds,
     expandedSet,
 }: IfModeProps): JSX.Element {
-    // Evaluate condition to determine active branch
+
+    const residingSheet = useMemo<string>(() => {
+        return activeSheetName;
+    }, []);
+
     const conditionResult = useMemo(
-        () => evaluateFormula(argFormulas[0], hfInstance, activeSheetName),
-        [argFormulas, hfInstance, activeSheetName]
+        () => evaluateFormula(argFormulas[0], hfInstance, residingSheet),
+        [argFormulas, hfInstance, residingSheet]
     );
+
     const isTruthy = useMemo(() => isTruthyResult(conditionResult), [conditionResult]);
 
     // Evaluate each branch's value
     const trueBranchValue = useMemo(
-        () => evaluateFormula(argFormulas[1] || '', hfInstance, activeSheetName),
-        [argFormulas, hfInstance, activeSheetName]
+        () => evaluateFormula(argFormulas[1] || '', hfInstance, residingSheet),
+        [argFormulas, hfInstance, residingSheet]
     );
     const falseBranchValue = useMemo(
-        () => evaluateFormula(argFormulas[2] || '', hfInstance, activeSheetName),
-        [argFormulas, hfInstance, activeSheetName]
+        () => evaluateFormula(argFormulas[2] || '', hfInstance, residingSheet),
+        [argFormulas, hfInstance, residingSheet]
     );
 
     // Active branch: 0 = true branch, 1 = false branch
@@ -286,15 +291,19 @@ function IfsModeContent({
         return result;
     }, [argFormulas]);
 
+    const residingSheet = useMemo<string>(() => {
+        return activeSheetName;
+    }, []);
+
     // Evaluate conditions to find first truthy
     const conditionResults = useMemo(() => {
-        return pairs.map(pair => evaluateFormula(pair.condition, hfInstance, activeSheetName));
-    }, [pairs, hfInstance, activeSheetName]);
+        return pairs.map(pair => evaluateFormula(pair.condition, hfInstance, residingSheet));
+    }, [pairs, hfInstance, residingSheet]);
 
     // Evaluate each value
     const valueResults = useMemo(() => {
-        return pairs.map(pair => evaluateFormula(pair.value, hfInstance, activeSheetName));
-    }, [pairs, hfInstance, activeSheetName]);
+        return pairs.map(pair => evaluateFormula(pair.value, hfInstance, residingSheet));
+    }, [pairs, hfInstance, residingSheet]);
 
     const activePairIndex = useMemo(() => {
         return conditionResults.findIndex(result => isTruthyResult(result));

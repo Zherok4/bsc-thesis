@@ -15,14 +15,6 @@ export type FunctionNode = Node<
 'FunctionNode'
 >;
 
-function replaceAll(argFormulatoNameMap: Map<string, string>, target: string): string {
-    let result: string = target;
-    argFormulatoNameMap.forEach((name, formula) => {
-        result = result.replace(formula, name);
-    });
-    return result;
-}
-
 /**
  * Checks if a formula is a constant value (number or string literal).
  * Returns the constant value if it is, otherwise returns null.
@@ -46,25 +38,14 @@ function getConstantValue(formula: string): string | null {
 export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
 
+    const residingSheet = useMemo<string>(() => {
+        return activeSheetName;
+    }, []);
+
     const output: string = useMemo<string>(
-        () => evaluateFormula(funFormula, hfInstance, activeSheetName),
-        [funFormula, hfInstance, activeSheetName]
-    ); 
-    
-    const argFormulaToNameMap: Map<string, string> = useMemo<Map<string, string>>(() => {
-        const map = new Map<string, string>();
-        argFormulas.forEach((formula, idx) => {
-            map.set(formula, `arg${idx}`);
-        })
-        return map;
-    }, [argFormulas]);
-
-
-
-    const formulaReplacedWithArgNames: string = useMemo<string>(() => {
-        return replaceAll(argFormulaToNameMap, funFormula);
-    }, [funFormula, argFormulaToNameMap]);
-
+        () => evaluateFormula(funFormula, hfInstance, residingSheet),
+        [funFormula, hfInstance, residingSheet]
+    );
 
     return (
         <div className="node-wrapper">

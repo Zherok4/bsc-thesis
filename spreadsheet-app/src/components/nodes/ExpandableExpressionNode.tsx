@@ -32,20 +32,14 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
     const { hfInstance, activeSheetName } = useHyperFormula();
     const { formula, isExpanded, onToggleExpand, nodeId, variables = [] } = props.data;
 
-    const MAX_FORMULA_LENGTH = 30;
+    const residingSheet = useMemo<string>(() => {
+        return activeSheetName;
+    }, []);
 
     const evaluatedOutput = useMemo(
-        () => evaluateFormula(formula, hfInstance, activeSheetName),
-        [formula, hfInstance, activeSheetName]
+        () => evaluateFormula(formula, hfInstance, residingSheet),
+        [formula, hfInstance, residingSheet]
     );
-
-    const displayFormula = useMemo(() => {
-        const cleaned = formula.trim().replace(/\s+/g, ' ');
-        if (!isExpanded && cleaned.length > MAX_FORMULA_LENGTH) {
-            return cleaned.slice(0, MAX_FORMULA_LENGTH) + '…';
-        }
-        return cleaned;
-    }, [formula, isExpanded]);
 
     const handleDoubleClick = useCallback(() => {
         onToggleExpand(nodeId);

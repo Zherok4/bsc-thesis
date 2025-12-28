@@ -117,6 +117,7 @@ function App() {
 
   /** scrollToCell is triggered if:
    *  - user clicks on a cell reference node
+   *  - user click on a range reference node
    * 
    *  moves the viewport of the handsontable spreadsheet to the corresponding cell
    */
@@ -141,6 +142,22 @@ function App() {
 
     if (currentDatatable) {
       currentDatatable.clearHighlight();
+    }
+  }, []);
+
+  /** Set the viewed cell highlight (dotted border) for the cell currently displayed in the graph */
+  const setViewedCellHighlight = useCallback((row: number, col: number, sheet: string) => {
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.setViewedCellHighlight(row, col, sheet);
+    }
+  }, []);
+
+  /** Clear the viewed cell highlight */
+  const clearViewedCellHighlight = useCallback(() => {
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.clearViewedCellHighlight();
     }
   }, []);
 
@@ -204,14 +221,16 @@ function App() {
           />
         </div>
         <div className="sidebar-container">
-          <Sidebar 
-          ast={selectedCellValueAST} 
-          hfInstance={hfInstance} 
+          <Sidebar
+          ast={selectedCellValueAST}
+          hfInstance={hfInstance}
           activeSheetName={activeSheetName}
           selectedCell={selectedCell}
           scrollToCell={scrollToCell}
           highlightCells={highlightCells}
           clearHighlight={handleClearHighlight}
+          setViewedCellHighlight={setViewedCellHighlight}
+          clearViewedCellHighlight={clearViewedCellHighlight}
           />
         </div>
       </div>

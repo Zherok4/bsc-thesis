@@ -81,19 +81,19 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
 
         if (simpleCellAddress) {
             const {row, col} = simpleCellAddress;
-            scrollToCell(row, col, sheet);
-            highlightCells(row, col, row, col, sheet);
+            scrollToCell(row, col, residingSheet);
+            highlightCells(row, col, row, col, residingSheet);
         }
-    }, [simpleCellAddress, scrollToCell, highlightCells, sheet]);
+    }, [simpleCellAddress, scrollToCell, highlightCells, residingSheet]);
 
     const handleMouseOver = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (simpleCellAddress) {
             const {row, col} = simpleCellAddress;
-            highlightCells(row, col, row, col, sheet);
+            highlightCells(row, col, row, col, residingSheet);
         }
-    }, [simpleCellAddress, highlightCells, sheet]);
+    }, [simpleCellAddress, highlightCells, residingSheet]);
 
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
