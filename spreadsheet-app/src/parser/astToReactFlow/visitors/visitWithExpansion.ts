@@ -48,7 +48,7 @@ interface HandlerParams {
 function handleFormulaNode(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, context, collapsedNodeId } = params;
 
-    const createdNode = createResultNode(collapsedNode.label);
+    const createdNode = createResultNode(collapsedNode.label, context.activeSheetName);
     nodes.push(createdNode);
 
     collapsedNode.children.forEach((child, idx) => {

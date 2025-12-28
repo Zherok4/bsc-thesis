@@ -166,12 +166,13 @@ export function createFunctionNode(
 /**
  * Creates a result node (top-level formula result)
  * @param formula - The formula string
+ * @param sheet - The sheet name where this result node was created
  */
-export function createResultNode(formula: string): Node {
+export function createResultNode(formula: string, sheet: string): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { formula },
+        data: { formula, sheet },
         type: "ResultNode",
     };
 }

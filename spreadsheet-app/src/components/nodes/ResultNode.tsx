@@ -8,20 +8,17 @@ import "./ResultNode.css"
 export type ResultNode = Node<
 {
     formula: string,
+    sheet: string,
 },
 'ResultNode'
 >;
 
-export default function ResultNodeComponent({data: {formula}}: NodeProps<ResultNode>): JSX.Element {
-    const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
-
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+export default function ResultNodeComponent({data: {formula, sheet}}: NodeProps<ResultNode>): JSX.Element {
+    const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
 
     const output = useMemo<string>(
-        () => evaluateFormula(formula, hfInstance, residingSheet),
-        [formula, hfInstance, residingSheet]
+        () => evaluateFormula(formula, hfInstance, sheet),
+        [formula, hfInstance]
     );
 
     return (

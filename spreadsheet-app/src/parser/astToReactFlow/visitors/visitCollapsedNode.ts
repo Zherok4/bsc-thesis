@@ -30,6 +30,7 @@ import {
  * @param nodes - Array to collect created nodes
  * @param edges - Array to collect created edges
  * @param parentID - ID of the parent node to connect to
+ * @param activeSheetName - Name of the active sheet for formula evaluation
  * @param handleID - Optional handle ID for function argument connections
  */
 export function visitCollapsedNode(
@@ -37,14 +38,15 @@ export function visitCollapsedNode(
     nodes: Node[],
     edges: Edge[],
     parentID: string,
+    activeSheetName: string,
     handleID?: string
 ): void {
     switch (collapsedNode.original.type) {
         case "Formula": {
-            const createdNode = createResultNode(collapsedNode.label);
+            const createdNode = createResultNode(collapsedNode.label, activeSheetName);
             nodes.push(createdNode);
             collapsedNode.children.forEach((child) => {
-                visitCollapsedNode(child, nodes, edges, createdNode.id);
+                visitCollapsedNode(child, nodes, edges, createdNode.id, activeSheetName);
             });
             break;
         }
@@ -168,6 +170,7 @@ export function visitCollapsedNode(
                     nodes,
                     edges,
                     createdNode.id,
+                    activeSheetName,
                     `arghandle-${idx}`
                 );
             });
@@ -184,7 +187,7 @@ export function visitCollapsedNode(
             nodes.push(createdNode);
             edges.push(createdEdge);
             collapsedNode.children.forEach((child) => {
-                visitCollapsedNode(child, nodes, edges, createdNode.id);
+                visitCollapsedNode(child, nodes, edges, createdNode.id, activeSheetName);
             });
         }
     }
