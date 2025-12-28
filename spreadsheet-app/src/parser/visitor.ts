@@ -2,7 +2,7 @@ import type { CstNode, ILexingResult, IToken } from "chevrotain";
 import { parserInstance } from "./parserConfig";
 import { SpreadsheetFormulaLexer } from "./tokens";
 
-export type ASTNode = 
+export type ASTNode =
     | FormulaNode
     | BinaryOpNode
     | UnaryOpNode
@@ -10,6 +10,8 @@ export type ASTNode =
     | FunctionCallNode
     | CellReferenceNode
     | CellRangeNode
+    | ColumnRangeNode
+    | RowRangeNode
     | NumberLiteralNode
     | StringLiteralNode
     | BooleanLiteralNode;
@@ -59,6 +61,24 @@ export interface CellRangeNode {
     sheet?: string;
     start: CellReferenceNode;
     end: CellReferenceNode;
+}
+
+export interface ColumnRangeNode {
+    type: "ColumnRange";
+    sheet?: string;
+    startColumn: string;
+    endColumn: string;
+    absoluteStart: boolean;
+    absoluteEnd: boolean;
+}
+
+export interface RowRangeNode {
+    type: "RowRange";
+    sheet?: string;
+    startRow: number;
+    endRow: number;
+    absoluteStart: boolean;
+    absoluteEnd: boolean;
 }
 
 export interface NumberLiteralNode {
@@ -267,9 +287,38 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         return ctx.args.map((arg: CstNode) => this.visit(arg));
     }
 
-    cellRange(ctx: any): CellReferenceNode | CellRangeNode {
+    cellRange(ctx: any): CellReferenceNode | CellRangeNode | ColumnRangeNode | RowRangeNode {
         const sheet = ctx.SheetReference ? ctx.SheetReference[0].image.slice(0, -1) : undefined;
 
+        // Handle column range: A:B, $A:$B
+        if (ctx.startCol) {
+            const startColImage = ctx.startCol[0].image;
+            const endColImage = ctx.endCol[0].image;
+            return {
+                type: "ColumnRange",
+                sheet,
+                startColumn: this.parseColumnReference(startColImage),
+                endColumn: this.parseColumnReference(endColImage),
+                absoluteStart: startColImage.startsWith("$"),
+                absoluteEnd: endColImage.startsWith("$"),
+            };
+        }
+
+        // Handle row range: 1:10, $1:$10
+        if (ctx.startRow) {
+            const startRowImage = ctx.startRow[0].image;
+            const endRowImage = ctx.endRow[0].image;
+            return {
+                type: "RowRange",
+                sheet,
+                startRow: this.parseRowReference(startRowImage),
+                endRow: this.parseRowReference(endRowImage),
+                absoluteStart: startRowImage.startsWith("$"),
+                absoluteEnd: endRowImage.startsWith("$"),
+            };
+        }
+
+        // Handle cell reference or cell range: A1 or A1:B10
         const startRef = this.parseCellReference(ctx.start[0].image, sheet);
 
         if (ctx.end) {
@@ -283,6 +332,22 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         }
 
         return startRef;
+    }
+
+    private parseColumnReference(reference: string): string {
+        const match = reference.match(/^\$?([A-Za-z]+)$/);
+        if (!match) {
+            throw new Error(`Invalid column reference: ${reference}`);
+        }
+        return match[1].toUpperCase();
+    }
+
+    private parseRowReference(reference: string): number {
+        const match = reference.match(/^\$?(\d+)$/);
+        if (!match) {
+            throw new Error(`Invalid row reference: ${reference}`);
+        }
+        return parseInt(match[1], 10);
     }
 
     private parseCellReference(reference: string, sheet?: string): CellReferenceNode {

@@ -5,14 +5,17 @@ import type {
     BinaryOpNode,
     CellRangeNode,
     CellReferenceNode,
+    ColumnRangeNode,
     FunctionCallNode,
     NumberLiteralNode,
+    RowRangeNode,
     StringLiteralNode,
 } from "../../visitor";
 import { createDefaultEdge } from "../edgeFactory";
 import { getCellFormulaAsCollapsedNode } from "../helpers/cellFormulaHelper";
 import {
     createBinOpNode,
+    createColumnRangeNode,
     createConditionalNode,
     createDefaultNode,
     createExpandableExpressionNode,
@@ -20,6 +23,7 @@ import {
     createRangeNode,
     createReferenceNode,
     createResultNode,
+    createRowRangeNode,
     createStringNode,
 } from "../nodeFactories";
 import type { ExpansionContext } from "../types";
@@ -174,6 +178,42 @@ function handleCellRange(params: HandlerParams): void {
         startNode.reference,
         endNode.reference,
         rangeNode.sheet
+    );
+    const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
+    nodes.push(createdNode);
+    edges.push(createdEdge);
+}
+
+/**
+ * Handles ColumnRange nodes (e.g., A:B, $A:$C)
+ */
+function handleColumnRange(params: HandlerParams): void {
+    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+
+    const colRangeNode = collapsedNode.original as ColumnRangeNode;
+
+    const createdNode = createColumnRangeNode(
+        colRangeNode.startColumn,
+        colRangeNode.endColumn,
+        colRangeNode.sheet
+    );
+    const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
+    nodes.push(createdNode);
+    edges.push(createdEdge);
+}
+
+/**
+ * Handles RowRange nodes (e.g., 1:10, $1:$5)
+ */
+function handleRowRange(params: HandlerParams): void {
+    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+
+    const rowRangeNode = collapsedNode.original as RowRangeNode;
+
+    const createdNode = createRowRangeNode(
+        rowRangeNode.startRow,
+        rowRangeNode.endRow,
+        rowRangeNode.sheet
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -622,6 +662,14 @@ export function visitCollapsedNodeWithExpansion(
 
         case "CellRange":
             handleCellRange(params);
+            break;
+
+        case "ColumnRange":
+            handleColumnRange(params);
+            break;
+
+        case "RowRange":
+            handleRowRange(params);
             break;
 
         case "NumberLiteral":

@@ -5,20 +5,24 @@ import type {
     BinaryOpNode,
     CellRangeNode,
     CellReferenceNode,
+    ColumnRangeNode,
     FormulaNode,
     FunctionCallNode,
     NumberLiteralNode,
     PercentNode,
+    RowRangeNode,
     StringLiteralNode,
     UnaryOpNode,
 } from "../../visitor";
 import { createDefaultEdge } from "../edgeFactory";
 import {
+    createColumnRangeNode,
     createDefaultNode,
     createFunctionNode,
     createNumNode,
     createRangeNode,
     createReferenceNode,
+    createRowRangeNode,
     createStringNode,
 } from "../nodeFactories";
 
@@ -120,6 +124,32 @@ export function visitAstNode(
             nodes.push(createdNode);
             edges.push(createdEdge);
             // Range node is a leaf - don't visit start/end as separate nodes
+            break;
+        }
+
+        case "ColumnRange": {
+            const colRangeNode = node as ColumnRangeNode;
+            const createdNode = createColumnRangeNode(
+                colRangeNode.startColumn,
+                colRangeNode.endColumn,
+                colRangeNode.sheet
+            );
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case "RowRange": {
+            const rowRangeNode = node as RowRangeNode;
+            const createdNode = createRowRangeNode(
+                rowRangeNode.startRow,
+                rowRangeNode.endRow,
+                rowRangeNode.sheet
+            );
+            const createdEdge = createDefaultEdge(createdNode.id, parentID);
+            nodes.push(createdNode);
+            edges.push(createdEdge);
             break;
         }
 

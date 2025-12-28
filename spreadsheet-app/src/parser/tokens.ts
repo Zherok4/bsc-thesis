@@ -24,6 +24,18 @@ export const String: TokenType = createToken({
 });
 
 // Cell and Range References
+// Column-only reference: A, $A, AA, $AA (letters NOT followed by digit, to distinguish from CellReference)
+export const ColumnReference: TokenType = createToken({
+    name: "ColumnReference",
+    pattern: /\$?[A-Za-z]+(?!\d)/,
+});
+
+// Row-only reference: 1, $1, 100 (digits NOT followed by letter, to distinguish from CellReference)
+export const RowReference: TokenType = createToken({
+    name: "RowReference",
+    pattern: /\$?\d+(?![A-Za-z])/,
+});
+
 export const CellReference: TokenType = createToken({
     name: "CellReference",
     pattern: /\$?[A-Za-z]+\$?\d+/,
@@ -90,6 +102,8 @@ export const allTokens = [
     // References
     SheetReference,
     FunctionName,
+    ColumnReference,
+    RowReference,
     CellReference,
 ];
 

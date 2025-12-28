@@ -1,5 +1,5 @@
 import { collapsedNodeFactory } from "./collapsedNodeFactory";
-import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, StringLiteralNode, UnaryOpNode } from "./visitor";
+import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, ColumnRangeNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, RowRangeNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
 export interface CollapsedNode {
     type: "CollapsedNode";
@@ -44,6 +44,16 @@ export function nodeToString(node: ASTNode): string {
             const prefix = rangeNode.sheet? `${rangeNode.sheet}!` : "";
             return `${prefix}${nodeToString(rangeNode.start)}:${nodeToString(rangeNode.end)}`;
         }
+        case "ColumnRange":{
+            const colRangeNode = node as ColumnRangeNode;
+            const prefix = colRangeNode.sheet ? `${colRangeNode.sheet}!` : "";
+            return `${prefix}${colRangeNode.startColumn}:${colRangeNode.endColumn}`;
+        }
+        case "RowRange":{
+            const rowRangeNode = node as RowRangeNode;
+            const prefix = rowRangeNode.sheet ? `${rowRangeNode.sheet}!` : "";
+            return `${prefix}${rowRangeNode.startRow}:${rowRangeNode.endRow}`;
+        }
         case "NumberLiteral":{
             const numNode = node as NumberLiteralNode;
             return `${numNode.value}`;
@@ -83,6 +93,8 @@ function extractImportantNodes(node: ASTNode): ASTNode[] {
         case "FunctionCall":
         case "CellReference":
         case "CellRange":
+        case "ColumnRange":
+        case "RowRange":
             // Important node found - return it
             return [node];
         case "NumberLiteral":
@@ -133,6 +145,14 @@ export function collapseNode(node: ASTNode): CollapsedNode {
         case "CellRange": {
             const rangeNode: CellRangeNode = node as CellRangeNode;
             return collapsedNodeFactory(rangeNode, "reference", []);
+        }
+        case "ColumnRange": {
+            const colRangeNode: ColumnRangeNode = node as ColumnRangeNode;
+            return collapsedNodeFactory(colRangeNode, "reference", []);
+        }
+        case "RowRange": {
+            const rowRangeNode: RowRangeNode = node as RowRangeNode;
+            return collapsedNodeFactory(rowRangeNode, "reference", []);
         }
         case "NumberLiteral": {
             const numNode: NumberLiteralNode = node as NumberLiteralNode;

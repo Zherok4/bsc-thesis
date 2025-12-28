@@ -24,17 +24,26 @@ interface ReferenceNodeData {
 }
 
 /**
- * Internal type for range node data
+ * Internal type for range node data (supports cell, column, and row ranges)
  */
 interface RangeNodeData {
-    startReference: string;
-    endReference: string;
+    rangeType?: "cell" | "column" | "row";
+    // Cell range properties
+    startReference?: string;
+    endReference?: string;
+    // Column range properties
+    startColumn?: string;
+    endColumn?: string;
+    // Row range properties
+    startRow?: number;
+    endRow?: number;
     sheet?: string;
 }
 
 /**
  * Generates a unique key for a reference or range node based on its address.
- * Format: "cell:Sheet1:A1" for cells, "range:Sheet1:A1:B10" for ranges
+ * Format: "cell:Sheet1:A1" for cells, "range:Sheet1:A1:B10" for cell ranges,
+ * "colrange:Sheet1:A:B" for column ranges, "rowrange:Sheet1:1:10" for row ranges
  *
  * @param node - The node to generate a key for
  * @param activeSheetName - Default sheet name when node doesn't specify one
@@ -49,7 +58,17 @@ function getReferenceKey(node: Node, activeSheetName: string): string | null {
     if (node.type === "RangeNode") {
         const data = node.data as unknown as RangeNodeData;
         const sheet = data.sheet || activeSheetName;
-        return `range:${sheet}:${data.startReference}:${data.endReference}`;
+        const rangeType = data.rangeType ?? "cell";
+
+        switch (rangeType) {
+            case "column":
+                return `colrange:${sheet}:${data.startColumn}:${data.endColumn}`;
+            case "row":
+                return `rowrange:${sheet}:${data.startRow}:${data.endRow}`;
+            case "cell":
+            default:
+                return `range:${sheet}:${data.startReference}:${data.endReference}`;
+        }
     }
     return null;
 }

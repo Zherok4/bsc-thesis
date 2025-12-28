@@ -3,18 +3,22 @@ import { nodeToString, type CollapsedNode } from "../../collapseAST";
 import type {
     CellRangeNode,
     CellReferenceNode,
+    ColumnRangeNode,
     FunctionCallNode,
     NumberLiteralNode,
+    RowRangeNode,
     StringLiteralNode,
 } from "../../visitor";
 import { createDefaultEdge } from "../edgeFactory";
 import {
+    createColumnRangeNode,
     createDefaultNode,
     createFunctionNode,
     createNumNode,
     createRangeNode,
     createReferenceNode,
     createResultNode,
+    createRowRangeNode,
     createStringNode,
 } from "../nodeFactories";
 
@@ -69,6 +73,40 @@ export function visitCollapsedNode(
                 startNode.reference,
                 endNode.reference,
                 rangeNode.sheet
+            );
+            const createdEdge = createDefaultEdge(
+                createdNode.id,
+                parentID,
+                handleID
+            );
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case "ColumnRange": {
+            const colRangeNode = collapsedNode.original as ColumnRangeNode;
+            const createdNode = createColumnRangeNode(
+                colRangeNode.startColumn,
+                colRangeNode.endColumn,
+                colRangeNode.sheet
+            );
+            const createdEdge = createDefaultEdge(
+                createdNode.id,
+                parentID,
+                handleID
+            );
+            nodes.push(createdNode);
+            edges.push(createdEdge);
+            break;
+        }
+
+        case "RowRange": {
+            const rowRangeNode = collapsedNode.original as RowRangeNode;
+            const createdNode = createRowRangeNode(
+                rowRangeNode.startRow,
+                rowRangeNode.endRow,
+                rowRangeNode.sheet
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,

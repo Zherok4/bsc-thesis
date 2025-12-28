@@ -2,7 +2,7 @@ import { CstParser } from "chevrotain";
 import type { CstNode } from "chevrotain";
 import { SpreadsheetFormulaLexer } from "./tokens";
 import { allTokens } from "./tokens";
-import { 
+import {
     WhiteSpace,
     Number,
     String,
@@ -26,6 +26,8 @@ import {
     Equal,
     SheetReference,
     FunctionName,
+    ColumnReference,
+    RowReference,
     CellReference,
  } from "./tokens";
 
@@ -160,11 +162,28 @@ class SpreadsheetFormulaParser extends CstParser {
 
         $.RULE("cellRange", () => {
             $.OPTION(() => $.CONSUME(SheetReference));
-            $.CONSUME(CellReference, { LABEL: "start" });
-            $.OPTION2(() => {
-                $.CONSUME(Colon);
-                $.CONSUME2(CellReference, { LABEL: "end" });
-            });
+            $.OR([
+                // Column range: A:B, $A:$B
+                { ALT: () => {
+                    $.CONSUME(ColumnReference, { LABEL: "startCol" });
+                    $.CONSUME(Colon);
+                    $.CONSUME2(ColumnReference, { LABEL: "endCol" });
+                }},
+                // Row range: 1:10, $1:$10
+                { ALT: () => {
+                    $.CONSUME(RowReference, { LABEL: "startRow" });
+                    $.CONSUME2(Colon);
+                    $.CONSUME2(RowReference, { LABEL: "endRow" });
+                }},
+                // Cell reference or cell range (existing): A1 or A1:B10
+                { ALT: () => {
+                    $.CONSUME(CellReference, { LABEL: "start" });
+                    $.OPTION2(() => {
+                        $.CONSUME3(Colon);
+                        $.CONSUME2(CellReference, { LABEL: "end" });
+                    });
+                }},
+            ]);
         });
 
         $.RULE("literal", () => {

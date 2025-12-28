@@ -75,7 +75,45 @@ export function createRangeNode(
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startReference, endReference, sheet },
+        data: { startReference, endReference, sheet, rangeType: "cell" },
+        type: "RangeNode",
+    };
+}
+
+/**
+ * Creates a column range node (e.g., "A:B", "$A:$C")
+ * @param startColumn - Start column (e.g., "A")
+ * @param endColumn - End column (e.g., "B")
+ * @param sheet - Optional sheet name
+ */
+export function createColumnRangeNode(
+    startColumn: string,
+    endColumn: string,
+    sheet?: string
+): Node {
+    return {
+        id: generateNodeId(),
+        position: { x: 0, y: 100 * getNodeIdCounter() },
+        data: { startColumn, endColumn, sheet, rangeType: "column" },
+        type: "RangeNode",
+    };
+}
+
+/**
+ * Creates a row range node (e.g., "1:10", "$1:$5")
+ * @param startRow - Start row number
+ * @param endRow - End row number
+ * @param sheet - Optional sheet name
+ */
+export function createRowRangeNode(
+    startRow: number,
+    endRow: number,
+    sheet?: string
+): Node {
+    return {
+        id: generateNodeId(),
+        position: { x: 0, y: 100 * getNodeIdCounter() },
+        data: { startRow, endRow, sheet, rangeType: "row" },
         type: "RangeNode",
     };
 }
