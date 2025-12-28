@@ -142,8 +142,9 @@
     opacity: 0.5;
 }
 
-/* Expand toggle button - reuse ReferenceNode pattern */
-.expand-toggle {
+/* Expand toggle button - scoped to conditional node contexts */
+.branch .expand-toggle,
+.ifs-value .expand-toggle {
     position: absolute;
     left: 4px;
     display: flex;
@@ -163,19 +164,22 @@
     line-height: 1;
 }
 
-.expand-toggle:hover {
+.branch .expand-toggle:hover,
+.ifs-value .expand-toggle:hover {
     background: var(--accent-light);
     border-color: var(--func-accent);
     color: var(--func-accent);
 }
 
-.expand-toggle.expanded {
+.branch .expand-toggle.expanded,
+.ifs-value .expand-toggle.expanded {
     background: var(--func-accent);
     border-color: var(--func-accent);
     color: white;
 }
 
-.expand-toggle.expanded:hover {
+.branch .expand-toggle.expanded:hover,
+.ifs-value .expand-toggle.expanded:hover {
     filter: brightness(1.1);
 }
 

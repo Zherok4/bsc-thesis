@@ -3,6 +3,7 @@
 /* Reference node specific styles */
 .ref-node {
   padding: 4px 4px;
+  min-width: 60px;
 }
 
 /* New horizontal layout */
@@ -15,6 +16,7 @@
 
 .ref-left {
   display: flex;
+  gap: 4px;
   align-items: center;
   padding-right: 4px;
   border-right: 1px solid var(--node-border);
@@ -72,7 +74,7 @@
 }
 
 /* Expand/collapse toggle button */
-.expand-toggle {
+.ref-node .expand-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,6 +84,7 @@
   margin-right: 4px;
   border: 1px solid var(--node-border);
   border-radius: 4px;
+  flex-shrink: 0;
   background: var(--node-bg);
   color: var(--text-secondary);
   font-size: 14px;
@@ -91,19 +94,19 @@
   line-height: 1;
 }
 
-.expand-toggle:hover {
+.ref-node .expand-toggle:hover {
   background: var(--sheet-accent-light);
   border-color: var(--sheet-accent);
   color: var(--sheet-accent);
 }
 
-.expand-toggle.expanded {
+.ref-node .expand-toggle.expanded {
   background: var(--sheet-accent);
   border-color: var(--sheet-accent);
   color: white;
 }
 
-.expand-toggle.expanded:hover {
+.ref-node .expand-toggle.expanded:hover {
   background: var(--sheet-accent);
   filter: brightness(1.1);
 }
