@@ -6,7 +6,7 @@
   color: black;
   border: 1px solid black;
   font-family: system-ui, sans-serif;
-  font-size: 14px;
+  font-size: var(--node-font-size);
 }
 
 .two-text-node p {

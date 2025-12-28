@@ -5,7 +5,7 @@
 
 .number-node .type-badge {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
+      font-size: var(--node-font-size-sm);
       font-weight: 500;
       color: var(--number-accent);
       background: var(--number-accent-light);
@@ -17,7 +17,7 @@
 
 .number-node .value-display {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 14px;
+      font-size: var(--node-font-size);
       font-weight: 500;
       color: var(--number-accent);
       background: var(--accent-light);

@@ -11,7 +11,7 @@
 
 .result-icon {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: var(--node-font-size);
   font-weight: 600;
   color: var(--func-accent);
   background: var(--func-accent-light);

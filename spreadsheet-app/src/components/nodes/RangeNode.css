@@ -33,7 +33,7 @@
 
 .range-ref {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: var(--node-font-size);
   font-weight: 600;
   color: var(--sheet-accent);
   background: var(--sheet-accent-light);
@@ -50,7 +50,7 @@
 
 .range-preview-value {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 16px;
+  font-size: var(--node-font-size-lg);
   font-weight: 500;
   color: var(--text-primary);
 }

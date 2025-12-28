@@ -2,7 +2,7 @@
 
 .string-node .type-badge {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
+      font-size: var(--node-font-size-sm);
       font-weight: 500;
       color: var(--string-accent);
       background: var(--string-accent-light);
@@ -15,7 +15,7 @@
 .string-node .value-display {
       position: relative;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 13px;
+      font-size: var(--node-font-size);
       color: var(--string-accent);
       background: var(--accent-light);
       padding: 6px 10px;

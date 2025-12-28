@@ -58,7 +58,7 @@
 
 .cell-ref {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: var(--node-font-size);
   font-weight: 600;
   color: var(--sheet-accent);
   background: var(--sheet-accent-light);
@@ -87,7 +87,7 @@
   flex-shrink: 0;
   background: var(--node-bg);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--node-font-size);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;

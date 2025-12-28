@@ -1,5 +1,10 @@
 /* Shared node styles and CSS variables */
 :root {
+  /* Typography */
+  --node-font-size-sm: 14px;
+  --node-font-size: 18px;
+  --node-font-size-lg: 20px;
+
   /* Base colors */
   --node-bg: #ffffff;
   --node-border: #e2e4e8;
@@ -68,7 +73,7 @@
 
 /* Node type label */
 .node-type {
-  font-size: 10px;
+  font-size: var(--node-font-size-sm);
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -106,7 +111,7 @@
 
 /* Sheet name label */
 .sheet-name {
-  font-size: 10px;
+  font-size: var(--node-font-size-sm);
   color: var(--text-tertiary);
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -171,7 +176,7 @@
 /* Unified result value styling for all nodes */
 .node-result-value {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: var(--node-font-size);
   font-weight: 500;
   color: var(--text-primary);
   padding-right: 4px;
