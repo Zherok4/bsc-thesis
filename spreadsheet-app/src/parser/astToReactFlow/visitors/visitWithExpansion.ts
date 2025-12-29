@@ -238,13 +238,13 @@ function handleNumberLiteral(_params: HandlerParams): void {
  * Handles StringLiteral nodes
  */
 function handleStringLiteral(params: HandlerParams): void {
-    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+    //const { collapsedNode, nodes, edges, parentID, handleID } = params;
 
-    const strLiteralNode = collapsedNode.original as StringLiteralNode;
-    const createdNode = createStringNode(strLiteralNode.value);
-    const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
-    nodes.push(createdNode);
-    edges.push(createdEdge);
+    //const strLiteralNode = collapsedNode.original as StringLiteralNode;
+    //const createdNode = createStringNode(strLiteralNode.value);
+    //const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
+    //nodes.push(createdNode);
+    //edges.push(createdEdge);
 }
 
 /**

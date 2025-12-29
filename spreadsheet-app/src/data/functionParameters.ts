@@ -7,7 +7,7 @@ type ParamGenerator = (index: number) => string;
 
 const FUNCTION_PARAMETERS: Record<string, ParamGenerator> = {
   // --- Logical Functions ---
-  "IF": (i) => ["logical_test", "value_if_true", "value_if_false"][i] ?? `arg${i}`,
+  "IF": (i) => ["condition", "then", "else"][i] ?? `arg${i}`,
   "IFERROR": (i) => ["value", "value_if_error"][i] ?? `arg${i}`,
   "IFNA": (i) => ["value", "value_if_na"][i] ?? `arg${i}`,
   "IFS": (i) => i % 2 === 0 ? `logical_test${i / 2 + 1}` : `value_if_true${(i + 1) / 2}`,
@@ -20,8 +20,8 @@ const FUNCTION_PARAMETERS: Record<string, ParamGenerator> = {
   "FALSE": () => `arg0`,
 
   // --- Lookup & Reference Functions ---
-  "VLOOKUP": (i) => ["lookup_value", "table_array", "col_index_num", "range_lookup"][i] ?? `arg${i}`,
-  "HLOOKUP": (i) => ["lookup_value", "table_array", "row_index_num", "range_lookup"][i] ?? `arg${i}`,
+  "VLOOKUP": (i) => ["value to lookup", "in table", "vertical offset", "range_lookup"][i] ?? `arg${i}`,
+  "HLOOKUP": (i) => ["value to lookup", "in table", "horizontal offset", "range_lookup"][i] ?? `arg${i}`,
   "INDEX": (i) => ["array", "row_num", "column_num"][i] ?? `arg${i}`,
   "MATCH": (i) => ["lookup_value", "lookup_array", "match_type"][i] ?? `arg${i}`,
   "CHOOSE": (i) => i === 0 ? "index_num" : `value${i}`,
@@ -67,7 +67,7 @@ const FUNCTION_PARAMETERS: Record<string, ParamGenerator> = {
   "COUNTA": (i) => `value${i + 1}`,
   "COUNTBLANK": (i) => `range${i + 1}`,
   "COUNTIF": (i) => ["range", "criteria"][i] ?? `arg${i}`,
-  "COUNTIFS": (i) => i % 2 === 0 ? `criteria_range${i / 2 + 1}` : `criteria${(i + 1) / 2}`,
+  "COUNTIFS": (i) => i % 2 === 0 ? `range${i / 2 + 1}` : `criteria for range${(i + 1) / 2}`,
   "MAX": (i) => `number${i + 1}`,
   "MIN": (i) => `number${i + 1}`,
   "MAXIFS": (i) => i === 0 ? "max_range" : (i % 2 === 1 ? `criteria_range${Math.ceil(i / 2)}` : `criteria${i / 2}`),
