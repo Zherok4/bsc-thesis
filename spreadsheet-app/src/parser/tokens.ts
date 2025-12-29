@@ -102,9 +102,9 @@ export const allTokens = [
     // References
     SheetReference,
     FunctionName,
+    CellReference,
     ColumnReference,
     RowReference,
-    CellReference,
 ];
 
 // TODO: create buildLexer based on config options i.e which seperator etc.
