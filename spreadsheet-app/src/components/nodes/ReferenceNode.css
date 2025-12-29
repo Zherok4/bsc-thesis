@@ -115,3 +115,23 @@
 .node-wrapper.expanded {
   box-shadow: 0 0 0 1px var(--sheet-accent), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Stacked label container */
+.ref-node .ref-label-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* Header label styling - eyebrow above reference */
+.ref-node .header-label {
+  font-size: var(--node-font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+}

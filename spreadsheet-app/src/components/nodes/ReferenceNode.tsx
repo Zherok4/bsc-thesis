@@ -4,6 +4,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type GraphEditModeContextValue } from "../context";
 import type { CellValue, SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
+import { useCellHeaders } from "../../hooks";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -52,6 +53,13 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             return hfInstance.getCellValue(simpleCellAddress);
         }
     }, [simpleCellAddress, hfInstance]);
+
+    const { label: headerLabel } = useCellHeaders(
+        hfInstance,
+        sheetId,
+        simpleCellAddress?.row ?? 0,
+        simpleCellAddress?.col ?? 0
+    );
 
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -134,11 +142,14 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                                 {isExpanded ? '−' : '+'}
                             </button>
                         )}
-                        <div
-                            className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
-                            onDoubleClick={e => handleDoubleClick(e)}
-                            title="double click to change Reference">
-                            {internalReference}
+                        <div className="ref-label-stack">
+                            {headerLabel && <span className="header-label">{headerLabel}</span>}
+                            <div
+                                className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
+                                onDoubleClick={e => handleDoubleClick(e)}
+                                title={headerLabel || "double click to change Reference"}>
+                                {internalReference}
+                            </div>
                         </div>
                     </div>
                     <div className="ref-right">

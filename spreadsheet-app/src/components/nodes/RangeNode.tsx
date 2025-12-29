@@ -4,6 +4,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { type CellValue, type SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
+import { useRangeHeaders } from "../../hooks";
 import "./RangeNode.css"
 
 /**
@@ -103,6 +104,16 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
         return undefined;
     }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd, hfInstance, sheetId]);
 
+    // Get header labels for cell ranges
+    const { label: headerLabel } = useRangeHeaders(
+        hfInstance,
+        sheetId,
+        simpleCellAddressStart?.row ?? 0,
+        simpleCellAddressStart?.col ?? 0,
+        simpleCellAddressEnd?.row ?? 0,
+        simpleCellAddressEnd?.col ?? 0
+    );
+
     // Click handler - scrolls to the range location
     const handleClick = useCallback((e: React.MouseEvent): void => {
         e.stopPropagation();
@@ -189,11 +200,16 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
             >
                 <div className="range-content">
                     <div className="range-left">
-                        <span className="range-ref">
-                            <span>{rangeLabel.start}</span>
-                            <span className="range-separator">:</span>
-                            <span>{rangeLabel.end}</span>
-                        </span>
+                        <div className="range-label-stack">
+                            {rangeType === "cell" && headerLabel && (
+                                <span className="header-label" title={headerLabel}>{headerLabel}</span>
+                            )}
+                            <span className="range-ref">
+                                <span>{rangeLabel.start}</span>
+                                <span className="range-separator">:</span>
+                                <span>{rangeLabel.end}</span>
+                            </span>
+                        </div>
                     </div>
                     <div className="range-right">
                         <span className="node-result-value">{valueDisplay}</span>

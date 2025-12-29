@@ -59,3 +59,23 @@
 .range-node .selected-indicator {
   border: 1.5px solid var(--sheet-accent);
 }
+
+/* Stacked label container */
+.range-node .range-label-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* Header label styling - eyebrow above range reference */
+.range-node .header-label {
+  font-size: var(--node-font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+}
