@@ -149,8 +149,12 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
         scrollToCell: (row: number, col: number) => {
             const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
             const hotInstance = hotTableRef?.hotInstance;
+            // using heuristic that most of the time the important semantic naming is at top of a range / cell scroll one column and row back
+            
             if (hotInstance) {
-                hotInstance.scrollViewportTo({row, col, verticalSnap: 'top', horizontalSnap: 'start'});
+                const targetRow = Math.max(0, row - 1);
+                const targetCol = Math.max(0, col - 1);
+                hotInstance.scrollViewportTo({row: targetRow, col: targetCol, verticalSnap: 'top', horizontalSnap: 'start'});
             }
         },
         highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => {
