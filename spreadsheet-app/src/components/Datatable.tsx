@@ -299,8 +299,9 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
                 }}
                 minCols = {100}
                 contextMenu={true}
-                autoRowSize={true}
-                autoColumnSize={true}
+                // AutoRow / Column ==> lead to critical error ==> to prevent this we have to fix that ever sheet has same dimensions
+                //autoRowSize={true}
+                //autoColumnSize={true}
                 licenseKey="non-commercial-and-evaluation"
                 outsideClickDeselects={false}
                 // HOOKS / EVENTS
