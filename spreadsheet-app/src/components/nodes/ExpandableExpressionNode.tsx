@@ -20,6 +20,8 @@ export type ExpandableExpressionNode = Node<
     nodeId: string,
     variables?: ExpressionVariable[],
     isConnectedToFunctionArg?: boolean,
+    /** Sheet name where this expression resides */
+    sheet: string,
 },
 'ExpandableExpressionNode'
 >;
@@ -29,12 +31,10 @@ export type ExpandableExpressionNode = Node<
  * expansion via double-click to show additional details.
  */
 export default function ExpandableExpressionNodeComponent(props: NodeProps<ExpandableExpressionNode>): JSX.Element {
-    const { hfInstance, activeSheetName } = useHyperFormula();
-    const { formula, isExpanded, onToggleExpand, nodeId, variables = [] } = props.data;
+    const { hfInstance } = useHyperFormula();
+    const { formula, isExpanded, onToggleExpand, nodeId, variables = [], sheet } = props.data;
 
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+    const residingSheet = sheet;
 
     const evaluatedOutput = useMemo(
         () => evaluateFormula(formula, hfInstance, residingSheet),

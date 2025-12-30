@@ -26,6 +26,8 @@ export type ConditionalNode = Node<
     branchExpansionIds: string[];
     /** Set of expanded branch indices */
     expandedBranchIndices: number[];
+    /** Sheet name where this conditional resides */
+    sheet: string;
 },
 'ConditionalNode'
 >;
@@ -71,9 +73,10 @@ export default function ConditionalNodeComponent({
         onToggleBranchExpand,
         branchExpansionIds,
         expandedBranchIndices,
+        sheet,
     }
 }: NodeProps<ConditionalNode>): JSX.Element {
-    const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
     const expandedSet = useMemo(() => new Set(expandedBranchIndices), [expandedBranchIndices]);
 
     if (funName === 'IF') {
@@ -81,7 +84,7 @@ export default function ConditionalNodeComponent({
             <IfModeContent
                 argFormulas={argFormulas}
                 hfInstance={hfInstance}
-                activeSheetName={activeSheetName}
+                sheet={sheet}
                 onToggleBranchExpand={onToggleBranchExpand}
                 branchExpansionIds={branchExpansionIds}
                 expandedSet={expandedSet}
@@ -94,7 +97,7 @@ export default function ConditionalNodeComponent({
         <IfsModeContent
             argFormulas={argFormulas}
             hfInstance={hfInstance}
-            activeSheetName={activeSheetName}
+            sheet={sheet}
             onToggleBranchExpand={onToggleBranchExpand}
             branchExpansionIds={branchExpansionIds}
             expandedSet={expandedSet}
@@ -105,7 +108,7 @@ export default function ConditionalNodeComponent({
 interface IfModeProps {
     argFormulas: string[];
     hfInstance: HyperFormulaContextValue['hfInstance'];
-    activeSheetName: string;
+    sheet: string;
     onToggleBranchExpand: (branchId: string) => void;
     branchExpansionIds: string[];
     expandedSet: Set<number>;
@@ -117,15 +120,13 @@ interface IfModeProps {
 function IfModeContent({
     argFormulas,
     hfInstance,
-    activeSheetName,
+    sheet,
     onToggleBranchExpand,
     branchExpansionIds,
     expandedSet,
 }: IfModeProps): JSX.Element {
 
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+    const residingSheet = sheet;
 
     const conditionResult = useMemo(
         () => evaluateFormula(argFormulas[0], hfInstance, residingSheet),
@@ -260,7 +261,7 @@ function IfModeContent({
 interface IfsModeProps {
     argFormulas: string[];
     hfInstance: HyperFormulaContextValue['hfInstance'];
-    activeSheetName: string;
+    sheet: string;
     onToggleBranchExpand: (branchId: string) => void;
     branchExpansionIds: string[];
     expandedSet: Set<number>;
@@ -272,7 +273,7 @@ interface IfsModeProps {
 function IfsModeContent({
     argFormulas,
     hfInstance,
-    activeSheetName,
+    sheet,
     onToggleBranchExpand,
     branchExpansionIds,
     expandedSet,
@@ -291,9 +292,7 @@ function IfsModeContent({
         return result;
     }, [argFormulas]);
 
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+    const residingSheet = sheet;
 
     // Evaluate conditions to find first truthy
     const conditionResults = useMemo(() => {

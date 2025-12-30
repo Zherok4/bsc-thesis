@@ -65,12 +65,12 @@ export function createReferenceNode(
  * Creates a cell range node
  * @param startReference - Start of the range (e.g., "A1")
  * @param endReference - End of the range (e.g., "B10")
- * @param sheet - Optional sheet name
+ * @param sheet - Sheet name where this range resides
  */
 export function createRangeNode(
     startReference: string,
     endReference: string,
-    sheet?: string
+    sheet: string
 ): Node {
     return {
         id: generateNodeId(),
@@ -84,12 +84,12 @@ export function createRangeNode(
  * Creates a column range node (e.g., "A:B", "$A:$C")
  * @param startColumn - Start column (e.g., "A")
  * @param endColumn - End column (e.g., "B")
- * @param sheet - Optional sheet name
+ * @param sheet - Sheet name where this range resides
  */
 export function createColumnRangeNode(
     startColumn: string,
     endColumn: string,
-    sheet?: string
+    sheet: string
 ): Node {
     return {
         id: generateNodeId(),
@@ -103,12 +103,12 @@ export function createColumnRangeNode(
  * Creates a row range node (e.g., "1:10", "$1:$5")
  * @param startRow - Start row number
  * @param endRow - End row number
- * @param sheet - Optional sheet name
+ * @param sheet - Sheet name where this range resides
  */
 export function createRowRangeNode(
     startRow: number,
     endRow: number,
-    sheet?: string
+    sheet: string
 ): Node {
     return {
         id: generateNodeId(),
@@ -149,16 +149,18 @@ export function createStringNode(value: string): Node {
  * @param funName - Name of the function (e.g., "SUM", "AVERAGE")
  * @param argFormulas - Array of formula strings for each argument
  * @param funFormula - The complete function formula string
+ * @param sheet - The sheet name where this function resides
  */
 export function createFunctionNode(
     funName: string,
     argFormulas: string[],
-    funFormula: string
+    funFormula: string,
+    sheet: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { funName, argFormulas, funFormula },
+        data: { funName, argFormulas, funFormula, sheet },
         type: "FunctionNode",
     };
 }
@@ -183,12 +185,14 @@ export function createResultNode(formula: string, sheet: string): Node {
  * @param isExpanded - Whether the node is currently expanded
  * @param onToggleExpand - Callback to toggle expansion state
  * @param isConnectedToFunctionArg - Whether this node is connected to a function argument handle
+ * @param sheet - The sheet name where this expression resides
  */
 export function createExpandableExpressionNode(
     formula: string,
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
-    isConnectedToFunctionArg: boolean = false
+    isConnectedToFunctionArg: boolean = false,
+    sheet: string = ""
 ): Node {
     const nodeId = generateNodeId();
     return {
@@ -200,6 +204,7 @@ export function createExpandableExpressionNode(
             onToggleExpand,
             nodeId,
             isConnectedToFunctionArg,
+            sheet,
         },
         type: "ExpandableExpressionNode",
     };
@@ -242,12 +247,14 @@ interface ConditionalExpansionConfig {
  * @param argFormulas - Array of formula strings for each argument
  * @param funFormula - The complete function formula string
  * @param expansionConfig - Configuration for branch expansion
+ * @param sheet - The sheet name where this conditional resides
  */
 export function createConditionalNode(
     funName: 'IF' | 'IFS',
     argFormulas: string[],
     funFormula: string,
-    expansionConfig: ConditionalExpansionConfig
+    expansionConfig: ConditionalExpansionConfig,
+    sheet: string
 ): Node {
     return {
         id: generateNodeId(),
@@ -259,6 +266,7 @@ export function createConditionalNode(
             onToggleBranchExpand: expansionConfig.onToggleBranchExpand,
             branchExpansionIds: expansionConfig.branchExpansionIds,
             expandedBranchIndices: expansionConfig.expandedBranchIndices,
+            sheet,
         },
         type: "ConditionalNode",
     };

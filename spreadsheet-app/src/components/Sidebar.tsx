@@ -85,7 +85,6 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
 
   /** The AST that is currently synced/displayed in the graph */
   const [syncedAst, setSyncedAst] = useState<ASTNode | undefined>(ast);
-
   /** The cell position that is currently synced/displayed in the graph */
   const [syncedCell, setSyncedCell] = useState<{row: number, col: number, sheet: string} | null>(
     selectedCell ? { row: selectedCell.row, col: selectedCell.col, sheet: activeSheetName } : null
@@ -100,7 +99,12 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
     const sheetId = hfInstance.getSheetId(syncedCell.sheet);
     if (sheetId === undefined) return null;
     const address = { sheet: sheetId, row: syncedCell.row, col: syncedCell.col };
-    return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+    try {
+      return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+    } catch {
+      // Cell address out of bounds for this sheet
+      return null;
+    }
   }, [syncedCell, hfInstance]);
 
   /** The cell address to sync to, shown in the sync button (only if cell has a formula) */
@@ -109,7 +113,12 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
     const sheetId = hfInstance.getSheetId(activeSheetName);
     if (sheetId === undefined) return null;
     const address = { sheet: sheetId, row: selectedCell.row, col: selectedCell.col };
-    return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+    try {
+      return hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? null;
+    } catch {
+      // Cell address out of bounds for this sheet
+      return null;
+    }
   }, [hasPendingSync, selectedCell, ast, hfInstance, activeSheetName]);
 
   /** Sync the graph to the current cell's AST */
@@ -152,17 +161,21 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
 
   const buildGraph = useCallback((tree: CollapsedNode, dimensions?: NodeDimensionsMap) => {
     resetNodeIdCounter();
+    /** The graphSheetName is the Sheet where Graph resides */
+    const graphSheetName = syncedCell?.sheet || activeSheetName;
+
     const context: ExpansionContext = {
       expandedNodeIds,
       onToggleExpand: handleToggleExpand,
       hfInstance,
-      activeSheetName,
+      activeSheetName: graphSheetName,
       isEditModeActive,
       setEditMode,
     };
+
     const graph = toGraphWithExpansion(tree, context, mergeConfig);
     return applyDagreLayout(graph, dimensions);
-  }, [expandedNodeIds, handleToggleExpand, hfInstance, activeSheetName, mergeConfig]);
+  }, [expandedNodeIds, handleToggleExpand, hfInstance, mergeConfig, syncedCell?.sheet]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     

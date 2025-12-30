@@ -11,6 +11,8 @@ export type FunctionNode = Node<
     funName: string,
     argFormulas: string[],
     funFormula: string,
+    /** Sheet name where this function resides */
+    sheet: string,
 },
 'FunctionNode'
 >;
@@ -35,12 +37,10 @@ function getConstantValue(formula: string): string | null {
     return null;
 }
 
-export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula}}: NodeProps<FunctionNode>): JSX.Element {
-    const { hfInstance, activeSheetName }: HyperFormulaContextValue = useHyperFormula();
+export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula, sheet}}: NodeProps<FunctionNode>): JSX.Element {
+    const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
 
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+    const residingSheet = sheet;
 
     const output: string = useMemo<string>(
         () => evaluateFormula(funFormula, hfInstance, residingSheet),

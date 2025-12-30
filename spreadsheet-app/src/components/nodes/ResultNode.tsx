@@ -18,7 +18,7 @@ export default function ResultNodeComponent({data: {formula, sheet}}: NodeProps<
 
     const output = useMemo<string>(
         () => evaluateFormula(formula, hfInstance, sheet),
-        [formula, hfInstance]
+        [formula, hfInstance, sheet]
     );
 
     return (

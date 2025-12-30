@@ -113,6 +113,9 @@ function App() {
    */
   const handleSheetChange = useCallback((sheetName: string) => {
     setActiveSheetName(sheetName);
+    // Clear selection to prevent accessing non-existent cells on the new sheet
+    setSelectedCell(null);
+    setSelectedCellValue('');
   }, []);
 
   /** scrollToCell is triggered if:

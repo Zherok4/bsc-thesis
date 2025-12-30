@@ -74,11 +74,14 @@ function handleCellReference(params: HandlerParams): void {
     const refNode = collapsedNode.original as CellReferenceNode;
     const cellId = `${refNode.sheet || context.activeSheetName}:${refNode.reference}`;
 
+    // Resolve sheet name - use explicit sheet from AST or fall back to context's active sheet
+    const resolvedSheet = refNode.sheet || context.activeSheetName;
+
     // Check for circular reference
     const visitedCells = context.visitedCells || new Set<string>();
     if (visitedCells.has(cellId)) {
         // Circular reference detected - create non-expandable node
-        const createdNode = createReferenceNode(refNode.reference, refNode.sheet);
+        const createdNode = createReferenceNode(refNode.reference, resolvedSheet);
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -98,11 +101,12 @@ function handleCellReference(params: HandlerParams): void {
             refNode,
             cellId,
             cellFormula,
-            visitedCells
+            visitedCells,
+            resolvedSheet
         );
     } else {
         // No formula - create regular reference node
-        const createdNode = createReferenceNode(refNode.reference, refNode.sheet);
+        const createdNode = createReferenceNode(refNode.reference, resolvedSheet);
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -117,7 +121,8 @@ function handleCellReferenceWithFormula(
     refNode: CellReferenceNode,
     cellId: string,
     cellFormula: CollapsedNode,
-    visitedCells: Set<string>
+    visitedCells: Set<string>,
+    resolvedSheet: string
 ): void {
     const { nodes, edges, parentID, context, handleID, collapsedNodeId } = params;
 
@@ -128,7 +133,7 @@ function handleCellReferenceWithFormula(
     // Create the cell reference node with expansion support
     const refCreatedNode = createReferenceNode(
         refNode.reference,
-        refNode.sheet,
+        resolvedSheet,
         true,
         {
             isExpanded,
@@ -168,7 +173,7 @@ function handleCellReferenceWithFormula(
  * Handles CellRange nodes
  */
 function handleCellRange(params: HandlerParams): void {
-    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+    const { collapsedNode, nodes, edges, parentID, handleID, context } = params;
 
     const rangeNode = collapsedNode.original as CellRangeNode;
     const startNode = rangeNode.start;
@@ -177,7 +182,7 @@ function handleCellRange(params: HandlerParams): void {
     const createdNode = createRangeNode(
         startNode.reference,
         endNode.reference,
-        rangeNode.sheet
+        rangeNode.sheet || context.activeSheetName
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -188,14 +193,14 @@ function handleCellRange(params: HandlerParams): void {
  * Handles ColumnRange nodes (e.g., A:B, $A:$C)
  */
 function handleColumnRange(params: HandlerParams): void {
-    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+    const { collapsedNode, nodes, edges, parentID, handleID, context } = params;
 
     const colRangeNode = collapsedNode.original as ColumnRangeNode;
 
     const createdNode = createColumnRangeNode(
         colRangeNode.startColumn,
         colRangeNode.endColumn,
-        colRangeNode.sheet
+        colRangeNode.sheet || context.activeSheetName
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -206,14 +211,14 @@ function handleColumnRange(params: HandlerParams): void {
  * Handles RowRange nodes (e.g., 1:10, $1:$5)
  */
 function handleRowRange(params: HandlerParams): void {
-    const { collapsedNode, nodes, edges, parentID, handleID } = params;
+    const { collapsedNode, nodes, edges, parentID, handleID, context } = params;
 
     const rowRangeNode = collapsedNode.original as RowRangeNode;
 
     const createdNode = createRowRangeNode(
         rowRangeNode.startRow,
         rowRangeNode.endRow,
-        rowRangeNode.sheet
+        rowRangeNode.sheet || context.activeSheetName
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -277,7 +282,7 @@ function handleGenericFunctionCall(params: HandlerParams): void {
     const funFormula = nodeToString(funNode);
     const argFormulas = collapsedNode.children.map((child) => child.label);
 
-    const createdNode = createFunctionNode(funNode.name, argFormulas, funFormula);
+    const createdNode = createFunctionNode(funNode.name, argFormulas, funFormula, context.activeSheetName);
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);
@@ -338,16 +343,25 @@ function handleConditionalFunctionCall(
     if (funName === 'IF') {
         // IF: evaluate the first argument (condition)
         const conditionFormula = argFormulas[0];
-        const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
-        activeBranchIndex = isTruthyCondition(conditionResult) ? 0 : 1;
+        try {
+            const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
+            activeBranchIndex = isTruthyCondition(conditionResult) ? 0 : 1;
+        } catch {
+            // Cell reference out of bounds - default to showing true branch
+            activeBranchIndex = 0;
+        }
     } else {
         // IFS: find the first truthy condition
         for (let i = 0; i < branchCount; i++) {
             const conditionFormula = argFormulas[i * 2]; // conditions are at even indices
-            const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
-            if (isTruthyCondition(conditionResult)) {
-                activeBranchIndex = i;
-                break;
+            try {
+                const conditionResult = evaluateFormula(conditionFormula, context.hfInstance, context.activeSheetName);
+                if (isTruthyCondition(conditionResult)) {
+                    activeBranchIndex = i;
+                    break;
+                }
+            } catch {
+                // Cell reference out of bounds - continue checking other conditions
             }
         }
     }
@@ -356,7 +370,7 @@ function handleConditionalFunctionCall(
         onToggleBranchExpand: context.onToggleExpand,
         branchExpansionIds,
         expandedBranchIndices,
-    });
+    }, context.activeSheetName);
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);
@@ -543,7 +557,8 @@ function handleExpandableExpression(params: HandlerParams): void {
             collapsedNode.label,
             isExpanded,
             context.onToggleExpand,
-            isConnectedToFunctionArg
+            isConnectedToFunctionArg,
+            context.activeSheetName
         );
         // Override the nodeId in data to use our stable collapsed ID
         createdNode.data.nodeId = collapsedNodeId;

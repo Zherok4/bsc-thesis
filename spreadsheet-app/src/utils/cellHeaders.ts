@@ -46,7 +46,13 @@ export function findColumnHeader(
 ): string | null {
     // Start from the cell directly above the target
     for (let r = row - 1; r >= 0; r--) {
-        const value = hfInstance.getCellValue({ sheet: sheetId, row: r, col });
+        let value: CellValue;
+        try {
+            value = hfInstance.getCellValue({ sheet: sheetId, row: r, col });
+        } catch {
+            // Cell outside sheet bounds - no header available
+            return null;
+        }
 
         // If we hit an empty cell, stop searching (no continuous header chain)
         if (isEmpty(value)) {
@@ -82,7 +88,13 @@ export function findRowHeader(
 ): string | null {
     // Start from the cell directly to the left of the target
     for (let c = col - 1; c >= 0; c--) {
-        const value = hfInstance.getCellValue({ sheet: sheetId, row, col: c });
+        let value: CellValue;
+        try {
+            value = hfInstance.getCellValue({ sheet: sheetId, row, col: c });
+        } catch {
+            // Cell outside sheet bounds - no header available
+            return null;
+        }
 
         // If we hit an empty cell, stop searching
         if (isEmpty(value)) {

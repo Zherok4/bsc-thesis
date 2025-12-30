@@ -26,8 +26,8 @@ export type RangeNode = Node<
     startRow?: number;
     /** End row for row ranges */
     endRow?: number;
-    /** Optional sheet name */
-    sheet?: string;
+    /** Sheet name where this range resides */
+    sheet: string;
 },
 'RangeNode'
 >;
@@ -36,14 +36,10 @@ export type RangeNode = Node<
  * Component that renders cell ranges, column ranges, and row ranges
  */
 export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.Element {
-    const { hfInstance, activeSheetName, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
 
-    const sheet = data.sheet;
     const rangeType = data.rangeType ?? "cell"; // Default to cell for backwards compatibility
-
-    const residingSheet = useMemo<string>(() => {
-        return activeSheetName;
-    }, []);
+    const residingSheet = data.sheet;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -95,7 +91,11 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
             const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
             for (let row = startRow, valueCount = 0; row <= endRow && valueCount < VALUECAP; row++) {
                 for (let col = startCol; col <= endCol && valueCount < VALUECAP; col++) {
-                    values.push(hfInstance.getCellValue({ col, row, sheet: sheetId || 0 }));
+                    try {
+                        values.push(hfInstance.getCellValue({ col, row, sheet: sheetId || 0 }));
+                    } catch {
+                        values.push('#REF!');
+                    }
                     valueCount++;
                 }
             }

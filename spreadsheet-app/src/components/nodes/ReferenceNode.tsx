@@ -10,7 +10,7 @@ import "./ReferenceNode.css"
 export type ReferenceNode = Node<
 {
     reference: string,
-    sheet?: string,
+    sheet: string,
     hasFormula?: boolean,
     /** Whether this node is currently expanded (only relevant when hasFormula is true) */
     isExpanded?: boolean,
@@ -28,10 +28,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
-
-    const residingSheet = useMemo<string>(() => {
-        return sheet || activeSheetName;
-    }, []);
+    const residingSheet = sheet;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -49,8 +46,11 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const cellValue = useMemo<CellValue | undefined>(() => {
         if (!simpleCellAddress) {
             return undefined;
-        } else {
+        }
+        try {
             return hfInstance.getCellValue(simpleCellAddress);
+        } catch {
+            return '#REF!';
         }
     }, [simpleCellAddress, hfInstance]);
 
@@ -60,6 +60,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         simpleCellAddress?.row ?? 0,
         simpleCellAddress?.col ?? 0
     );
+    
 
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
