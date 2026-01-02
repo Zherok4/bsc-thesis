@@ -164,7 +164,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`} style={sheetColorStyle}>
             <div className="selected-indicator"></div>
             <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
-                <div className="ref-content">
+                <div className="ref-content" title={headerLabel}>
                     <div className="ref-left">
                         {isExpandable && (
                             <button
@@ -180,7 +180,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                             <div
                                 className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
                                 onDoubleClick={e => handleDoubleClick(e)}
-                                title={headerLabel || "double click to change Reference"}>
+                                title={"double click to change Reference"}>
                                 {internalReference}
                             </div>
                         </div>
