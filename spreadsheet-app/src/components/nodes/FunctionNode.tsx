@@ -5,6 +5,19 @@ import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { evaluateFormula } from "../../utils";
 import './FunctionNode.css';
 import { getParameterName } from "../../data/functionParameters";
+import EditableConstant, { type ConstantType } from "./EditableConstant";
+
+/**
+ * Information about a constant argument for editing purposes
+ */
+export interface ConstantArgInfo {
+    /** The AST node ID of the constant */
+    astNodeId: string;
+    /** The type of the constant (number or string) */
+    type: ConstantType;
+    /** The raw value (number for numbers, unquoted string for strings) */
+    rawValue: string | number;
+}
 
 export type FunctionNode = Node<
 {
@@ -13,6 +26,8 @@ export type FunctionNode = Node<
     funFormula: string,
     /** Sheet name where this function resides */
     sheet: string,
+    /** Map of argument index to constant info (only present for constant arguments) */
+    constantArgs?: Record<number, ConstantArgInfo>,
 },
 'FunctionNode'
 >;
@@ -37,7 +52,7 @@ function getConstantValue(formula: string): string | null {
     return null;
 }
 
-export default function FunctionNodeComponent({data: {funName, argFormulas, funFormula, sheet}}: NodeProps<FunctionNode>): JSX.Element {
+export default function FunctionNodeComponent({id, data: {funName, argFormulas, funFormula, sheet, constantArgs}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
 
     const residingSheet = sheet;
@@ -50,24 +65,25 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
     return (
         <div className="node-wrapper">
             <div className="selected-indicator"></div>
-            
+
             <div className="func-node">
                 <div className="node-header">
                     <div className="header-left">
                     <span className="func-symbol">ƒ|</span>
                     <span className="func-name">{funName}</span>
                     </div>
-                    
+
                 </div>
-            
+
                 <div className="node-body">
-                    
-                    
+
+
                     <div className="args">
                         <span className="args-label">{argFormulas.length > 0 && "Arguments"}</span>
                         {
                             argFormulas.map((formula, idx) => {
                                 const constantValue = getConstantValue(formula);
+                                const constantInfo = constantArgs?.[idx];
                                 return (
                                     <div key={idx} className="arg">
                                         <Handle
@@ -77,7 +93,17 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                                             className="arg-handle"
                                         />
                                         <span className="arg-label">{getParameterName(funName, idx)}</span>
-                                        {constantValue && (
+                                        {constantValue && constantInfo && (
+                                            <EditableConstant
+                                                displayValue={constantValue}
+                                                rawValue={constantInfo.rawValue}
+                                                type={constantInfo.type}
+                                                astNodeId={constantInfo.astNodeId}
+                                                editId={`${id}-arg-${idx}`}
+                                                className="arg-value"
+                                            />
+                                        )}
+                                        {constantValue && !constantInfo && (
                                             <span className="arg-value">{constantValue}</span>
                                         )}
                                     </div>
@@ -85,7 +111,7 @@ export default function FunctionNodeComponent({data: {funName, argFormulas, funF
                             })
                         }
                     </div>
-                    
+
                     <div className="result">
                         <span className="result-label">Result</span>
                         <span className="node-result-value">{output || '—'}</span>

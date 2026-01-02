@@ -29,6 +29,7 @@
 
   /* Edit mode */
   --edit-mode-border: #f59e0b;
+  --edit-mode-shadow: rgba(245, 158, 11, 0.2);
   --preview-mode-border: #1a42e8;
 }
 
@@ -120,10 +121,10 @@
 .react-flow__handle {
   width: 7px;
   height: 7px;
-  
+
   border: 1.5px solid var(--handle-border);
   border-radius: 50%;
-  z-index: 10;
+  z-index: 1;
   transition: all 0.2s ease;
 }
 

@@ -47,7 +47,7 @@
 .arg {
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     padding: 5px 8px;
     background: var(--accent-light);
@@ -71,6 +71,19 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: var(--node-font-size);
     color: var(--text-primary);
+}
+
+/* Editable constant wrapper in arg - constrain width */
+.arg .editable-constant-wrapper {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.arg .editable-constant-wrapper.default {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 100%;
 }
 
 .result {

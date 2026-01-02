@@ -1,5 +1,7 @@
 import type { Node } from "@xyflow/react";
 import { generateNodeId, getNodeIdCounter } from "./idGenerator";
+import type { ConstantArgInfo } from "../../components/nodes/FunctionNode";
+import type { ConstantOperandInfo } from "../../components/nodes/BinOpNode";
 
 /**
  * Factory functions for creating ReactFlow nodes.
@@ -153,17 +155,19 @@ export function createStringNode(value: string): Node {
  * @param argFormulas - Array of formula strings for each argument
  * @param funFormula - The complete function formula string
  * @param sheet - The sheet name where this function resides
+ * @param constantArgs - Optional map of argument index to constant info for editable constants
  */
 export function createFunctionNode(
     funName: string,
     argFormulas: string[],
     funFormula: string,
-    sheet: string
+    sheet: string,
+    constantArgs?: Record<number, ConstantArgInfo>
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { funName, argFormulas, funFormula, sheet },
+        data: { funName, argFormulas, funFormula, sheet, constantArgs },
         type: "FunctionNode",
     };
 }
@@ -235,16 +239,20 @@ export function createExpandableExpressionNode(
  * @param operator - The operator symbol (e.g., "+", "-", "*", "/")
  * @param leftConstant - Optional constant value for left operand
  * @param rightConstant - Optional constant value for right operand
+ * @param leftConstantInfo - Optional info about the left constant for editing
+ * @param rightConstantInfo - Optional info about the right constant for editing
  */
 export function createBinOpNode(
     operator: string,
     leftConstant?: string,
-    rightConstant?: string
+    rightConstant?: string,
+    leftConstantInfo?: ConstantOperandInfo,
+    rightConstantInfo?: ConstantOperandInfo
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { operator, leftConstant, rightConstant },
+        data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo },
         type: "BinOpNode",
     };
 }

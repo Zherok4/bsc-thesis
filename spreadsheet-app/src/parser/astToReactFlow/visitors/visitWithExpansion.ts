@@ -295,7 +295,26 @@ function handleGenericFunctionCall(params: HandlerParams): void {
     const funFormula = nodeToString(funNode);
     const argFormulas = collapsedNode.children.map((child) => child.label);
 
-    const createdNode = createFunctionNode(funNode.name, argFormulas, funFormula, context.activeSheetName);
+    // Build constant args info for editable constants
+    const constantArgs: Record<number, { astNodeId: string; type: 'number' | 'string'; rawValue: string | number }> = {};
+    funNode.arguments.forEach((arg, idx) => {
+        const info = getConstantInfo(arg);
+        if (info) {
+            constantArgs[idx] = {
+                astNodeId: info.astNodeId,
+                type: info.type,
+                rawValue: info.rawValue,
+            };
+        }
+    });
+
+    const createdNode = createFunctionNode(
+        funNode.name,
+        argFormulas,
+        funFormula,
+        context.activeSheetName,
+        Object.keys(constantArgs).length > 0 ? constantArgs : undefined
+    );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);
@@ -487,15 +506,41 @@ function handleConditionalFunctionCall(
 }
 
 /**
- * Gets the constant value from an AST node if it's a literal.
+ * Information about a constant for editing
+ */
+interface ConstantInfo {
+    /** The display value (may include quotes for strings) */
+    displayValue: string;
+    /** The raw value (number for numbers, unquoted string for strings) */
+    rawValue: string | number;
+    /** The type of constant */
+    type: 'number' | 'string';
+    /** The AST node ID */
+    astNodeId: string;
+}
+
+/**
+ * Gets the constant info from an AST node if it's a literal.
  * Returns undefined for non-constant nodes.
  */
-function getConstantValue(node: ASTNode): string | undefined {
+function getConstantInfo(node: ASTNode): ConstantInfo | undefined {
     if (node.type === "NumberLiteral") {
-        return String((node as NumberLiteralNode).value);
+        const numNode = node as NumberLiteralNode;
+        return {
+            displayValue: String(numNode.value),
+            rawValue: numNode.value,
+            type: 'number',
+            astNodeId: numNode.nodeId,
+        };
     }
     if (node.type === "StringLiteral") {
-        return `"${(node as StringLiteralNode).value}"`;
+        const strNode = node as StringLiteralNode;
+        return {
+            displayValue: `"${strNode.value}"`,
+            rawValue: strNode.value,
+            type: 'string',
+            astNodeId: strNode.nodeId,
+        };
     }
     return undefined;
 }
@@ -513,10 +558,24 @@ function handleBinaryOp(params: HandlerParams): void {
     if (binaryNode.left.type === "BinaryOp" || binaryNode.right.type === "BinaryOp") {
         handleExpandableExpression(params);
     } else {
-        const leftConstant = getConstantValue(binaryNode.left);
-        const rightConstant = getConstantValue(binaryNode.right);
+        const leftConstantInfo = getConstantInfo(binaryNode.left);
+        const rightConstantInfo = getConstantInfo(binaryNode.right);
 
-        const createdNode = createBinOpNode(binaryNode.operator, leftConstant, rightConstant);
+        const createdNode = createBinOpNode(
+            binaryNode.operator,
+            leftConstantInfo?.displayValue,
+            rightConstantInfo?.displayValue,
+            leftConstantInfo ? {
+                astNodeId: leftConstantInfo.astNodeId,
+                type: leftConstantInfo.type,
+                rawValue: leftConstantInfo.rawValue,
+            } : undefined,
+            rightConstantInfo ? {
+                astNodeId: rightConstantInfo.astNodeId,
+                type: rightConstantInfo.type,
+                rawValue: rightConstantInfo.rawValue,
+            } : undefined
+        );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -526,7 +585,7 @@ function handleBinaryOp(params: HandlerParams): void {
         let childIdx = 0;
 
         // Visit left operand only if not a constant
-        if (!leftConstant && collapsedNode.children[childIdx]) {
+        if (!leftConstantInfo && collapsedNode.children[childIdx]) {
             visitCollapsedNodeWithExpansion(
                 collapsedNode.children[childIdx],
                 nodes,
@@ -540,7 +599,7 @@ function handleBinaryOp(params: HandlerParams): void {
         }
 
         // Visit right operand only if not a constant
-        if (!rightConstant && collapsedNode.children[childIdx]) {
+        if (!rightConstantInfo && collapsedNode.children[childIdx]) {
             visitCollapsedNodeWithExpansion(
                 collapsedNode.children[childIdx],
                 nodes,

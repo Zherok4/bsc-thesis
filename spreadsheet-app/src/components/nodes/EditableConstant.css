@@ -1,0 +1,278 @@
+@import './nodes.css';
+
+/* ========================================
+   PREVIEW MODE - input-like appearance
+   ======================================== */
+
+.editable-constant {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size);
+    color: var(--text-primary);
+    cursor: text;
+    border-radius: 3px;
+    padding: 2px 6px;
+    background: white;
+    border: 1px solid var(--node-border);
+    transition: all 0.15s ease;
+    min-width: 24px;
+    text-align: center;
+}
+
+.editable-constant:hover {
+    border-color: var(--node-border-hover);
+}
+
+
+/* ========================================
+   DEFAULT VARIANT - Column layout (like ReferenceNode)
+   For FunctionNode arguments
+   ======================================== */
+
+.editable-constant-wrapper.default {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.editable-constant-wrapper.default .constant-input {
+    width: 100%;
+    padding: 4px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size);
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: white;
+    color: var(--text-primary);
+    outline: none;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.editable-constant-wrapper.default .constant-input:focus {
+    border-color: var(--edit-mode-border);
+    box-shadow: 0 0 0 2px var(--edit-mode-shadow);
+}
+
+.editable-constant-wrapper.default .constant-input.has-error {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.editable-constant-wrapper.default .constant-error {
+    font-size: var(--node-font-size-sm);
+    color: #dc2626;
+    text-align: center;
+}
+
+/* Action buttons - same as ReferenceNode */
+.editable-constant-wrapper.default .constant-edit-actions {
+    display: flex;
+    gap: 4px;
+    border-top: 1px solid var(--node-border);
+    padding-top: 4px;
+}
+
+.editable-constant-wrapper.default .constant-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: var(--node-bg);
+    font-size: var(--node-font-size);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.editable-constant-wrapper.default .constant-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.editable-constant-wrapper.default .constant-action-btn.save-btn {
+    color: #059669;
+    border-color: #059669;
+}
+
+.editable-constant-wrapper.default .constant-action-btn.save-btn:hover:not(:disabled) {
+    background: #059669;
+    color: white;
+}
+
+.editable-constant-wrapper.default .constant-action-btn.cancel-btn {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.editable-constant-wrapper.default .constant-action-btn.cancel-btn:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* ========================================
+   POPOVER VARIANT - Floating above node
+   For BinOpNode (compact nodes)
+   ======================================== */
+
+/* Elevate the entire React Flow node when it contains an active popover */
+.react-flow__node:has(.editable-constant-popover) {
+    z-index: 10000 !important;
+}
+
+/* Amber border on node wrapper when editing a constant (default variant) */
+.node-wrapper:has(.editable-constant-wrapper.default) {
+    border-color: var(--edit-mode-border);
+    box-shadow: 0 0 0 2px var(--edit-mode-shadow);
+}
+
+/* Amber highlight on the argument being edited */
+.arg:has(.editable-constant-wrapper.default) {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--edit-mode-border);
+}
+
+/* Hide selected indicator when editing */
+.node-wrapper:has(.editable-constant-wrapper.default) .selected-indicator,
+.node-wrapper:has(.editable-constant-popover) .selected-indicator {
+    opacity: 0 !important;
+}
+
+.editable-constant-wrapper.popover {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Anchor text (shows the current value in place) */
+.editable-constant-wrapper.popover .editable-constant-anchor {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size-sm);
+    color: var(--text-primary);
+    opacity: 0.5;
+}
+
+/* Floating popover container - positioned above */
+.editable-constant-wrapper.popover .editable-constant-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: white;
+    border: 1px solid var(--edit-mode-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px var(--edit-mode-shadow);
+    min-width: 100px;
+    box-sizing: border-box;
+    z-index: 1000;
+}
+
+/* Arrow pointing down to anchor */
+.editable-constant-wrapper.popover .editable-constant-popover::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--edit-mode-border);
+}
+
+.editable-constant-wrapper.popover .editable-constant-popover::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: white;
+}
+
+.editable-constant-wrapper.popover .constant-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size);
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: white;
+    color: var(--text-primary);
+    outline: none;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.editable-constant-wrapper.popover .constant-input:focus {
+    border-color: var(--edit-mode-border);
+    box-shadow: 0 0 0 2px var(--edit-mode-shadow);
+}
+
+.editable-constant-wrapper.popover .constant-input.has-error {
+    border-color: #dc2626;
+}
+
+.editable-constant-wrapper.popover .constant-error {
+    font-size: var(--node-font-size-sm);
+    color: #dc2626;
+    text-align: center;
+}
+
+/* Action buttons */
+.editable-constant-wrapper.popover .constant-edit-actions {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 6px 12px;
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: var(--node-bg);
+    font-size: var(--node-font-size);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn.save-btn {
+    color: #059669;
+    border-color: #059669;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn.save-btn:hover:not(:disabled) {
+    background: #059669;
+    color: white;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn.cancel-btn {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.editable-constant-wrapper.popover .constant-action-btn.cancel-btn:hover {
+    background: #dc2626;
+    color: white;
+}
