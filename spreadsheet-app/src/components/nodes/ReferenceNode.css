@@ -135,3 +135,50 @@
   white-space: nowrap;
   line-height: 1;
 }
+
+/* Edit action buttons container */
+.ref-node .edit-actions {
+  display: flex;
+  gap: 4px;
+  padding: 4px 4px 0 4px;
+  border-top: 1px solid var(--node-border);
+  margin-top: 4px;
+}
+
+/* Edit action button base styles */
+.ref-node .edit-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--node-border);
+  border-radius: 4px;
+  background: var(--node-bg);
+  font-size: var(--node-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Save button */
+.ref-node .edit-action-btn.save-btn {
+  color: #059669;
+  border-color: #059669;
+}
+
+.ref-node .edit-action-btn.save-btn:hover {
+  background: #059669;
+  color: white;
+}
+
+/* Cancel button */
+.ref-node .edit-action-btn.cancel-btn {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.ref-node .edit-action-btn.cancel-btn:hover {
+  background: #dc2626;
+  color: white;
+}

@@ -81,7 +81,13 @@ function handleCellReference(params: HandlerParams): void {
     const visitedCells = context.visitedCells || new Set<string>();
     if (visitedCells.has(cellId)) {
         // Circular reference detected - create non-expandable node
-        const createdNode = createReferenceNode(refNode.reference, resolvedSheet);
+        const createdNode = createReferenceNode(
+            refNode.reference,
+            resolvedSheet,
+            false,
+            undefined,
+            refNode.nodeId
+        );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -106,7 +112,13 @@ function handleCellReference(params: HandlerParams): void {
         );
     } else {
         // No formula - create regular reference node
-        const createdNode = createReferenceNode(refNode.reference, resolvedSheet);
+        const createdNode = createReferenceNode(
+            refNode.reference,
+            resolvedSheet,
+            false,
+            undefined,
+            refNode.nodeId
+        );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -139,7 +151,8 @@ function handleCellReferenceWithFormula(
             isExpanded,
             onToggleExpand: context.onToggleExpand,
             expansionNodeId: cellExpandId,
-        }
+        },
+        refNode.nodeId
     );
     const refEdge = createDefaultEdge(refCreatedNode.id, parentID, handleID);
     nodes.push(refCreatedNode);

@@ -2,6 +2,14 @@ import type { CstNode, ILexingResult, IToken } from "chevrotain";
 import { parserInstance } from "./parserConfig";
 import { SpreadsheetFormulaLexer } from "./tokens";
 
+/**
+ * Base interface for all AST nodes, providing a unique identifier.
+ */
+export interface BaseASTNode {
+    /** Unique identifier for this node within the AST */
+    nodeId: string;
+}
+
 export type ASTNode =
     | FormulaNode
     | BinaryOpNode
@@ -16,37 +24,37 @@ export type ASTNode =
     | StringLiteralNode
     | BooleanLiteralNode;
 
-export interface FormulaNode {
+export interface FormulaNode extends BaseASTNode {
     type: "Formula";
     expression: ASTNode;
 }
 
-export interface BinaryOpNode {
+export interface BinaryOpNode extends BaseASTNode {
     type: "BinaryOp";
     operator: string;
     left: ASTNode;
     right: ASTNode;
 }
 
-export interface UnaryOpNode {
+export interface UnaryOpNode extends BaseASTNode {
     type: "UnaryOp";
     operator: string;
     operand: ASTNode;
 }
 
-export interface PercentNode {
+export interface PercentNode extends BaseASTNode {
     type: "Percent";
     operator: string;
     operand: ASTNode;
 }
 
-export interface FunctionCallNode {
+export interface FunctionCallNode extends BaseASTNode {
     type: "FunctionCall";
     name: string;
     arguments: ASTNode[];
 }
 
-export interface CellReferenceNode {
+export interface CellReferenceNode extends BaseASTNode {
     type: "CellReference";
     sheet?: string;
     reference: string;
@@ -56,14 +64,14 @@ export interface CellReferenceNode {
     absoluteRow: boolean;
 }
 
-export interface CellRangeNode {
+export interface CellRangeNode extends BaseASTNode {
     type: "CellRange";
     sheet?: string;
     start: CellReferenceNode;
     end: CellReferenceNode;
 }
 
-export interface ColumnRangeNode {
+export interface ColumnRangeNode extends BaseASTNode {
     type: "ColumnRange";
     sheet?: string;
     startColumn: string;
@@ -72,7 +80,7 @@ export interface ColumnRangeNode {
     absoluteEnd: boolean;
 }
 
-export interface RowRangeNode {
+export interface RowRangeNode extends BaseASTNode {
     type: "RowRange";
     sheet?: string;
     startRow: number;
@@ -81,17 +89,17 @@ export interface RowRangeNode {
     absoluteEnd: boolean;
 }
 
-export interface NumberLiteralNode {
+export interface NumberLiteralNode extends BaseASTNode {
     type: "NumberLiteral";
     value: number;
 }
 
-export interface StringLiteralNode {
+export interface StringLiteralNode extends BaseASTNode {
     type: "StringLiteral";
     value: string;
 }
 
-export interface BooleanLiteralNode {
+export interface BooleanLiteralNode extends BaseASTNode {
     type: "BooleanLiteral";
     value: boolean;
 }
@@ -99,13 +107,26 @@ export interface BooleanLiteralNode {
 const BaseSpreadsheetVisitor = parserInstance.getBaseCstVisitorConstructor();
 
 class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
+    private nodeIdCounter: number = 0;
+
     constructor() {
         super();
         this.validateVisitor();
     }
 
+    /** Resets the node ID counter. Should be called before parsing a new formula. */
+    resetCounter(): void {
+        this.nodeIdCounter = 0;
+    }
+
+    /** Generates a unique node ID */
+    private generateNodeId(): string {
+        return `ast-${this.nodeIdCounter++}`;
+    }
+
     formula (ctx: any): FormulaNode {
         return {
+            nodeId: this.generateNodeId(),
             type: "Formula",
             expression: this.visit(ctx.expression),
         };
@@ -130,6 +151,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
             ctx.rhs.forEach((rhsOperand: CstNode, idx: number) => {
                 result = {
+                    nodeId: this.generateNodeId(),
                     type: "BinaryOp",
                     operator: operators[idx].image,
                     left: result,
@@ -147,6 +169,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         if (ctx.rhs) {
             ctx.rhs.forEach((rhsOperand: CstNode) => {
                 result = {
+                    nodeId: this.generateNodeId(),
                     type: "BinaryOp",
                     operator: "&",
                     left: result,
@@ -169,6 +192,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
             ctx.rhs.forEach((rhsOperand: CstNode, idx: number) => {
                 result = {
+                    nodeId: this.generateNodeId(),
                     type: "BinaryOp",
                     operator: operators[idx].image,
                     left: result,
@@ -191,6 +215,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
             ctx.rhs.forEach((rhsOperand: CstNode, idx: number) => {
                 result = {
+                    nodeId: this.generateNodeId(),
                     type: "BinaryOp",
                     operator: operators[idx].image,
                     left: result,
@@ -208,6 +233,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         if (ctx.rhs) {
             ctx.rhs.forEach((rhsOperand: CstNode) => {
                 result = {
+                    nodeId: this.generateNodeId(),
                     type: "BinaryOp",
                     operator: "^",
                     left: result,
@@ -224,6 +250,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
         if (ctx.Minus) {
             return {
+                nodeId: this.generateNodeId(),
                 type: "UnaryOp",
                 operator: "-",
                 operand,
@@ -232,6 +259,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
         if (ctx.Plus) {
             return {
+                nodeId: this.generateNodeId(),
                 type: "UnaryOp",
                 operator: "+",
                 operand,
@@ -246,6 +274,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
 
         if (ctx.Percent) {
             return {
+                nodeId: this.generateNodeId(),
                 type: "Percent",
                 operator: "%",
                 operand,
@@ -277,6 +306,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
     functionCall(ctx: any): FunctionCallNode {
         const args = ctx.argumentList ? this.visit(ctx.argumentList) : [];
         return {
+            nodeId: this.generateNodeId(),
             type: "FunctionCall",
             name: ctx.FunctionName[0].image.toUpperCase(),
             arguments: args,
@@ -295,6 +325,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
             const startColImage = ctx.startCol[0].image;
             const endColImage = ctx.endCol[0].image;
             return {
+                nodeId: this.generateNodeId(),
                 type: "ColumnRange",
                 sheet,
                 startColumn: this.parseColumnReference(startColImage),
@@ -309,6 +340,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
             const startRowImage = ctx.startRow[0].image;
             const endRowImage = ctx.endRow[0].image;
             return {
+                nodeId: this.generateNodeId(),
                 type: "RowRange",
                 sheet,
                 startRow: this.parseRowReference(startRowImage),
@@ -324,6 +356,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         if (ctx.end) {
             const endRef = this.parseCellReference(ctx.end[0].image, sheet);
             return {
+                nodeId: this.generateNodeId(),
                 type: "CellRange",
                 sheet,
                 start: startRef,
@@ -358,6 +391,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
         const [, colAbsolute, column, rowAbsolute, row] = match;
 
         return {
+            nodeId: this.generateNodeId(),
             type: "CellReference",
             sheet,
             reference,
@@ -371,6 +405,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
     literal(ctx: any): NumberLiteralNode | StringLiteralNode {
         if (ctx.Number) {
             return {
+                nodeId: this.generateNodeId(),
                 type: "NumberLiteral",
                 value: parseFloat(ctx.Number[0].image),
             };
@@ -380,6 +415,7 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
             const raw = ctx.String[0].image;
             const value = raw.slice(1, -1).replace(/\\(.)/g, "$1");
             return {
+                nodeId: this.generateNodeId(),
                 type: "StringLiteral",
                 value,
             };
@@ -428,6 +464,7 @@ export function parse(formula: string): ParseResult {
         };
     }
 
+    astVisitor.resetCounter();
     const ast: FormulaNode = astVisitor.visit(cst) as FormulaNode;
 
     return {

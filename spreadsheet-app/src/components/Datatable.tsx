@@ -299,7 +299,12 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
                 }}
                 minCols = {100}
                 contextMenu={true}
-                // AutoRow / Column ==> lead to critical error ==> to prevent this we have to fix that ever sheet has same dimensions
+                /*
+                * AutoRow / Column ==> lead to critical error 
+                * ==> to prevent this we have to fix that every sheet has same dimensions or
+                * make the datatable remount on every sheet change (because if we do not remount them they still get rendered in the background)
+                * and if then a hfInstance does not have correct dimensions with one of the hiddensheets ==> crashes
+                */
                 //autoRowSize={true}
                 //autoColumnSize={true}
                 licenseKey="non-commercial-and-evaluation"

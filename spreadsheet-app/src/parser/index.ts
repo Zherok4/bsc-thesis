@@ -32,6 +32,7 @@ export {
 } from './parserConfig'
 
 export type {
+    BaseASTNode,
     ASTNode,
     FormulaNode,
     BinaryOpNode,
@@ -51,3 +52,16 @@ export {
     parse,
     parseFormula,
 } from './visitor'
+
+export {
+    serializeNode,
+    transformAST,
+    createCellReferenceTransformer,
+    createNumberLiteralTransformer,
+    createStringLiteralTransformer,
+} from './serializer'
+
+export type {
+    NodeTransformer,
+    TransformResult,
+} from './serializer'

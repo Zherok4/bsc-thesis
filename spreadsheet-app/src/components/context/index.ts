@@ -15,5 +15,6 @@ export {
 } from './GraphEditModeContext';
 
 export type {
-  GraphEditModeContextValue
+  GraphEditModeContextValue,
+  NodeEdit
 } from './GraphEditModeContext';

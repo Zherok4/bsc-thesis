@@ -55,7 +55,10 @@ export function visitCollapsedNode(
             const refNode = collapsedNode.original as CellReferenceNode;
             const createdNode = createReferenceNode(
                 refNode.reference,
-                refNode.sheet
+                refNode.sheet,
+                false,
+                undefined,
+                refNode.nodeId
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,
@@ -74,7 +77,7 @@ export function visitCollapsedNode(
             const createdNode = createRangeNode(
                 startNode.reference,
                 endNode.reference,
-                rangeNode.sheet
+                rangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,
@@ -91,7 +94,7 @@ export function visitCollapsedNode(
             const createdNode = createColumnRangeNode(
                 colRangeNode.startColumn,
                 colRangeNode.endColumn,
-                colRangeNode.sheet
+                colRangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,
@@ -108,7 +111,7 @@ export function visitCollapsedNode(
             const createdNode = createRowRangeNode(
                 rowRangeNode.startRow,
                 rowRangeNode.endRow,
-                rowRangeNode.sheet
+                rowRangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,
@@ -155,7 +158,8 @@ export function visitCollapsedNode(
             const createdNode = createFunctionNode(
                 funNode.name,
                 argFormulas,
-                funFormula
+                funFormula,
+                ''
             );
             const createdEdge = createDefaultEdge(
                 createdNode.id,

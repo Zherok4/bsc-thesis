@@ -1,6 +1,23 @@
 import { createContext, useContext } from 'react';
 
 /**
+ * Base properties common to all node edits.
+ */
+interface BaseNodeEdit {
+    /** The AST node ID to identify the specific node to modify */
+    astNodeId: string;
+}
+
+/**
+ * Represents a pending edit to a node value.
+ * Uses discriminated union to support different edit types.
+ */
+export type NodeEdit =
+    | (BaseNodeEdit & { type: 'reference'; newValue: string; sheet: string })
+    | (BaseNodeEdit & { type: 'number'; newValue: number })
+    | (BaseNodeEdit & { type: 'string'; newValue: string });
+
+/**
  * Context value for managing graph edit mode state.
  * Provides standardized functions for entering and exiting edit mode.
  */
@@ -19,6 +36,11 @@ export interface GraphEditModeContextValue {
      * This is the only way to properly exit edit mode.
      */
     exitEditMode: () => void;
+    /**
+     * Saves an edit to a node and exits edit mode.
+     * @param edit - The edit to apply, containing old and new values
+     */
+    saveEdit: (edit: NodeEdit) => void;
 }
 
 const GraphEditModeContext = createContext<GraphEditModeContextValue | undefined>(undefined);

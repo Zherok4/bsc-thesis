@@ -37,12 +37,14 @@ interface ReferenceExpansionConfig {
  * @param sheet - Optional sheet name for cross-sheet references
  * @param hasFormula - Whether the referenced cell contains a formula (enables left handle)
  * @param expansionConfig - Optional expansion configuration (only used when hasFormula is true)
+ * @param astNodeId - Optional AST node ID for identifying this node during edits
  */
 export function createReferenceNode(
     reference: string,
     sheet?: string,
     hasFormula: boolean = false,
-    expansionConfig?: ReferenceExpansionConfig
+    expansionConfig?: ReferenceExpansionConfig,
+    astNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
@@ -51,6 +53,7 @@ export function createReferenceNode(
             reference,
             sheet,
             hasFormula,
+            astNodeId,
             ...(hasFormula && expansionConfig ? {
                 isExpanded: expansionConfig.isExpanded,
                 onToggleExpand: expansionConfig.onToggleExpand,

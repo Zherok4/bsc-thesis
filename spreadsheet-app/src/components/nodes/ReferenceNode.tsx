@@ -18,13 +18,15 @@ export type ReferenceNode = Node<
     onToggleExpand?: (nodeId: string) => void,
     /** Stable ID used for tracking expansion state */
     expansionNodeId?: string,
+    /** AST node ID for identifying this node during edits */
+    astNodeId?: string,
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
-    const { isEditModeActive, editingNodeId, enterEditMode }: GraphEditModeContextValue = useGraphEditMode();
+    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
@@ -96,6 +98,44 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         }
     }, [simpleCellAddress, highlightCells, residingSheet]);
 
+    const handleSaveEdit = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (!astNodeId || selectedCell === null) {
+            exitEditMode();
+            return;
+        }
+
+        const targetSheetId = hfInstance.getSheetId(activeSheetName);
+        if (targetSheetId === undefined) {
+            exitEditMode();
+            return;
+        }
+
+        const simpleCellAddressOfSelectedCell = { sheet: targetSheetId, col: selectedCell.col, row: selectedCell.row };
+        const newReference = hfInstance.simpleCellAddressToString(
+            simpleCellAddressOfSelectedCell,
+            { includeSheetName: false }
+        );
+
+        if (!newReference) {
+            exitEditMode();
+            return;
+        }
+
+        saveEdit({
+            type: 'reference',
+            astNodeId,
+            newValue: newReference,
+            sheet: activeSheetName,
+        });
+    }, [astNodeId, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode]);
+
+    const handleCancelEdit = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        exitEditMode();
+    }, [exitEditMode]);
+
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
         
@@ -150,6 +190,24 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                         <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>
+                {isThisNodeBeingEdited && (
+                    <div className="edit-actions">
+                        <button
+                            className="edit-action-btn save-btn"
+                            onClick={handleSaveEdit}
+                            title="Save reference change"
+                        >
+                            ✓
+                        </button>
+                        <button
+                            className="edit-action-btn cancel-btn"
+                            onClick={handleCancelEdit}
+                            title="Cancel edit"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
             </div>
             {hasFormula && <Handle type="target" position={Position.Left} />}
         </div>

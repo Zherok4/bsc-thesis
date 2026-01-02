@@ -165,6 +165,31 @@ function App() {
   }, []);
 
   /**
+   * Handles node edits from the graph view.
+   * Updates the cell with the new formula and refreshes the state.
+   * @param newFormula - The new formula string to set
+   * @param row - The row of the cell to update
+   * @param col - The column of the cell to update
+   * @param sheet - The sheet containing the cell to update
+   */
+  const handleNodeEdit = useCallback((newFormula: string, row: number, col: number, sheet: string) => {
+    // Switch to the target sheet if different from current
+    if (sheet !== activeSheetName) {
+      handleSheetChange(sheet);
+    }
+
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.updateCell(newFormula, row, col);
+    }
+
+    // Update selected cell value if the edited cell is currently selected
+    if (selectedCell && selectedCell.row === row && selectedCell.col === col && sheet === activeSheetName) {
+      setSelectedCellValue(newFormula);
+    }
+  }, [activeSheetName, handleSheetChange, selectedCell]);
+
+  /**
    * handleImport is triggered when:
    * - User imports an Excel file via the TopBar
    *
@@ -234,6 +259,7 @@ function App() {
           clearHighlight={handleClearHighlight}
           setViewedCellHighlight={setViewedCellHighlight}
           clearViewedCellHighlight={clearViewedCellHighlight}
+          onNodeEdit={handleNodeEdit}
           />
         </div>
       </div>

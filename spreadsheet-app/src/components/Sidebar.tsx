@@ -2,13 +2,14 @@ import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edg
 import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
-import type { ASTNode } from '../parser';
+import type { ASTNode, FormulaNode } from '../parser';
+import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
-import { HyperFormulaProvider, GraphEditModeContext } from './context';
+import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit } from './context';
 import type { HyperFormula } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/ReferenceNode';
 import RangeNodeComponent from './nodes/RangeNode';
@@ -41,6 +42,8 @@ export interface SidebarProps {
   setViewedCellHighlight: (row: number, col: number, sheet: string) => void;
   /** Clear the viewed cell highlight */
   clearViewedCellHighlight: () => void;
+  /** Callback when a node edit is saved. Receives the new formula and cell position to update. */
+  onNodeEdit?: (newFormula: string, row: number, col: number, sheet: string) => void;
 }
 
 const MEASUREMENT_COVERAGE_THRESHOLD = 0.8;
@@ -68,7 +71,7 @@ const nodeTypes = {
   ConditionalNode: ConditionalNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -104,6 +107,44 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
 
   /** Whether there is a pending sync (incoming ast differs from synced ast) */
   const hasPendingSync = ast !== syncedAst;
+
+  /** Saves an edit to a node and exits edit mode */
+  const saveEdit = useCallback((edit: NodeEdit) => {
+    if (!onNodeEdit || !syncedAst || !syncedCell) {
+      exitEditMode();
+      return;
+    }
+
+    const formulaAst = syncedAst as FormulaNode;
+    let transformer;
+
+    switch (edit.type) {
+      case 'reference': {
+        const newValue = edit.sheet !== syncedCell.sheet
+          ? `${edit.sheet}!${edit.newValue}`
+          : edit.newValue;
+        transformer = createCellReferenceTransformer(newValue, edit.sheet);
+        break;
+      }
+      case 'number':
+        transformer = createNumberLiteralTransformer(edit.newValue);
+        break;
+      case 'string':
+        transformer = createStringLiteralTransformer(edit.newValue);
+        break;
+    }
+
+    const result = transformAST(formulaAst, edit.astNodeId, transformer);
+
+    if (result.transformed) {
+      const newFormula = serializeNode(result.ast);
+      onNodeEdit(newFormula, syncedCell.row, syncedCell.col, syncedCell.sheet);
+      // Update the synced AST so the graph rebuilds with the new formula
+      setSyncedAst(result.ast);
+    }
+
+    exitEditMode();
+  }, [onNodeEdit, exitEditMode, syncedAst, syncedCell]);
 
   /** The cell address currently being viewed in the graph */
   const currentCellAddress = useMemo<string | null>(() => {
@@ -295,7 +336,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
   return (
     <div className={`sidebar-inner ${isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
       <GraphEditModeContext.Provider
-        value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode }}
+        value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }}
       >
         <HyperFormulaProvider 
           hfInstance={hfInstance} 

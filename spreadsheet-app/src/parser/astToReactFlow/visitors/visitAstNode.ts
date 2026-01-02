@@ -90,7 +90,8 @@ export function visitAstNode(
             const createdNode = createFunctionNode(
                 functionNode.name,
                 argFormulas,
-                funFormula
+                funFormula,
+                ''
             );
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
@@ -105,7 +106,10 @@ export function visitAstNode(
             const refNode = node as CellReferenceNode;
             const createdNode = createReferenceNode(
                 refNode.reference,
-                refNode.sheet
+                refNode.sheet,
+                false,
+                undefined,
+                refNode.nodeId
             );
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
@@ -118,7 +122,7 @@ export function visitAstNode(
             const createdNode = createRangeNode(
                 rangeNode.start.reference,
                 rangeNode.end.reference,
-                rangeNode.sheet
+                rangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
@@ -132,7 +136,7 @@ export function visitAstNode(
             const createdNode = createColumnRangeNode(
                 colRangeNode.startColumn,
                 colRangeNode.endColumn,
-                colRangeNode.sheet
+                colRangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
@@ -145,7 +149,7 @@ export function visitAstNode(
             const createdNode = createRowRangeNode(
                 rowRangeNode.startRow,
                 rowRangeNode.endRow,
-                rowRangeNode.sheet
+                rowRangeNode.sheet ?? ''
             );
             const createdEdge = createDefaultEdge(createdNode.id, parentID);
             nodes.push(createdNode);
