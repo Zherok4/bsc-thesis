@@ -6,19 +6,27 @@ import { evaluateFormula } from "../../utils";
 import { abbreviateNumber } from "./utils";
 import './ExpandableExpressionNode.css'
 
-/** Represents a variable in the math expression with its name and current value */
-interface ExpressionVariable {
-    name: string;
-    value: string;
+/** Represents an argument input with a label (A, B, C...) and optional constant value */
+interface ExpressionArgument {
+    /** The label for this argument (A, B, C, ...) */
+    label: string;
+    /** The original formula/reference this argument represents */
+    originalFormula: string;
+    /** If this is a constant value, store it here (won't have a handle) */
+    constantValue?: string;
 }
 
 export type ExpandableExpressionNode = Node<
 {
+    /** The original formula for evaluation */
     formula: string,
+    /** The formula with references replaced by argument labels (A, B, C...) for display */
+    displayFormula: string,
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
     nodeId: string,
-    variables?: ExpressionVariable[],
+    /** Arguments with labels A, B, C... */
+    arguments: ExpressionArgument[],
     isConnectedToFunctionArg?: boolean,
     /** Sheet name where this expression resides */
     sheet: string,
@@ -29,10 +37,11 @@ export type ExpandableExpressionNode = Node<
 /**
  * A compact math expression node that displays the formula and allows
  * expansion via double-click to show additional details.
+ * Uses named arguments (A, B, C...) to represent inputs.
  */
 export default function ExpandableExpressionNodeComponent(props: NodeProps<ExpandableExpressionNode>): JSX.Element {
     const { hfInstance } = useHyperFormula();
-    const { formula, isExpanded, onToggleExpand, nodeId, variables = [], sheet } = props.data;
+    const { formula, displayFormula, isExpanded, onToggleExpand, nodeId, arguments: args = [], sheet } = props.data;
 
     const residingSheet = sheet;
 
@@ -51,25 +60,29 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
             onDoubleClick={handleDoubleClick}
         >
             <div className="math-expression-header">
-                <span className="math-formula" title={formula}>{formula}</span>
+                <span className="math-formula" title={formula}>{displayFormula}</span>
                 <span className="math-label">Math Expression</span>
             </div>
 
             <div className="math-expression-body">
                 <div className="math-inputs">
-                    {variables.map((variable) => (
-                        <div key={variable.name} className="math-variable">
-                            <Handle
-                                type="target"
-                                position={Position.Left}
-                                id={`var-${variable.name}`}
-                                className="math-handle-input"
-                            />
-                            <span className="variable-name">{variable.name}</span>
-                            <span className="variable-value">{variable.value}</span>
+                    {args.map((arg, idx) => (
+                        <div key={arg.label} className="math-variable">
+                            {!arg.constantValue && (
+                                <Handle
+                                    type="target"
+                                    position={Position.Left}
+                                    id={`arghandle-${idx}`}
+                                    className="math-handle-input"
+                                />
+                            )}
+                            <span className="variable-name">{arg.label}</span>
+                            {arg.constantValue && (
+                                <span className="variable-value">{arg.constantValue}</span>
+                            )}
                         </div>
                     ))}
-                    {variables.length === 0 && (
+                    {args.length === 0 && (
                         <div className="math-variable">
                             <Handle
                                 type="target"

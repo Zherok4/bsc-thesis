@@ -555,7 +555,57 @@ function handleBinaryOp(params: HandlerParams): void {
 }
 
 /**
- * Handles expandable expression nodes (UnaryOp, Percent)
+ * Generates an argument label from an index (0 -> A, 1 -> B, ..., 25 -> Z, 26 -> AA, etc.)
+ */
+function getArgumentLabel(index: number): string {
+    let label = '';
+    let n = index;
+    do {
+        label = String.fromCharCode(65 + (n % 26)) + label;
+        n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return label;
+}
+
+/**
+ * Represents an argument for the expandable expression node
+ */
+interface ExpressionArgument {
+    label: string;
+    originalFormula: string;
+    constantValue?: string;
+}
+
+/**
+ * Builds arguments and display formula from collapsed node children.
+ * Replaces each child's label in the formula with A, B, C... labels.
+ */
+function buildExpressionArguments(
+    formula: string,
+    children: CollapsedNode[]
+): { displayFormula: string; args: ExpressionArgument[] } {
+    const args: ExpressionArgument[] = [];
+    let displayFormula = formula;
+
+    children.forEach((child, idx) => {
+        const label = getArgumentLabel(idx);
+        const originalFormula = child.label;
+
+        args.push({
+            label,
+            originalFormula,
+        });
+
+        // Replace the child's formula in the display formula with the label
+        // Use a simple replacement (first occurrence)
+        displayFormula = displayFormula.replace(originalFormula, label);
+    });
+
+    return { displayFormula, args };
+}
+
+/**
+ * Handles expandable expression nodes (UnaryOp, Percent, nested BinaryOp)
  */
 function handleExpandableExpression(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, parentID, context, handleID, collapsedNodeId } =
@@ -565,9 +615,17 @@ function handleExpandableExpression(params: HandlerParams): void {
     const isConnectedToFunctionArg = handleID?.startsWith("arghandle-") ?? false;
 
     if (collapsedNode.hasHiddenDetails) {
+        // Build arguments from children (A, B, C...)
+        const { displayFormula, args } = buildExpressionArguments(
+            collapsedNode.label,
+            collapsedNode.children
+        );
+
         // Create expandable node (collapsed or expanded state)
         const createdNode = createExpandableExpressionNode(
             collapsedNode.label,
+            displayFormula,
+            args,
             isExpanded,
             context.onToggleExpand,
             isConnectedToFunctionArg,
@@ -580,7 +638,7 @@ function handleExpandableExpression(params: HandlerParams): void {
         nodes.push(createdNode);
         edges.push(createdEdge);
 
-        // Show children (important references, functions, ranges)
+        // Show children (important references, functions, ranges) with proper arghandle IDs
         collapsedNode.children.forEach((child, idx) => {
             visitCollapsedNodeWithExpansion(
                 child,
@@ -588,13 +646,28 @@ function handleExpandableExpression(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                undefined,
+                `arghandle-${idx}`,
                 `${collapsedNodeId}-${idx}`
             );
         });
     } else {
-        // No hidden details, just show as default node
-        const createdNode = createDefaultNode(collapsedNode.label);
+        // No hidden details - build arguments but show as simpler node
+        const { displayFormula, args } = buildExpressionArguments(
+            collapsedNode.label,
+            collapsedNode.children
+        );
+
+        const createdNode = createExpandableExpressionNode(
+            collapsedNode.label,
+            displayFormula,
+            args,
+            isExpanded,
+            context.onToggleExpand,
+            isConnectedToFunctionArg,
+            context.activeSheetName
+        );
+        createdNode.data.nodeId = collapsedNodeId;
+
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
         edges.push(createdEdge);
@@ -606,7 +679,7 @@ function handleExpandableExpression(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                undefined,
+                `arghandle-${idx}`,
                 `${collapsedNodeId}-${idx}`
             );
         });

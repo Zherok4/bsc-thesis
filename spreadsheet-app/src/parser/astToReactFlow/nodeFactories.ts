@@ -182,9 +182,22 @@ export function createResultNode(formula: string, sheet: string): Node {
     };
 }
 
+/** Represents an argument input with a label (A, B, C...) and optional constant value */
+interface ExpressionArgument {
+    /** The label for this argument (A, B, C, ...) */
+    label: string;
+    /** The original formula/reference this argument represents */
+    originalFormula: string;
+    /** If this is a constant value, store it here (won't have a handle) */
+    constantValue?: string;
+}
+
 /**
- * Creates an expandable expression node that can be toggled to show/hide details
- * @param formula - The formula/expression string
+ * Creates an expandable expression node that can be toggled to show/hide details.
+ * Uses named arguments (A, B, C...) to represent inputs.
+ * @param formula - The original formula/expression string for evaluation
+ * @param displayFormula - The formula with references replaced by argument labels
+ * @param args - Array of arguments with labels A, B, C...
  * @param isExpanded - Whether the node is currently expanded
  * @param onToggleExpand - Callback to toggle expansion state
  * @param isConnectedToFunctionArg - Whether this node is connected to a function argument handle
@@ -192,6 +205,8 @@ export function createResultNode(formula: string, sheet: string): Node {
  */
 export function createExpandableExpressionNode(
     formula: string,
+    displayFormula: string,
+    args: ExpressionArgument[],
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
     isConnectedToFunctionArg: boolean = false,
@@ -203,6 +218,8 @@ export function createExpandableExpressionNode(
         position: { x: 0, y: 100 * getNodeIdCounter() },
         data: {
             formula,
+            displayFormula,
+            arguments: args,
             isExpanded,
             onToggleExpand,
             nodeId,
