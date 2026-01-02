@@ -1,14 +1,24 @@
-import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
+import { createContext, useContext } from 'react';
 
+/**
+ * Context value for managing graph edit mode state.
+ * Provides standardized functions for entering and exiting edit mode.
+ */
 export interface GraphEditModeContextValue {
-    /** indicates wheter the user is in editing mode and can actively change values of nodes */
+    /** Indicates whether the user is in editing mode and can actively change values of nodes */
     isEditModeActive: boolean;
-    /** changes the edit mode true indicates active false indicates inactive */
-    setEditMode: Dispatch<SetStateAction<boolean>>;
-    // TODO: maybe better way to reference ref Cells ==> also consider cells with same address but different sheet
-    /** the address of the cell Address we are editing if EditMode is inactive editingNodeId should always be null */
+    /** The ID of the node currently being edited. Null when not in edit mode or no specific node selected */
     editingNodeId: string | null;
-    setEditingNodeId: Dispatch<SetStateAction<string | null>>;
+    /**
+     * Enters edit mode, optionally targeting a specific node.
+     * @param nodeId - Optional ID of the node to edit. If omitted, enters edit mode without a target node.
+     */
+    enterEditMode: (nodeId?: string) => void;
+    /**
+     * Exits edit mode and clears the editing node ID.
+     * This is the only way to properly exit edit mode.
+     */
+    exitEditMode: () => void;
 }
 
 const GraphEditModeContext = createContext<GraphEditModeContextValue | undefined>(undefined);

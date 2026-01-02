@@ -24,7 +24,7 @@ export type ReferenceNode = Node<
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
 export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
-    const { isEditModeActive, setEditMode, editingNodeId, setEditingNodeId }: GraphEditModeContextValue = useGraphEditMode();
+    const { isEditModeActive, editingNodeId, enterEditMode }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
@@ -65,18 +65,10 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
-        if (!isEditModeActive) {
-            setEditMode(true);
-            setEditingNodeId(id);
-            return;
+        if (!isEditModeActive || !isThisNodeBeingEdited) {
+            enterEditMode(id);
         }
-
-        /** Edit Mode is already Active */
-        if (!isThisNodeBeingEdited) {
-            setEditMode(true);
-            setEditingNodeId(id);
-        }
-    }, [setEditMode, isEditModeActive, isThisNodeBeingEdited, setEditingNodeId, id]);
+    }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id]);
 
     const handleExpandToggle = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();

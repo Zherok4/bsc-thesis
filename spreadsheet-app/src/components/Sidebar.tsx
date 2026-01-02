@@ -75,8 +75,20 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
 
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
-  const [isEditModeActive, setEditMode] = useState<boolean>(false);
-  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [isEditModeActive, setEditModeInternal] = useState<boolean>(false);
+  const [editingNodeId, setEditingNodeIdInternal] = useState<string | null>(null);
+
+  /** Enters edit mode, optionally targeting a specific node */
+  const enterEditMode = useCallback((nodeId?: string) => {
+    setEditModeInternal(true);
+    setEditingNodeIdInternal(nodeId ?? null);
+  }, []);
+
+  /** Exits edit mode and clears the editing node */
+  const exitEditMode = useCallback(() => {
+    setEditModeInternal(false);
+    setEditingNodeIdInternal(null);
+  }, []);
 
   const [measuredDimensions, setMeasuredDimensions] = useState<NodeDimensionsMap>(new Map());
   const [needsRelayout, setNeedsRelayout] = useState(false);
@@ -170,7 +182,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
       hfInstance,
       activeSheetName: graphSheetName,
       isEditModeActive,
-      setEditMode,
+      enterEditMode,
     };
 
     const graph = toGraphWithExpansion(tree, context, mergeConfig);
@@ -269,8 +281,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isEditModeActive) {
-        setEditMode(false);
-        setEditingNodeId(null);
+        exitEditMode();
         if (selectedCell !== null) {
           scrollToCell(selectedCell.row, selectedCell.col, activeSheetName)
         }
@@ -279,13 +290,12 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditModeActive, setEditMode]);
+  }, [isEditModeActive, exitEditMode]);
 
   return (
     <div className={`sidebar-inner ${isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
-      <GraphEditModeContext.Provider 
-      // TODO create API function for swithcing edit mode
-        value={{ isEditModeActive, setEditMode, editingNodeId, setEditingNodeId}}
+      <GraphEditModeContext.Provider
+        value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode }}
       >
         <HyperFormulaProvider 
           hfInstance={hfInstance} 

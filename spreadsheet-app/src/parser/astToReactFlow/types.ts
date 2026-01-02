@@ -1,6 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { HyperFormula } from "hyperformula";
-import type { Dispatch, SetStateAction } from "react";
 
 /**
  * Represents a ReactFlow graph with nodes and edges
@@ -36,8 +35,8 @@ export interface ExpansionContext {
     visitedCells?: Set<string>;
     /** Whether edit mode is currently active */
     isEditModeActive: boolean;
-    /** Setter for edit mode state (true = active, false = inactive) */
-    setEditMode: Dispatch<SetStateAction<boolean>>;
+    /** Enters edit mode, optionally targeting a specific node */
+    enterEditMode: (nodeId?: string) => void;
     /** Whether this node is part of an inactive conditional branch (for graying out) */
     isInactivePath?: boolean;
 }

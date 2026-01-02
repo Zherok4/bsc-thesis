@@ -22,16 +22,17 @@ interface GraphToolbarProps {
  * Includes a sync button to manually update the graph to the current selection.
  */
 export default function GraphToolbar({ currentCellAddress, hasPendingSync, pendingCellAddress, onSync }: GraphToolbarProps): ReactElement {
-  const { isEditModeActive, setEditMode, setEditingNodeId }: GraphEditModeContextValue = useGraphEditMode();
+  const { isEditModeActive, enterEditMode, exitEditMode }: GraphEditModeContextValue = useGraphEditMode();
 
-  const handlePreviewMode = () => {
-    setEditMode(false);
-    setEditingNodeId(null);
+  const handlePreviewMode = (): void => {
+    exitEditMode();
   };
 
-  const handleEditMode = () => {
-    setEditMode(true);
+  const handleEditMode = (): void => {
+    enterEditMode();
   };
+
+  const shouldShowSyncButton = pendingCellAddress && currentCellAddress !== pendingCellAddress && !isEditModeActive;
 
   return (
     <div className="graph-toolbar">
@@ -56,7 +57,7 @@ export default function GraphToolbar({ currentCellAddress, hasPendingSync, pendi
         </span>
       )}
       <button
-        className={`toolbar-button sync-button ${pendingCellAddress && currentCellAddress !== pendingCellAddress ? 'visible' : 'hidden'}`}
+        className={`toolbar-button sync-button ${shouldShowSyncButton ? 'visible' : 'hidden'}`}
         onClick={onSync}
         title="Sync graph to current selection"
         aria-label="Sync graph"
