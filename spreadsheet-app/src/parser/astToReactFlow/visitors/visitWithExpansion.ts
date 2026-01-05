@@ -161,9 +161,12 @@ function handleCellReferenceWithFormula(
     // When expanded, connect children directly to the reference node
     if (isExpanded) {
         // Recursively visit the cell's formula children with circular ref protection
+        // Update activeSheetName to the resolved sheet so relative references within
+        // the expanded formula resolve to the correct sheet
         const childContext: ExpansionContext = {
             ...context,
             visitedCells: new Set([...visitedCells, cellId]),
+            activeSheetName: resolvedSheet,
         };
 
         // cellFormula wraps a FormulaNode - visit its children (the top-level expressions)
