@@ -398,11 +398,24 @@ function handleConditionalFunctionCall(
         }
     }
 
+    // Build constant args info for editable constants
+    const constantArgs: Record<number, { astNodeId: string; type: 'number' | 'string'; rawValue: string | number }> = {};
+    funNode.arguments.forEach((arg, idx) => {
+        const info = getConstantInfo(arg);
+        if (info) {
+            constantArgs[idx] = {
+                astNodeId: info.astNodeId,
+                type: info.type,
+                rawValue: info.rawValue,
+            };
+        }
+    });
+
     const createdNode = createConditionalNode(funName, argFormulas, funFormula, {
         onToggleBranchExpand: context.onToggleExpand,
         branchExpansionIds,
         expandedBranchIndices,
-    }, context.activeSheetName);
+    }, context.activeSheetName, Object.keys(constantArgs).length > 0 ? constantArgs : undefined);
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);

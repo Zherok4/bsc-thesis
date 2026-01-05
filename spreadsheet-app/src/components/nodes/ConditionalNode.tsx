@@ -4,7 +4,20 @@ import { Handle, Position } from "@xyflow/react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { evaluateFormula } from "../../utils";
 import { getParameterName } from "../../data/functionParameters";
+import EditableConstant, { type ConstantType } from "./EditableConstant";
 import './ConditionalNode.css';
+
+/**
+ * Information about a constant argument for editing purposes
+ */
+export interface ConstantArgInfo {
+    /** The AST node ID of the constant */
+    astNodeId: string;
+    /** The type of the constant (number or string) */
+    type: ConstantType;
+    /** The raw value (number for numbers, unquoted string for strings) */
+    rawValue: string | number;
+}
 
 /**
  * Node type for IF and IFS conditional functions.
@@ -28,9 +41,31 @@ export type ConditionalNode = Node<
     expandedBranchIndices: number[];
     /** Sheet name where this conditional resides */
     sheet: string;
+    /** Map of argument index to constant info (only present for constant arguments) */
+    constantArgs?: Record<number, ConstantArgInfo>;
 },
 'ConditionalNode'
 >;
+
+/**
+ * Checks if a formula is a constant value (number or string literal).
+ * Returns the constant value if it is, otherwise returns null.
+ */
+function getConstantValue(formula: string): string | null {
+    const trimmed = formula.trim();
+
+    // Check for number (including negatives and decimals)
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    // Check for string literal (wrapped in double quotes)
+    if (/^".*"$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    return null;
+}
 
 /**
  * Determines if a condition result is truthy.
@@ -67,6 +102,7 @@ function isConstantFormula(formula: string): boolean {
  * ConditionalNode component for visualizing IF and IFS functions.
  */
 export default function ConditionalNodeComponent({
+    id,
     data: {
         funName,
         argFormulas,
@@ -74,6 +110,7 @@ export default function ConditionalNodeComponent({
         branchExpansionIds,
         expandedBranchIndices,
         sheet,
+        constantArgs,
     }
 }: NodeProps<ConditionalNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
@@ -82,12 +119,14 @@ export default function ConditionalNodeComponent({
     if (funName === 'IF') {
         return (
             <IfModeContent
+                nodeId={id}
                 argFormulas={argFormulas}
                 hfInstance={hfInstance}
                 sheet={sheet}
                 onToggleBranchExpand={onToggleBranchExpand}
                 branchExpansionIds={branchExpansionIds}
                 expandedSet={expandedSet}
+                constantArgs={constantArgs}
             />
         );
     }
@@ -95,35 +134,41 @@ export default function ConditionalNodeComponent({
     // IFS mode
     return (
         <IfsModeContent
+            nodeId={id}
             argFormulas={argFormulas}
             hfInstance={hfInstance}
             sheet={sheet}
             onToggleBranchExpand={onToggleBranchExpand}
             branchExpansionIds={branchExpansionIds}
             expandedSet={expandedSet}
+            constantArgs={constantArgs}
         />
     );
 }
 
 interface IfModeProps {
+    nodeId: string;
     argFormulas: string[];
     hfInstance: HyperFormulaContextValue['hfInstance'];
     sheet: string;
     onToggleBranchExpand: (branchId: string) => void;
     branchExpansionIds: string[];
     expandedSet: Set<number>;
+    constantArgs?: Record<number, ConstantArgInfo>;
 }
 
 /**
  * IF mode rendering - condition with true/false branches.
  */
 function IfModeContent({
+    nodeId,
     argFormulas,
     hfInstance,
     sheet,
     onToggleBranchExpand,
     branchExpansionIds,
     expandedSet,
+    constantArgs,
 }: IfModeProps): JSX.Element {
 
     const residingSheet = sheet;
@@ -214,7 +259,33 @@ function IfModeContent({
                                 className="arg-handle"
                             />
                             <span className="arg-label">{getParameterName('IF', 1)}</span>
-                            <span className="arg-value">{trueBranchValue || '—'}</span>
+                            {(() => {
+                                const constantValue = getConstantValue(argFormulas[1] || '');
+                                const constantInfo = constantArgs?.[1];
+                                // Editable constant - always show
+                                if (constantValue && constantInfo) {
+                                    return (
+                                        <EditableConstant
+                                            displayValue={constantValue}
+                                            rawValue={constantInfo.rawValue}
+                                            type={constantInfo.type}
+                                            astNodeId={constantInfo.astNodeId}
+                                            editId={`${nodeId}-arg-1`}
+                                            className="arg-value"
+                                        />
+                                    );
+                                }
+                                // Non-editable constant - always show
+                                if (constantValue) {
+                                    return <span className="arg-value">{constantValue}</span>;
+                                }
+                                // Reference/formula: show value only when collapsed (not active and not expanded)
+                                const isBranchCollapsed = activeBranchIndex !== 0 && !isTrueBranchExpanded;
+                                if (isBranchCollapsed) {
+                                    return <span className="arg-value">{trueBranchValue || '—'}</span>;
+                                }
+                                return null;
+                            })()}
                             {activeBranchIndex === 0 && (
                                 <Handle
                                     type="source"
@@ -242,7 +313,33 @@ function IfModeContent({
                                 className="arg-handle"
                             />
                             <span className="arg-label">{getParameterName('IF', 2)}</span>
-                            <span className="arg-value">{falseBranchValue || '—'}</span>
+                            {(() => {
+                                const constantValue = getConstantValue(argFormulas[2] || '');
+                                const constantInfo = constantArgs?.[2];
+                                // Editable constant - always show
+                                if (constantValue && constantInfo) {
+                                    return (
+                                        <EditableConstant
+                                            displayValue={constantValue}
+                                            rawValue={constantInfo.rawValue}
+                                            type={constantInfo.type}
+                                            astNodeId={constantInfo.astNodeId}
+                                            editId={`${nodeId}-arg-2`}
+                                            className="arg-value"
+                                        />
+                                    );
+                                }
+                                // Non-editable constant - always show
+                                if (constantValue) {
+                                    return <span className="arg-value">{constantValue}</span>;
+                                }
+                                // Reference/formula: show value only when collapsed (not active and not expanded)
+                                const isBranchCollapsed = activeBranchIndex !== 1 && !isFalseBranchExpanded;
+                                if (isBranchCollapsed) {
+                                    return <span className="arg-value">{falseBranchValue || '—'}</span>;
+                                }
+                                return null;
+                            })()}
                             {activeBranchIndex === 1 && (
                                 <Handle
                                     type="source"
@@ -259,24 +356,28 @@ function IfModeContent({
 }
 
 interface IfsModeProps {
+    nodeId: string;
     argFormulas: string[];
     hfInstance: HyperFormulaContextValue['hfInstance'];
     sheet: string;
     onToggleBranchExpand: (branchId: string) => void;
     branchExpansionIds: string[];
     expandedSet: Set<number>;
+    constantArgs?: Record<number, ConstantArgInfo>;
 }
 
 /**
  * IFS mode rendering - multiple condition-value pairs.
  */
 function IfsModeContent({
+    nodeId,
     argFormulas,
     hfInstance,
     sheet,
     onToggleBranchExpand,
     branchExpansionIds,
     expandedSet,
+    constantArgs,
 }: IfsModeProps): JSX.Element {
     // Build condition-value pairs
     const pairs = useMemo(() => {
@@ -373,7 +474,33 @@ function IfsModeContent({
                                             className="arg-handle"
                                         />
                                         <span className="arg-label">{getParameterName('IFS', pair.valueIndex)}</span>
-                                        <span className="arg-value">{valueResults[pairIndex] || '—'}</span>
+                                        {(() => {
+                                            const constantValue = getConstantValue(pair.value);
+                                            const constantInfo = constantArgs?.[pair.valueIndex];
+                                            // Editable constant - always show
+                                            if (constantValue && constantInfo) {
+                                                return (
+                                                    <EditableConstant
+                                                        displayValue={constantValue}
+                                                        rawValue={constantInfo.rawValue}
+                                                        type={constantInfo.type}
+                                                        astNodeId={constantInfo.astNodeId}
+                                                        editId={`${nodeId}-arg-${pair.valueIndex}`}
+                                                        className="arg-value"
+                                                    />
+                                                );
+                                            }
+                                            // Non-editable constant - always show
+                                            if (constantValue) {
+                                                return <span className="arg-value">{constantValue}</span>;
+                                            }
+                                            // Reference/formula: show value only when collapsed (not active and not expanded)
+                                            const isBranchCollapsed = !isActive && !isExpanded;
+                                            if (isBranchCollapsed) {
+                                                return <span className="arg-value">{valueResults[pairIndex] || '—'}</span>;
+                                            }
+                                            return null;
+                                        })()}
                                         {isActive && (
                                             <Handle
                                                 type="source"

@@ -1,6 +1,7 @@
 import type { Node } from "@xyflow/react";
 import { generateNodeId, getNodeIdCounter } from "./idGenerator";
 import type { ConstantArgInfo } from "../../components/nodes/FunctionNode";
+import type { ConstantArgInfo as ConditionalConstantArgInfo } from "../../components/nodes/ConditionalNode";
 import type { ConstantOperandInfo } from "../../components/nodes/BinOpNode";
 
 /**
@@ -276,13 +277,15 @@ interface ConditionalExpansionConfig {
  * @param funFormula - The complete function formula string
  * @param expansionConfig - Configuration for branch expansion
  * @param sheet - The sheet name where this conditional resides
+ * @param constantArgs - Optional map of argument index to constant info for editable constants
  */
 export function createConditionalNode(
     funName: 'IF' | 'IFS',
     argFormulas: string[],
     funFormula: string,
     expansionConfig: ConditionalExpansionConfig,
-    sheet: string
+    sheet: string,
+    constantArgs?: Record<number, ConditionalConstantArgInfo>
 ): Node {
     return {
         id: generateNodeId(),
@@ -295,6 +298,7 @@ export function createConditionalNode(
             branchExpansionIds: expansionConfig.branchExpansionIds,
             expandedBranchIndices: expansionConfig.expandedBranchIndices,
             sheet,
+            constantArgs,
         },
         type: "ConditionalNode",
     };
