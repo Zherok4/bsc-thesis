@@ -2,6 +2,7 @@ import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
 import { memo, useCallback, useImperativeHandle, useRef, useMemo, useEffect, type JSX } from 'react';
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
+import type { MergeCellSettings } from './TopBar';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 import './Datatable.css';
@@ -46,6 +47,8 @@ interface DatatableProps {
     activeSheetName: string;
     /** Version counter to trigger re-renders when sheets change */
     sheetsVersion?: number;
+    /** Merge cell settings per sheet */
+    sheetMergeData?: { [key: string]: MergeCellSettings[] };
     /** Ref for imperative handle access */
     ref?: React.Ref<DatatableHandle>;
 }
@@ -84,7 +87,7 @@ export interface DatatableHandle {
  * @param props.sheetsVersion - Version counter for sheet updates
  * @param props.ref - Imperative handle ref
  */
-const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, ref}: DatatableProps): JSX.Element[] => {
+const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, sheetMergeData, ref}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
     const currentViewedCell = useRef<ViewedCell | null>(null);
@@ -304,10 +307,11 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                     engine: hfInstance,
                     sheetName: sheetName,
                 }}
+                mergeCells={sheetMergeData?.[sheetName] ?? false}
                 minCols = {100}
                 contextMenu={true}
                 /*
-                * AutoRow / Column ==> lead to critical error 
+                * AutoRow / Column ==> lead to critical error
                 * ==> to prevent this we have to fix that every sheet has same dimensions or
                 * make the datatable remount on every sheet change (because if we do not remount them they still get rendered in the background)
                 * and if then a hfInstance does not have correct dimensions with one of the hiddensheets ==> crashes

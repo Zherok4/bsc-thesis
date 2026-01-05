@@ -4,6 +4,7 @@ import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
+import type { ImportResult, MergeCellSettings } from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
 import { HyperFormula } from 'hyperformula';
 import Sidebar from './components/Sidebar';
@@ -38,6 +39,7 @@ function App() {
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
   const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
   const [sheetsVersion, setSheetsVersion] = useState(0);
+  const [sheetMergeData, setSheetMergeData] = useState<{ [key: string]: MergeCellSettings[] }>({});
 
 
   const selectedCellValueAST: FormulaNode | undefined = useMemo(() => {
@@ -209,11 +211,11 @@ function App() {
    * - User imports an Excel file via the TopBar
    *
    * Loads the imported sheets and displays the first sheet
-   * @param importedSheets - Array of sheets with their data
+   * @param result - Import result containing sheet data and merge information
    */
-  // TODO: Give / Use type of a cell
-  const handleImport = useCallback((sheetsAsJavascriptArrays: {[key: string]: (any)[][]}) => {
-    if (sheetsAsJavascriptArrays) {
+  const handleImport = useCallback((result: ImportResult) => {
+    const { sheetData, mergeData } = result;
+    if (sheetData) {
       hfInstance.batch(() => {
         // Remove all active Sheets
         const sheetNames = hfInstance.getSheetNames();
@@ -225,20 +227,22 @@ function App() {
         }
 
         // Add all new sheets
-        for (const [sheetName, sheetData] of Object.entries(sheetsAsJavascriptArrays)) {
+        for (const [sheetName, data] of Object.entries(sheetData)) {
           if (hfInstance.isItPossibleToAddSheet(sheetName)) {
             hfInstance.addSheet(sheetName);
             const sheetId = hfInstance.getSheetId(sheetName);
             if (sheetId !== undefined) {
               // TODO: First normalize data ==> first row has to be equal length of longest row
-              hfInstance.setSheetContent(sheetId, sheetData);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              hfInstance.setSheetContent(sheetId, data as any);
             }
           }
         }
       });
       // Update states
+      setSheetMergeData(mergeData);
       setSheetsVersion(prev => prev + 1);
-      handleSheetChange(Object.keys(sheetsAsJavascriptArrays)[0]);
+      handleSheetChange(Object.keys(sheetData)[0]);
     }
   }, [handleSheetChange]);
 
@@ -255,6 +259,7 @@ function App() {
               hfInstance={hfInstance}
               activeSheetName={activeSheetName}
               sheetsVersion={sheetsVersion}
+              sheetMergeData={sheetMergeData}
               ref={datatableRef}
             />
           </div>
