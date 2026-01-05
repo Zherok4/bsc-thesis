@@ -1,6 +1,18 @@
 import { collapsedNodeFactory } from "./collapsedNodeFactory";
 import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, ColumnRangeNode, FormulaNode, FunctionCallNode, NumberLiteralNode, PercentNode, RowRangeNode, StringLiteralNode, UnaryOpNode } from "./visitor";
 
+/**
+ * Formats a sheet name for use in formulas.
+ * Wraps the name in single quotes if it contains spaces or special characters.
+ */
+function formatSheetName(sheet: string): string {
+    // Quote sheet names that contain spaces or special characters
+    if (/[\s'!]/.test(sheet)) {
+        return `'${sheet}'`;
+    }
+    return sheet;
+}
+
 export interface CollapsedNode {
     type: "CollapsedNode";
     label: string;
@@ -36,22 +48,23 @@ export function nodeToString(node: ASTNode): string {
         }
         case "CellReference":{
             const refNode = node as CellReferenceNode;
-            const prefix = refNode.sheet? `${refNode.sheet}!` : "";
+            const prefix = refNode.sheet ? `${formatSheetName(refNode.sheet)}!` : "";
             return `${prefix}${refNode.reference}`;
         }
         case "CellRange":{
             const rangeNode = node as CellRangeNode;
-            const prefix = rangeNode.sheet? `${rangeNode.sheet}!` : "";
-            return `${prefix}${nodeToString(rangeNode.start)}:${nodeToString(rangeNode.end)}`;
+            const prefix = rangeNode.sheet ? `${formatSheetName(rangeNode.sheet)}!` : "";
+            // Use reference directly to avoid duplicating sheet prefix from start/end nodes
+            return `${prefix}${rangeNode.start.reference}:${rangeNode.end.reference}`;
         }
         case "ColumnRange":{
             const colRangeNode = node as ColumnRangeNode;
-            const prefix = colRangeNode.sheet ? `${colRangeNode.sheet}!` : "";
+            const prefix = colRangeNode.sheet ? `${formatSheetName(colRangeNode.sheet)}!` : "";
             return `${prefix}${colRangeNode.startColumn}:${colRangeNode.endColumn}`;
         }
         case "RowRange":{
             const rowRangeNode = node as RowRangeNode;
-            const prefix = rowRangeNode.sheet ? `${rowRangeNode.sheet}!` : "";
+            const prefix = rowRangeNode.sheet ? `${formatSheetName(rowRangeNode.sheet)}!` : "";
             return `${prefix}${rowRangeNode.startRow}:${rowRangeNode.endRow}`;
         }
         case "NumberLiteral":{

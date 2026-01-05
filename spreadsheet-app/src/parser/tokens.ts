@@ -43,7 +43,7 @@ export const CellReference: TokenType = createToken({
 
 export const SheetReference: TokenType = createToken({
     name: "SheetReference",
-    pattern: /[A-Za-z_][A-Za-z0-9_]*!/,
+    pattern: /(?:'[^']*'|[A-Za-z_][A-Za-z0-9_]*)!/,
 })
 
 export const FunctionName: TokenType = createToken({

@@ -318,7 +318,12 @@ class SpreadsheetASTVisitor extends BaseSpreadsheetVisitor {
     }
 
     cellRange(ctx: any): CellReferenceNode | CellRangeNode | ColumnRangeNode | RowRangeNode {
-        const sheet = ctx.SheetReference ? ctx.SheetReference[0].image.slice(0, -1) : undefined;
+        let sheet: string | undefined = undefined;
+        if (ctx.SheetReference) {
+            // Remove trailing '!' and strip quotes if present
+            const raw = ctx.SheetReference[0].image.slice(0, -1);
+            sheet = raw.startsWith("'") && raw.endsWith("'") ? raw.slice(1, -1) : raw;
+        }
 
         // Handle column range: A:B, $A:$B
         if (ctx.startCol) {
