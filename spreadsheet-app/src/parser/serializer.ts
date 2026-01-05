@@ -109,7 +109,7 @@ export function createCellReferenceTransformer(
         return {
             nodeId: refNode.nodeId,
             type: 'CellReference',
-            sheet: newSheet ?? refNode.sheet,
+            sheet: newSheet,
             reference: newReference,
             column: column.toUpperCase(),
             row: parseInt(row, 10),
@@ -183,11 +183,11 @@ export function createCellRangeTransformer(
         return {
             nodeId: rangeNode.nodeId,
             type: 'CellRange',
-            sheet: newSheet ?? rangeNode.sheet,
+            sheet: newSheet,
             start: {
                 nodeId: rangeNode.start.nodeId,
                 type: 'CellReference',
-                sheet: newSheet ?? rangeNode.start.sheet,
+                sheet: newSheet,
                 reference: startReference,
                 column: startCol.toUpperCase(),
                 row: parseInt(startRow, 10),
@@ -197,7 +197,7 @@ export function createCellRangeTransformer(
             end: {
                 nodeId: rangeNode.end.nodeId,
                 type: 'CellReference',
-                sheet: newSheet ?? rangeNode.end.sheet,
+                sheet: newSheet,
                 reference: endReference,
                 column: endCol.toUpperCase(),
                 row: parseInt(endRow, 10),
@@ -228,7 +228,7 @@ export function createColumnRangeTransformer(
         return {
             nodeId: colRangeNode.nodeId,
             type: 'ColumnRange',
-            sheet: newSheet ?? colRangeNode.sheet,
+            sheet: newSheet,
             startColumn: startColumn.toUpperCase(),
             endColumn: endColumn.toUpperCase(),
             absoluteStart: colRangeNode.absoluteStart,
@@ -257,7 +257,7 @@ export function createRowRangeTransformer(
         return {
             nodeId: rowRangeNode.nodeId,
             type: 'RowRange',
-            sheet: newSheet ?? rowRangeNode.sheet,
+            sheet: newSheet,
             startRow,
             endRow,
             absoluteStart: rowRangeNode.absoluteStart,

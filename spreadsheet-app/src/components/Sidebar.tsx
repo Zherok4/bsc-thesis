@@ -130,12 +130,10 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
     switch (edit.type) {
       case 'reference': {
-        // Only include sheet prefix if the reference is to a different sheet
-        const isSameSheet = edit.sheet === syncedCell.sheet;
-        const newValue = isSameSheet ? edit.newValue : `${edit.sheet}!${edit.newValue}`;
         // Pass undefined for sheet if same sheet, so no sheet prefix is added to the AST
+        const isSameSheet = edit.sheet === syncedCell.sheet;
         const newSheet = isSameSheet ? undefined : edit.sheet;
-        transformer = createCellReferenceTransformer(newValue, newSheet);
+        transformer = createCellReferenceTransformer(edit.newValue, newSheet);
         break;
       }
       case 'number':
