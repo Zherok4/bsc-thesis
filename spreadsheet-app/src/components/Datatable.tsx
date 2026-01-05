@@ -38,6 +38,8 @@ interface ViewedCell {
 interface DatatableProps {
     /** Callback invoked when a cell is selected */
     onCellSelect: (value: string, row: number, col: number) => void;
+    /** Callback invoked when a range is selected (including single cell as 1x1 range) */
+    onRangeSelect?: (startRow: number, startCol: number, endRow: number, endCol: number) => void;
     /** HyperFormula instance for formula calculations */
     hfInstance: HyperFormula;
     /** Name of the currently active sheet */
@@ -82,7 +84,7 @@ export interface DatatableHandle {
  * @param props.sheetsVersion - Version counter for sheet updates
  * @param props.ref - Imperative handle ref
  */
-const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, ref}: DatatableProps): JSX.Element[] => {
+const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, ref}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
     const currentViewedCell = useRef<ViewedCell | null>(null);
@@ -254,12 +256,12 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
         },
     }), [activeSheetName]);
 
-    const createAfterSelectionHandler = useCallback((sheetName: string): (startRow: number, startColumn: number, _endRow: number, _endCol: number) => void => {
+    const createAfterSelectionHandler = useCallback((sheetName: string): (startRow: number, startColumn: number, endRow: number, endCol: number) => void => {
         return (
             startRow: number,
             startColumn: number,
-            _endRow: number,
-            _endCol: number
+            endRow: number,
+            endCol: number
         ): void => {
             if (sheetName !== activeSheetName) return;
 
@@ -269,9 +271,14 @@ const Datatable = ({onCellSelect, hfInstance, activeSheetName, sheetsVersion, re
 
             const rawValue = hotInstance.getSourceDataAtCell(startRow, startColumn);
             const displayValue = rawValue === null || rawValue === undefined ? '' : String(rawValue);
-            onCellSelect(displayValue, startRow, startColumn)
-        }}
-    , [onCellSelect, activeSheetName]);
+            onCellSelect(displayValue, startRow, startColumn);
+
+            // Report range selection (including single cell as 1x1 range)
+            if (onRangeSelect) {
+                onRangeSelect(startRow, startColumn, endRow, endCol);
+            }
+        };
+    }, [onCellSelect, onRangeSelect, activeSheetName]);
 
     // TODO: afterEdit hook ==> also an Edit can change current Value State
     return (sheetNames.map((sheetName: string) => (

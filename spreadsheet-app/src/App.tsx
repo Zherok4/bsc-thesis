@@ -9,6 +9,7 @@ import { HyperFormula } from 'hyperformula';
 import Sidebar from './components/Sidebar';
 import type { FormulaNode } from './parser';
 import { parseFormula } from './parser';
+import type { SelectedRange } from './components/context/HyperFormulaContext';
 
 const options : {licenseKey : string, useArrayArithmetic: boolean} = {
   licenseKey: 'gpl-v3',
@@ -33,6 +34,7 @@ function App() {
   }, []);
 
   const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
+  const [selectedRange, setSelectedRange] = useState<SelectedRange | null>(null);
   const [selectedCellValue, setSelectedCellValue] = useState<string>('');
   const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
   const [sheetsVersion, setSheetsVersion] = useState(0);
@@ -72,6 +74,19 @@ function App() {
     if (currentDatatable) {
       currentDatatable.clearHighlight();
     }
+  }, []);
+
+  /**
+   * updateRangeSelection is triggered when a range is selected in the Datatable.
+   * Includes single cell selection as a 1x1 range.
+   */
+  const updateRangeSelection = useCallback((
+    startRow: number,
+    startCol: number,
+    endRow: number,
+    endCol: number,
+  ) => {
+    setSelectedRange({ startRow, startCol, endRow, endCol });
   }, []);
 
   /**
@@ -234,9 +249,10 @@ function App() {
       <div className="main-container">
         <div className="datatable-container">
           <div className="hottable-wrapper">
-            <Datatable 
-              onCellSelect={updateSelectionState} 
-              hfInstance={hfInstance} 
+            <Datatable
+              onCellSelect={updateSelectionState}
+              onRangeSelect={updateRangeSelection}
+              hfInstance={hfInstance}
               activeSheetName={activeSheetName}
               sheetsVersion={sheetsVersion}
               ref={datatableRef}
@@ -250,16 +266,17 @@ function App() {
         </div>
         <div className="sidebar-container">
           <Sidebar
-          ast={selectedCellValueAST}
-          hfInstance={hfInstance}
-          activeSheetName={activeSheetName}
-          selectedCell={selectedCell}
-          scrollToCell={scrollToCell}
-          highlightCells={highlightCells}
-          clearHighlight={handleClearHighlight}
-          setViewedCellHighlight={setViewedCellHighlight}
-          clearViewedCellHighlight={clearViewedCellHighlight}
-          onNodeEdit={handleNodeEdit}
+            ast={selectedCellValueAST}
+            hfInstance={hfInstance}
+            activeSheetName={activeSheetName}
+            selectedCell={selectedCell}
+            selectedRange={selectedRange}
+            scrollToCell={scrollToCell}
+            highlightCells={highlightCells}
+            clearHighlight={handleClearHighlight}
+            setViewedCellHighlight={setViewedCellHighlight}
+            clearViewedCellHighlight={clearViewedCellHighlight}
+            onNodeEdit={handleNodeEdit}
           />
         </div>
       </div>
