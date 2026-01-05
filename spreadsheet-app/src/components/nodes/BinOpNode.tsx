@@ -31,6 +31,21 @@ export type BinOpNode = Node<
 >;
 
 /**
+ * Mirrors asymmetric comparison operators.
+ * Used when the left operand is displayed on the right side.
+ * For example: `5 > x` becomes `x < 5` when displayed.
+ */
+function getMirroredOperator(operator: string): string {
+    switch (operator) {
+        case ">": return "<";
+        case "<": return ">";
+        case ">=": return "<=";
+        case "<=": return ">=";
+        default: return operator;
+    }
+}
+
+/**
  * Maps raw operator symbols to display-friendly versions
  */
 function getDisplayOperator(operator: string): string {
@@ -74,18 +89,24 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
     const rightDisplayInfo = hasOnlyLeftConstant ? leftConstantInfo : rightConstantInfo;
     const rightEditId = hasOnlyLeftConstant ? `${id}-left` : `${id}-right`;
 
+    // Mirror the operator when the left constant is displayed on the right side
+    // e.g., `5 > x` displayed as `[x] < 5`
+    const displayOperator = hasOnlyLeftConstant ? getMirroredOperator(operator) : operator;
+
     return (
         <div className={`node-wrapper binop-node-wrapper`}>
             <div className="selected-indicator"></div>
             <div className="binop-node">
+                {/* Single input handle on the left side */}
+                <Handle
+                    type="target"
+                    position={Position.Left}
+                    id="operand"
+                    className="binop-handle-input"
+                />
+
                 {/* Left operand - only show constant if both sides have constants */}
                 <div className={`binop-operand binop-left ${!leftDisplayValue ? 'binop-empty' : ''}`}>
-                    <Handle
-                        type="target"
-                        position={Position.Left}
-                        id="left-operand"
-                        className="binop-handle-input"
-                    />
                     {leftDisplayValue && leftDisplayInfo && (
                         <EditableConstant
                             displayValue={formatConstant(leftDisplayValue).display}
@@ -105,7 +126,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                 </div>
 
                 {/* Operator */}
-                <span className="binop-operator">{getDisplayOperator(operator)}</span>
+                <span className="binop-operator">{getDisplayOperator(displayOperator)}</span>
 
                 {/* Right operand - shows the single constant when only one exists */}
                 <div className={`binop-operand binop-right ${!rightDisplayValue ? 'binop-empty' : ''}`}>
@@ -125,18 +146,12 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             {formatConstant(rightDisplayValue).display}
                         </span>
                     )}
-                    <Handle
-                        type="target"
-                        position={Position.Right}
-                        id="right-operand"
-                        className="binop-handle-input binop-handle-right"
-                    />
                 </div>
 
-                {/* Output handle */}
+                {/* Output handle on the right side */}
                 <Handle
                     type="source"
-                    position={Position.Bottom}
+                    position={Position.Right}
                     id="result"
                     className="binop-handle-output"
                 />
