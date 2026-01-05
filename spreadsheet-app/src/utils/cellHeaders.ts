@@ -30,7 +30,7 @@ function isEmpty(value: CellValue): boolean {
 
 /**
  * Finds the column header for a cell by searching upward in the same column.
- * Stops searching when an empty cell is encountered.
+ * Skips empty cells and continues searching until a string header is found.
  *
  * @param hfInstance - HyperFormula instance
  * @param sheetId - The sheet ID to search in
@@ -54,9 +54,9 @@ export function findColumnHeader(
             return null;
         }
 
-        // If we hit an empty cell, stop searching (no continuous header chain)
+        // Skip empty cells and continue searching upward
         if (isEmpty(value)) {
-            return null;
+            continue;
         }
 
         // If we find a string, it's a potential header
@@ -72,7 +72,7 @@ export function findColumnHeader(
 
 /**
  * Finds the row header for a cell by searching leftward in the same row.
- * Stops searching when an empty cell is encountered.
+ * Skips empty cells and continues searching until a string header is found.
  *
  * @param hfInstance - HyperFormula instance
  * @param sheetId - The sheet ID to search in
@@ -96,9 +96,9 @@ export function findRowHeader(
             return null;
         }
 
-        // If we hit an empty cell, stop searching
+        // Skip empty cells and continue searching leftward
         if (isEmpty(value)) {
-            return null;
+            continue;
         }
 
         // If we find a string, it's a potential header
