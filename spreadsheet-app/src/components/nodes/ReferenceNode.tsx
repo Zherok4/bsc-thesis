@@ -5,6 +5,7 @@ import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type 
 import type { CellValue, SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useCellHeaders } from "../../hooks";
+import splitIcon from "../../assets/split-svgrepo-com.svg";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -22,13 +23,15 @@ export type ReferenceNode = Node<
     astNodeId?: string,
     /** Array of AST node IDs when this node represents merged references */
     astNodeIds?: string[],
+    /** Reference key for merged nodes (used for unmerge action) */
+    mergedRefKey?: string,
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
-    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
+    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
 
@@ -140,6 +143,16 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         exitEditMode();
     }, [exitEditMode]);
 
+    /** Whether this node is merged (multiple occurrences combined into one) */
+    const isMerged = Boolean(mergedRefKey);
+
+    const handleUnmerge = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (mergedRefKey) {
+            onUnmerge(mergedRefKey);
+        }
+    }, [mergedRefKey, onUnmerge]);
+
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
         
@@ -210,6 +223,15 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                         >
                             ✕
                         </button>
+                        {isMerged && (
+                            <button
+                                className="edit-action-btn unmerge-btn"
+                                onClick={handleUnmerge}
+                                title="Unmerge to edit separately"
+                            >
+                                <img src={splitIcon} alt="Unmerge" />
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

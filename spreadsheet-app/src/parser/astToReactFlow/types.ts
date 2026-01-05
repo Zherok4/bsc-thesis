@@ -39,4 +39,8 @@ export interface ExpansionContext {
     enterEditMode: (nodeId?: string) => void;
     /** Whether this node is part of an inactive conditional branch (for graying out) */
     isInactivePath?: boolean;
+    /** Reference key to skip merging for (allows temporary unmerge for editing) */
+    skipMergeForRefKey?: string;
+    /** Callback to unmerge a merged node for individual editing */
+    onUnmerge?: (refKey: string) => void;
 }

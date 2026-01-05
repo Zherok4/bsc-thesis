@@ -69,6 +69,7 @@ export function toGraphWithExpansion(
         return mergeDuplicateReferences(graph, {
             maxDistance: mergeConfig.maxDistance,
             activeSheetName: context.activeSheetName,
+            skipMergeForRefKey: context.skipMergeForRefKey,
         });
     }
 

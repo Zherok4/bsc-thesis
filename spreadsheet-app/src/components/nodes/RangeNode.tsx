@@ -5,6 +5,7 @@ import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type 
 import { type CellValue, type SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useRangeHeaders } from "../../hooks";
+import splitIcon from "../../assets/split-svgrepo-com.svg";
 import "./RangeNode.css"
 
 /**
@@ -45,6 +46,8 @@ export type RangeNode = Node<
     astNodeId?: string;
     /** Array of AST node IDs when this node represents merged ranges */
     astNodeIds?: string[];
+    /** Reference key for merged nodes (used for unmerge action) */
+    mergedRefKey?: string;
 },
 'RangeNode'
 >;
@@ -54,12 +57,12 @@ export type RangeNode = Node<
  */
 export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedRange, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
-    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
+    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
 
     const isThisNodeBeingEdited = editingNodeId === id;
     const rangeType = data.rangeType ?? "cell"; // Default to cell for backwards compatibility
     const residingSheet = data.sheet;
-    const { astNodeId, astNodeIds } = data;
+    const { astNodeId, astNodeIds, mergedRefKey } = data;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -247,6 +250,16 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
         exitEditMode();
     }, [exitEditMode]);
 
+    /** Whether this node is merged (multiple occurrences combined into one) */
+    const isMerged = Boolean(mergedRefKey);
+
+    const handleUnmerge = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        if (mergedRefKey) {
+            onUnmerge(mergedRefKey);
+        }
+    }, [mergedRefKey, onUnmerge]);
+
     // Generate the display label based on range type, with live preview during editing
     const rangeLabel = useMemo<{ start: string; end: string }>(() => {
         // If editing, show preview of selected range
@@ -364,6 +377,15 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                         >
                             ✕
                         </button>
+                        {isMerged && (
+                            <button
+                                className="edit-action-btn unmerge-btn"
+                                onClick={handleUnmerge}
+                                title="Unmerge to edit separately"
+                            >
+                                <img src={splitIcon} alt="Unmerge" />
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

@@ -82,6 +82,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   const [isEditModeActive, setEditModeInternal] = useState<boolean>(false);
   const [editingNodeId, setEditingNodeIdInternal] = useState<string | null>(null);
+  /** Reference key that is temporarily unmerged for individual editing */
+  const [editingUnmergedRefKey, setEditingUnmergedRefKey] = useState<string | null>(null);
 
   /** Enters edit mode, optionally targeting a specific node */
   const enterEditMode = useCallback((nodeId?: string) => {
@@ -93,6 +95,13 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   const exitEditMode = useCallback(() => {
     setEditModeInternal(false);
     setEditingNodeIdInternal(null);
+    setEditingUnmergedRefKey(null); // Re-merge on exit
+  }, []);
+
+  /** Unmerges a merged node temporarily for individual editing */
+  const handleUnmerge = useCallback((refKey: string) => {
+    setEditingUnmergedRefKey(refKey);
+    setEditingNodeIdInternal(null); // Clear current node selection, user will pick one
   }, []);
 
   const [measuredDimensions, setMeasuredDimensions] = useState<NodeDimensionsMap>(new Map());
@@ -255,11 +264,13 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
       activeSheetName: graphSheetName,
       isEditModeActive,
       enterEditMode,
+      skipMergeForRefKey: editingUnmergedRefKey ?? undefined,
+      onUnmerge: handleUnmerge,
     };
 
     const graph = toGraphWithExpansion(tree, context, mergeConfig);
     return applyDagreLayout(graph, dimensions);
-  }, [expandedNodeIds, handleToggleExpand, hfInstance, mergeConfig, syncedCell?.sheet]);
+  }, [expandedNodeIds, handleToggleExpand, hfInstance, mergeConfig, syncedCell?.sheet, editingUnmergedRefKey, handleUnmerge]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     
@@ -367,7 +378,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   return (
     <div className={`sidebar-inner ${isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
       <GraphEditModeContext.Provider
-        value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }}
+        value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge: handleUnmerge }}
       >
         <HyperFormulaProvider
           hfInstance={hfInstance}

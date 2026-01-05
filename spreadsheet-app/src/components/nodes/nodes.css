@@ -31,6 +31,9 @@
   --edit-mode-border: #f59e0b;
   --edit-mode-shadow: rgba(245, 158, 11, 0.2);
   --preview-mode-border: #1a42e8;
+
+  /* Action buttons */
+  --unmerge-btn-color: #c9ccd1;
 }
 
 /* Edit mode indicator for graph container */

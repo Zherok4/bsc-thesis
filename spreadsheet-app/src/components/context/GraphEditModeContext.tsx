@@ -44,6 +44,11 @@ export interface GraphEditModeContextValue {
      * @param edit - The edit to apply, containing old and new values
      */
     saveEdit: (edit: NodeEdit) => void;
+    /**
+     * Unmerges a merged node temporarily for individual editing.
+     * @param refKey - The reference key of the merged node to unmerge
+     */
+    onUnmerge: (refKey: string) => void;
 }
 
 const GraphEditModeContext = createContext<GraphEditModeContextValue | undefined>(undefined);

@@ -147,3 +147,20 @@
   background: #dc2626;
   color: white;
 }
+
+/* Unmerge button */
+.range-node .edit-action-btn.unmerge-btn {
+  color: var(--unmerge-btn-color);
+  border-color: var(--unmerge-btn-color);
+  padding: 4px;
+}
+
+.range-node .edit-action-btn.unmerge-btn:hover {
+  background: var(--unmerge-btn-color);
+  color: white;
+}
+
+.range-node .edit-action-btn.unmerge-btn img {
+  width: 14px;
+  height: 14px;
+}

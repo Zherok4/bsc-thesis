@@ -12,6 +12,8 @@ export interface MergeContext {
     maxDistance: number;
     /** Active sheet name for normalizing references without explicit sheet */
     activeSheetName: string;
+    /** Reference key to skip merging for (allows temporary unmerge for editing) */
+    skipMergeForRefKey?: string;
 }
 
 /**
@@ -23,6 +25,8 @@ interface ReferenceNodeData {
     hasFormula?: boolean;
     astNodeId?: string;
     astNodeIds?: string[];
+    /** Reference key for this merged node (used for unmerge action) */
+    mergedRefKey?: string;
 }
 
 /**
@@ -42,6 +46,16 @@ interface RangeNodeData {
     sheet?: string;
     astNodeId?: string;
     astNodeIds?: string[];
+    /** Reference key for this merged node (used for unmerge action) */
+    mergedRefKey?: string;
+}
+
+/**
+ * Represents a group of nodes to be merged, along with their reference key
+ */
+interface MergeGroup {
+    refKey: string;
+    nodes: Node[];
 }
 
 /**
@@ -240,19 +254,19 @@ function findMergeGroups(
  *
  * @param nodes - All nodes in the graph
  * @param edges - All edges in the graph
- * @param mergeGroups - Groups of nodes to merge (from findMergeGroups)
+ * @param mergeGroups - Groups of nodes to merge with their reference keys
  * @returns Object containing filtered nodes, rewired edges, and merge mapping
  */
 function executeMerge(
     nodes: Node[],
     edges: Edge[],
-    mergeGroups: Node[][]
+    mergeGroups: MergeGroup[]
 ): { nodes: Node[]; edges: Edge[] } {
     // Build merge mapping: old node ID -> canonical node ID
     const mergeMap = new Map<string, string>();
     const nodesToRemove = new Set<string>();
 
-    for (const group of mergeGroups) {
+    for (const { refKey, nodes: group } of mergeGroups) {
         // Keep the first node as canonical
         const canonicalNode = group[0];
 
@@ -278,12 +292,16 @@ function executeMerge(
             }
         }
 
-        // Store collected astNodeIds in canonical node
+        // Store collected astNodeIds and mergedRefKey in canonical node
         if (allAstNodeIds.length > 0) {
             if (canonicalNode.type === "ReferenceNode") {
-                (canonicalNode.data as unknown as ReferenceNodeData).astNodeIds = allAstNodeIds;
+                const data = canonicalNode.data as unknown as ReferenceNodeData;
+                data.astNodeIds = allAstNodeIds;
+                data.mergedRefKey = refKey;
             } else if (canonicalNode.type === "RangeNode") {
-                (canonicalNode.data as unknown as RangeNodeData).astNodeIds = allAstNodeIds;
+                const data = canonicalNode.data as unknown as RangeNodeData;
+                data.astNodeIds = allAstNodeIds;
+                data.mergedRefKey = refKey;
             }
         }
 
@@ -347,7 +365,7 @@ export function mergeDuplicateReferences(
     context: MergeContext
 ): Graph {
     const { nodes, edges } = graph;
-    const { maxDistance, activeSheetName } = context;
+    const { maxDistance, activeSheetName, skipMergeForRefKey } = context;
 
     // Step 1: Build reference index (group nodes by reference key)
     const referenceIndex = buildReferenceIndex(nodes, activeSheetName);
@@ -356,11 +374,17 @@ export function mergeDuplicateReferences(
     const adjacency = buildAdjacencyGraph(edges);
 
     // Step 3: Find all merge groups
-    const allMergeGroups: Node[][] = [];
-    for (const duplicateNodes of referenceIndex.values()) {
+    const allMergeGroups: Array<{ refKey: string; nodes: Node[] }> = [];
+    for (const [refKey, duplicateNodes] of referenceIndex.entries()) {
+        // Skip merging for the specified reference key (allows temporary unmerge for editing)
+        if (skipMergeForRefKey && refKey === skipMergeForRefKey) {
+            continue;
+        }
         if (duplicateNodes.length > 1) {
             const groups = findMergeGroups(duplicateNodes, adjacency, maxDistance);
-            allMergeGroups.push(...groups);
+            for (const group of groups) {
+                allMergeGroups.push({ refKey, nodes: group });
+            }
         }
     }
 
