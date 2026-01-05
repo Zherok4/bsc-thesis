@@ -592,7 +592,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "left-operand",
+                "operand",
                 `${collapsedNodeId}-left`
             );
             childIdx++;
@@ -606,7 +606,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "right-operand",
+                "operand",
                 `${collapsedNodeId}-right`
             );
         }
