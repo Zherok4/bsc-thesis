@@ -399,6 +399,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             <Controls />
             <GraphToolbar
               currentCellAddress={currentCellAddress}
+              currentCell={syncedCell}
               hasPendingSync={hasPendingSync}
               pendingCellAddress={pendingCellAddress}
               onSync={handleSync}

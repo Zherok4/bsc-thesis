@@ -69,7 +69,12 @@
   color: white;
   background: #8b5cf6;
   border-radius: 4px;
-  cursor: default;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.current-cell-indicator:hover {
+  filter: brightness(1.1);
 }
 
 .toolbar-button.sync-button {
