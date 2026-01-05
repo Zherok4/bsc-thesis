@@ -21,6 +21,8 @@ interface ReferenceNodeData {
     reference: string;
     sheet?: string;
     hasFormula?: boolean;
+    astNodeId?: string;
+    astNodeIds?: string[];
 }
 
 /**
@@ -38,6 +40,8 @@ interface RangeNodeData {
     startRow?: number;
     endRow?: number;
     sheet?: string;
+    astNodeId?: string;
+    astNodeIds?: string[];
 }
 
 /**
@@ -251,6 +255,37 @@ function executeMerge(
     for (const group of mergeGroups) {
         // Keep the first node as canonical
         const canonicalNode = group[0];
+
+        // Collect all astNodeIds from the merged nodes
+        const allAstNodeIds: string[] = [];
+        for (const node of group) {
+            if (node.type === "ReferenceNode") {
+                const data = node.data as unknown as ReferenceNodeData;
+                if (data.astNodeId) {
+                    allAstNodeIds.push(data.astNodeId);
+                }
+                if (data.astNodeIds) {
+                    allAstNodeIds.push(...data.astNodeIds);
+                }
+            } else if (node.type === "RangeNode") {
+                const data = node.data as unknown as RangeNodeData;
+                if (data.astNodeId) {
+                    allAstNodeIds.push(data.astNodeId);
+                }
+                if (data.astNodeIds) {
+                    allAstNodeIds.push(...data.astNodeIds);
+                }
+            }
+        }
+
+        // Store collected astNodeIds in canonical node
+        if (allAstNodeIds.length > 0) {
+            if (canonicalNode.type === "ReferenceNode") {
+                (canonicalNode.data as unknown as ReferenceNodeData).astNodeIds = allAstNodeIds;
+            } else if (canonicalNode.type === "RangeNode") {
+                (canonicalNode.data as unknown as RangeNodeData).astNodeIds = allAstNodeIds;
+            }
+        }
 
         // Merge hasFormula property: if any node has it, canonical should have it
         if (canonicalNode.type === "ReferenceNode") {

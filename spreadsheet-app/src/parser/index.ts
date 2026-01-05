@@ -59,6 +59,9 @@ export {
     createCellReferenceTransformer,
     createNumberLiteralTransformer,
     createStringLiteralTransformer,
+    createCellRangeTransformer,
+    createColumnRangeTransformer,
+    createRowRangeTransformer,
 } from './serializer'
 
 export type {

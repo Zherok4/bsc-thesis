@@ -72,16 +72,18 @@ export function createReferenceNode(
  * @param startReference - Start of the range (e.g., "A1")
  * @param endReference - End of the range (e.g., "B10")
  * @param sheet - Sheet name where this range resides
+ * @param astNodeId - Optional AST node ID for identifying this node during edits
  */
 export function createRangeNode(
     startReference: string,
     endReference: string,
-    sheet: string
+    sheet: string,
+    astNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startReference, endReference, sheet, rangeType: "cell" },
+        data: { startReference, endReference, sheet, rangeType: "cell", astNodeId },
         type: "RangeNode",
     };
 }
@@ -91,16 +93,18 @@ export function createRangeNode(
  * @param startColumn - Start column (e.g., "A")
  * @param endColumn - End column (e.g., "B")
  * @param sheet - Sheet name where this range resides
+ * @param astNodeId - Optional AST node ID for identifying this node during edits
  */
 export function createColumnRangeNode(
     startColumn: string,
     endColumn: string,
-    sheet: string
+    sheet: string,
+    astNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startColumn, endColumn, sheet, rangeType: "column" },
+        data: { startColumn, endColumn, sheet, rangeType: "column", astNodeId },
         type: "RangeNode",
     };
 }
@@ -110,16 +114,18 @@ export function createColumnRangeNode(
  * @param startRow - Start row number
  * @param endRow - End row number
  * @param sheet - Sheet name where this range resides
+ * @param astNodeId - Optional AST node ID for identifying this node during edits
  */
 export function createRowRangeNode(
     startRow: number,
     endRow: number,
-    sheet: string
+    sheet: string,
+    astNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startRow, endRow, sheet, rangeType: "row" },
+        data: { startRow, endRow, sheet, rangeType: "row", astNodeId },
         type: "RangeNode",
     };
 }

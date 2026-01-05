@@ -1,12 +1,23 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, type ReactNode } from 'react';
 import type { HyperFormula } from 'hyperformula';
 
 
-// TODO: make a uniform handler 
+/**
+ * Represents a range selection in the spreadsheet.
+ */
+export interface SelectedRange {
+  startRow: number;
+  startCol: number;
+  endRow: number;
+  endCol: number;
+}
+
+// TODO: make a uniform handler
 export interface HyperFormulaContextValue {
   hfInstance: HyperFormula;
   activeSheetName: string;
   selectedCell: {row: number, col: number} | null;
+  selectedRange: SelectedRange | null;
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
@@ -18,6 +29,7 @@ export interface HyperFormulaProviderProps {
   hfInstance: HyperFormula;
   activeSheetName: string;
   selectedCell: {row: number, col: number} | null;
+  selectedRange: SelectedRange | null;
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
@@ -28,14 +40,15 @@ export function HyperFormulaProvider({
   hfInstance,
   activeSheetName,
   selectedCell,
+  selectedRange,
   scrollToCell,
   highlightCells,
   clearHighlight,
   children
-}: HyperFormulaProviderProps) {
+}: HyperFormulaProviderProps): React.ReactElement {
   return (
-    <HyperFormulaContext.Provider 
-    value={{ hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight}}
+    <HyperFormulaContext.Provider
+      value={{ hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight }}
     >
       {children}
     </HyperFormulaContext.Provider>

@@ -3,13 +3,13 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer } from '../parser';
+import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
-import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit } from './context';
+import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange } from './context';
 import type { HyperFormula } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/ReferenceNode';
 import RangeNodeComponent from './nodes/RangeNode';
@@ -34,6 +34,8 @@ export interface SidebarProps {
   activeSheetName: string;
   /** Address of the currently selected cell */
   selectedCell: {row: number, col: number} | null;
+  /** Currently selected range in the spreadsheet (for range editing) */
+  selectedRange: SelectedRange | null;
   /** scrollToCell Calback to move viewport to corresponding cell */
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
@@ -71,7 +73,7 @@ const nodeTypes = {
   ConditionalNode: ConditionalNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -115,7 +117,6 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
       return;
     }
 
-    const formulaAst = syncedAst as FormulaNode;
     let transformer;
 
     switch (edit.type) {
@@ -134,15 +135,43 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
       case 'string':
         transformer = createStringLiteralTransformer(edit.newValue);
         break;
+      case 'cellRange': {
+        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const newSheet = isSameSheet ? undefined : edit.sheet;
+        transformer = createCellRangeTransformer(edit.startReference, edit.endReference, newSheet);
+        break;
+      }
+      case 'columnRange': {
+        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const newSheet = isSameSheet ? undefined : edit.sheet;
+        transformer = createColumnRangeTransformer(edit.startColumn, edit.endColumn, newSheet);
+        break;
+      }
+      case 'rowRange': {
+        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const newSheet = isSameSheet ? undefined : edit.sheet;
+        transformer = createRowRangeTransformer(edit.startRow, edit.endRow, newSheet);
+        break;
+      }
     }
 
-    const result = transformAST(formulaAst, edit.astNodeId, transformer);
+    // Apply transformation to all AST nodes (supports merged nodes with multiple astNodeIds)
+    let currentAst = syncedAst as FormulaNode;
+    let anyTransformed = false;
 
-    if (result.transformed) {
-      const newFormula = serializeNode(result.ast);
+    for (const astNodeId of edit.astNodeIds) {
+      const result = transformAST(currentAst, astNodeId, transformer);
+      if (result.transformed) {
+        currentAst = result.ast;
+        anyTransformed = true;
+      }
+    }
+
+    if (anyTransformed) {
+      const newFormula = serializeNode(currentAst);
       onNodeEdit(newFormula, syncedCell.row, syncedCell.col, syncedCell.sheet);
       // Update the synced AST so the graph rebuilds with the new formula
-      setSyncedAst(result.ast);
+      setSyncedAst(currentAst);
     }
 
     exitEditMode();
@@ -340,10 +369,11 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, scrollTo
       <GraphEditModeContext.Provider
         value={{ isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }}
       >
-        <HyperFormulaProvider 
-          hfInstance={hfInstance} 
-          activeSheetName={activeSheetName} 
+        <HyperFormulaProvider
+          hfInstance={hfInstance}
+          activeSheetName={activeSheetName}
           selectedCell={selectedCell}
+          selectedRange={selectedRange}
           scrollToCell={scrollToCell}
           highlightCells={highlightCells}
           clearHighlight={clearHighlight}

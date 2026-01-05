@@ -195,7 +195,8 @@ function handleCellRange(params: HandlerParams): void {
     const createdNode = createRangeNode(
         startNode.reference,
         endNode.reference,
-        rangeNode.sheet || context.activeSheetName
+        rangeNode.sheet || context.activeSheetName,
+        rangeNode.nodeId
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -213,7 +214,8 @@ function handleColumnRange(params: HandlerParams): void {
     const createdNode = createColumnRangeNode(
         colRangeNode.startColumn,
         colRangeNode.endColumn,
-        colRangeNode.sheet || context.activeSheetName
+        colRangeNode.sheet || context.activeSheetName,
+        colRangeNode.nodeId
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -231,7 +233,8 @@ function handleRowRange(params: HandlerParams): void {
     const createdNode = createRowRangeNode(
         rowRangeNode.startRow,
         rowRangeNode.endRow,
-        rowRangeNode.sheet || context.activeSheetName
+        rowRangeNode.sheet || context.activeSheetName,
+        rowRangeNode.nodeId
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);

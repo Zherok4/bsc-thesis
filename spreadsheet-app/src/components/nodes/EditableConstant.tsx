@@ -130,13 +130,13 @@ export default function EditableConstant({
         if (type === 'number') {
             saveEdit({
                 type: 'number',
-                astNodeId,
+                astNodeIds: [astNodeId],
                 newValue: value as number,
             });
         } else {
             saveEdit({
                 type: 'string',
-                astNodeId,
+                astNodeIds: [astNodeId],
                 newValue: value as string,
             });
         }

@@ -4,8 +4,8 @@ import { createContext, useContext } from 'react';
  * Base properties common to all node edits.
  */
 interface BaseNodeEdit {
-    /** The AST node ID to identify the specific node to modify */
-    astNodeId: string;
+    /** The AST node IDs to identify the specific nodes to modify (supports merged nodes) */
+    astNodeIds: string[];
 }
 
 /**
@@ -15,7 +15,10 @@ interface BaseNodeEdit {
 export type NodeEdit =
     | (BaseNodeEdit & { type: 'reference'; newValue: string; sheet: string })
     | (BaseNodeEdit & { type: 'number'; newValue: number })
-    | (BaseNodeEdit & { type: 'string'; newValue: string });
+    | (BaseNodeEdit & { type: 'string'; newValue: string })
+    | (BaseNodeEdit & { type: 'cellRange'; startReference: string; endReference: string; sheet: string })
+    | (BaseNodeEdit & { type: 'columnRange'; startColumn: string; endColumn: string; sheet: string })
+    | (BaseNodeEdit & { type: 'rowRange'; startRow: number; endRow: number; sheet: string });
 
 /**
  * Context value for managing graph edit mode state.

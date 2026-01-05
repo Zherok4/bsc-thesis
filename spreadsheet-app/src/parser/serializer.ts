@@ -7,6 +7,8 @@ import type {
     FunctionCallNode,
     CellReferenceNode,
     CellRangeNode,
+    ColumnRangeNode,
+    RowRangeNode,
     NumberLiteralNode,
     StringLiteralNode,
     BooleanLiteralNode,
@@ -68,6 +70,11 @@ export function transformAST(
                     start: visit(node.start) as CellReferenceNode,
                     end: visit(node.end) as CellReferenceNode,
                 };
+
+            case 'ColumnRange':
+            case 'RowRange':
+                // Leaf nodes, just clone
+                return { ...node };
 
             default:
                 return { ...node };
@@ -142,6 +149,119 @@ export function createStringLiteralTransformer(newValue: string): NodeTransforme
             nodeId: node.nodeId,
             type: 'StringLiteral',
             value: newValue,
+        };
+    };
+}
+
+/**
+ * Creates a transformer that produces an updated CellRange node.
+ * @param startReference - The new start reference string (e.g., "A1")
+ * @param endReference - The new end reference string (e.g., "B10")
+ * @param newSheet - Optional new sheet name
+ */
+export function createCellRangeTransformer(
+    startReference: string,
+    endReference: string,
+    newSheet?: string
+): NodeTransformer {
+    return (node: ASTNode): ASTNode => {
+        if (node.type !== 'CellRange') {
+            return node;
+        }
+        const rangeNode = node as CellRangeNode;
+
+        const startMatch = startReference.match(/^(\$?)([A-Za-z]+)(\$?)(\d+)$/);
+        const endMatch = endReference.match(/^(\$?)([A-Za-z]+)(\$?)(\d+)$/);
+
+        if (!startMatch || !endMatch) {
+            throw new Error(`Invalid cell range references: ${startReference}:${endReference}`);
+        }
+
+        const [, startColAbs, startCol, startRowAbs, startRow] = startMatch;
+        const [, endColAbs, endCol, endRowAbs, endRow] = endMatch;
+
+        return {
+            nodeId: rangeNode.nodeId,
+            type: 'CellRange',
+            sheet: newSheet ?? rangeNode.sheet,
+            start: {
+                nodeId: rangeNode.start.nodeId,
+                type: 'CellReference',
+                sheet: newSheet ?? rangeNode.start.sheet,
+                reference: startReference,
+                column: startCol.toUpperCase(),
+                row: parseInt(startRow, 10),
+                absoluteColumn: startColAbs === '$',
+                absoluteRow: startRowAbs === '$',
+            },
+            end: {
+                nodeId: rangeNode.end.nodeId,
+                type: 'CellReference',
+                sheet: newSheet ?? rangeNode.end.sheet,
+                reference: endReference,
+                column: endCol.toUpperCase(),
+                row: parseInt(endRow, 10),
+                absoluteColumn: endColAbs === '$',
+                absoluteRow: endRowAbs === '$',
+            },
+        };
+    };
+}
+
+/**
+ * Creates a transformer that produces an updated ColumnRange node.
+ * @param startColumn - The new start column (e.g., "A")
+ * @param endColumn - The new end column (e.g., "B")
+ * @param newSheet - Optional new sheet name
+ */
+export function createColumnRangeTransformer(
+    startColumn: string,
+    endColumn: string,
+    newSheet?: string
+): NodeTransformer {
+    return (node: ASTNode): ASTNode => {
+        if (node.type !== 'ColumnRange') {
+            return node;
+        }
+        const colRangeNode = node as ColumnRangeNode;
+
+        return {
+            nodeId: colRangeNode.nodeId,
+            type: 'ColumnRange',
+            sheet: newSheet ?? colRangeNode.sheet,
+            startColumn: startColumn.toUpperCase(),
+            endColumn: endColumn.toUpperCase(),
+            absoluteStart: colRangeNode.absoluteStart,
+            absoluteEnd: colRangeNode.absoluteEnd,
+        };
+    };
+}
+
+/**
+ * Creates a transformer that produces an updated RowRange node.
+ * @param startRow - The new start row (1-indexed)
+ * @param endRow - The new end row (1-indexed)
+ * @param newSheet - Optional new sheet name
+ */
+export function createRowRangeTransformer(
+    startRow: number,
+    endRow: number,
+    newSheet?: string
+): NodeTransformer {
+    return (node: ASTNode): ASTNode => {
+        if (node.type !== 'RowRange') {
+            return node;
+        }
+        const rowRangeNode = node as RowRangeNode;
+
+        return {
+            nodeId: rowRangeNode.nodeId,
+            type: 'RowRange',
+            sheet: newSheet ?? rowRangeNode.sheet,
+            startRow,
+            endRow,
+            absoluteStart: rowRangeNode.absoluteStart,
+            absoluteEnd: rowRangeNode.absoluteEnd,
         };
     };
 }

@@ -1,11 +1,24 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { useCallback, useMemo, type JSX } from "react";
-import { useHyperFormula, type HyperFormulaContextValue } from "../context";
+import { useHyperFormula, useGraphEditMode, type HyperFormulaContextValue, type GraphEditModeContextValue } from "../context";
 import { type CellValue, type SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useRangeHeaders } from "../../hooks";
 import "./RangeNode.css"
+
+/**
+ * Converts a 0-based column index to Excel-style column letter(s)
+ */
+function colIndexToLetter(colIndex: number): string {
+    let letter = '';
+    let n = colIndex;
+    do {
+        letter = String.fromCharCode(65 + (n % 26)) + letter;
+        n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return letter;
+}
 
 /**
  * Union type for range node data supporting cell ranges, column ranges, and row ranges
@@ -28,6 +41,10 @@ export type RangeNode = Node<
     endRow?: number;
     /** Sheet name where this range resides */
     sheet: string;
+    /** AST node ID for identifying this node during edits */
+    astNodeId?: string;
+    /** Array of AST node IDs when this node represents merged ranges */
+    astNodeIds?: string[];
 },
 'RangeNode'
 >;
@@ -35,11 +52,14 @@ export type RangeNode = Node<
 /**
  * Component that renders cell ranges, column ranges, and row ranges
  */
-export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.Element {
-    const { hfInstance, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
+export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): JSX.Element {
+    const { hfInstance, activeSheetName, selectedRange, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
+    const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
 
+    const isThisNodeBeingEdited = editingNodeId === id;
     const rangeType = data.rangeType ?? "cell"; // Default to cell for backwards compatibility
     const residingSheet = data.sheet;
+    const { astNodeId, astNodeIds } = data;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -71,13 +91,6 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
         return 0;
     }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd, data]);
 
-    const numCols = useMemo<number>(() => {
-        if (rangeType === "cell" && simpleCellAddressStart && simpleCellAddressEnd) {
-            return Math.abs(simpleCellAddressStart.col - simpleCellAddressEnd.col) + 1;
-        }
-        // For column ranges, we'd need to parse column letters to numbers
-        return 0;
-    }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd]);
 
     // Get truncated cell values (only for cell ranges)
     const cellValuesTruncated = useMemo<CellValue[] | undefined>(() => {
@@ -113,6 +126,14 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
         simpleCellAddressEnd?.row ?? 0,
         simpleCellAddressEnd?.col ?? 0
     );
+
+    // Double-click handler to enter edit mode
+    const handleDoubleClick = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        if (!isEditModeActive || !isThisNodeBeingEdited) {
+            enterEditMode(id);
+        }
+    }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id]);
 
     // Click handler - scrolls to the range location
     const handleClick = useCallback((e: React.MouseEvent): void => {
@@ -152,8 +173,115 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
         }
     }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd, highlightCells, residingSheet]);
 
-    // Generate the display label based on range type
+    // Save edit handler
+    const handleSaveEdit = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+
+        // Use astNodeIds array if available (for merged nodes), otherwise fall back to single astNodeId
+        const nodeIds = astNodeIds ?? (astNodeId ? [astNodeId] : []);
+        if (nodeIds.length === 0 || selectedRange === null) {
+            exitEditMode();
+            return;
+        }
+
+        const targetSheetId = hfInstance.getSheetId(activeSheetName);
+        if (targetSheetId === undefined) {
+            exitEditMode();
+            return;
+        }
+
+        const { startRow, startCol, endRow, endCol } = selectedRange;
+
+        switch (rangeType) {
+            case 'cell': {
+                // Convert indices to cell references using HyperFormula
+                const startRef = hfInstance.simpleCellAddressToString(
+                    { sheet: targetSheetId, row: startRow, col: startCol },
+                    { includeSheetName: false }
+                );
+                const endRef = hfInstance.simpleCellAddressToString(
+                    { sheet: targetSheetId, row: endRow, col: endCol },
+                    { includeSheetName: false }
+                );
+
+                if (!startRef || !endRef) {
+                    exitEditMode();
+                    return;
+                }
+
+                saveEdit({
+                    type: 'cellRange',
+                    astNodeIds: nodeIds,
+                    startReference: startRef,
+                    endReference: endRef,
+                    sheet: activeSheetName,
+                });
+                break;
+            }
+            case 'column': {
+                saveEdit({
+                    type: 'columnRange',
+                    astNodeIds: nodeIds,
+                    startColumn: colIndexToLetter(startCol),
+                    endColumn: colIndexToLetter(endCol),
+                    sheet: activeSheetName,
+                });
+                break;
+            }
+            case 'row': {
+                saveEdit({
+                    type: 'rowRange',
+                    astNodeIds: nodeIds,
+                    startRow: startRow + 1, // Convert to 1-indexed
+                    endRow: endRow + 1,
+                    sheet: activeSheetName,
+                });
+                break;
+            }
+        }
+    }, [astNodeId, astNodeIds, selectedRange, rangeType, activeSheetName, hfInstance, saveEdit, exitEditMode]);
+
+    // Cancel edit handler
+    const handleCancelEdit = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        exitEditMode();
+    }, [exitEditMode]);
+
+    // Generate the display label based on range type, with live preview during editing
     const rangeLabel = useMemo<{ start: string; end: string }>(() => {
+        // If editing, show preview of selected range
+        if (isThisNodeBeingEdited && selectedRange) {
+            const targetSheetId = hfInstance.getSheetId(activeSheetName);
+            if (targetSheetId !== undefined) {
+                const { startRow, startCol, endRow, endCol } = selectedRange;
+
+                switch (rangeType) {
+                    case 'cell': {
+                        const startRef = hfInstance.simpleCellAddressToString(
+                            { sheet: targetSheetId, row: startRow, col: startCol },
+                            { includeSheetName: false }
+                        ) ?? '?';
+                        const endRef = hfInstance.simpleCellAddressToString(
+                            { sheet: targetSheetId, row: endRow, col: endCol },
+                            { includeSheetName: false }
+                        ) ?? '?';
+                        return { start: startRef, end: endRef };
+                    }
+                    case 'column':
+                        return {
+                            start: colIndexToLetter(startCol),
+                            end: colIndexToLetter(endCol)
+                        };
+                    case 'row':
+                        return {
+                            start: String(startRow + 1),
+                            end: String(endRow + 1)
+                        };
+                }
+            }
+        }
+
+        // Default: show current range values
         switch (rangeType) {
             case "cell":
                 return {
@@ -173,7 +301,7 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
             default:
                 return { start: "?", end: "?" };
         }
-    }, [rangeType, data]);
+    }, [rangeType, data, isThisNodeBeingEdited, selectedRange, hfInstance, activeSheetName]);
 
     // Generate value display based on range type
     const valueDisplay = useMemo<string>(() => {
@@ -190,7 +318,7 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
     }, [rangeType, cellValuesTruncated, numRows]);
 
     return (
-        <div className="node-wrapper" style={sheetColorStyle}>
+        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`} style={sheetColorStyle}>
             <div className="selected-indicator"></div>
             <div
                 className={`range-node ${rangeType !== "cell" ? "no-highlight" : ""}`}
@@ -204,7 +332,11 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
                             {rangeType === "cell" && headerLabel && (
                                 <span className="header-label" title={headerLabel}>{headerLabel}</span>
                             )}
-                            <span className="range-ref">
+                            <span
+                                className={`range-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
+                                onDoubleClick={handleDoubleClick}
+                                title="Double-click to change range"
+                            >
                                 <span>{rangeLabel.start}</span>
                                 <span className="range-separator">:</span>
                                 <span>{rangeLabel.end}</span>
@@ -216,6 +348,24 @@ export default function RangeNodeComponent({ data }: NodeProps<RangeNode>): JSX.
                         <Handle type="source" position={Position.Right} className="value-handle" />
                     </div>
                 </div>
+                {isThisNodeBeingEdited && (
+                    <div className="edit-actions">
+                        <button
+                            className="edit-action-btn save-btn"
+                            onClick={handleSaveEdit}
+                            title="Save range change"
+                        >
+                            ✓
+                        </button>
+                        <button
+                            className="edit-action-btn cancel-btn"
+                            onClick={handleCancelEdit}
+                            title="Cancel edit"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -79,3 +79,71 @@
   white-space: nowrap;
   line-height: 1;
 }
+
+/* Range ref is editable - add cursor */
+.range-ref {
+  cursor: pointer;
+}
+
+/* Range ref badge styling when being edited */
+.range-ref.editing {
+  background: var(--edit-mode-border);
+  color: white;
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    background: var(--edit-mode-border);
+  }
+  50% {
+    background: #d97706;
+  }
+}
+
+/* Edit action buttons container */
+.range-node .edit-actions {
+  display: flex;
+  gap: 4px;
+  padding: 4px 4px 0 4px;
+  border-top: 1px solid var(--node-border);
+  margin-top: 4px;
+}
+
+/* Edit action button base styles */
+.range-node .edit-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--node-border);
+  border-radius: 4px;
+  background: var(--node-bg);
+  font-size: var(--node-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Save button */
+.range-node .edit-action-btn.save-btn {
+  color: #059669;
+  border-color: #059669;
+}
+
+.range-node .edit-action-btn.save-btn:hover {
+  background: #059669;
+  color: white;
+}
+
+/* Cancel button */
+.range-node .edit-action-btn.cancel-btn {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.range-node .edit-action-btn.cancel-btn:hover {
+  background: #dc2626;
+  color: white;
+}

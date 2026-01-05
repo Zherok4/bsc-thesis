@@ -6,7 +6,8 @@ export {
 
 export type {
   HyperFormulaContextValue,
-  HyperFormulaProviderProps
+  HyperFormulaProviderProps,
+  SelectedRange
 } from './HyperFormulaContext';
 
 export {

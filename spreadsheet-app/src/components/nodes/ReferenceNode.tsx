@@ -20,11 +20,13 @@ export type ReferenceNode = Node<
     expansionNodeId?: string,
     /** AST node ID for identifying this node during edits */
     astNodeId?: string,
+    /** Array of AST node IDs when this node represents merged references */
+    astNodeIds?: string[],
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
@@ -101,7 +103,9 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const handleSaveEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
-        if (!astNodeId || selectedCell === null) {
+        // Use astNodeIds array if available (for merged nodes), otherwise fall back to single astNodeId
+        const nodeIds = astNodeIds ?? (astNodeId ? [astNodeId] : []);
+        if (nodeIds.length === 0 || selectedCell === null) {
             exitEditMode();
             return;
         }
@@ -125,11 +129,11 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
 
         saveEdit({
             type: 'reference',
-            astNodeId,
+            astNodeIds: nodeIds,
             newValue: newReference,
             sheet: activeSheetName,
         });
-    }, [astNodeId, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode]);
+    }, [astNodeId, astNodeIds, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode]);
 
     const handleCancelEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
