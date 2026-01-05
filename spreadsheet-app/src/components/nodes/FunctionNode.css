@@ -114,3 +114,19 @@
 .node-wrapper:focus-within .selected-indicator {
     opacity: 1;
 }
+
+/* Amber border when editing a constant */
+.node-wrapper:has(.editable-constant-wrapper) {
+    border-color: var(--edit-mode-border);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.5), 0 0 12px rgba(245, 158, 11, 0.3);
+    }
+}
