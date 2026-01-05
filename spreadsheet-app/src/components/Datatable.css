@@ -6,3 +6,25 @@
 .sheet-visible {
     display: block;
 }
+
+/* Cell font styles from XLSX import */
+.cell-bold {
+    font-weight: bold;
+}
+
+.cell-italic {
+    font-style: italic;
+}
+
+.cell-underline {
+    text-decoration: underline;
+}
+
+.cell-strikethrough {
+    text-decoration: line-through;
+}
+
+/* Support combined underline and strikethrough */
+.cell-underline.cell-strikethrough {
+    text-decoration: underline line-through;
+}

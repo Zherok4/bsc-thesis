@@ -13,11 +13,27 @@ export interface MergeCellSettings {
 }
 
 /**
- * Import result containing sheet data and merge information
+ * Represents font styling for a cell
+ */
+export interface CellStyle {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+}
+
+/**
+ * Maps cell coordinates to their styles using "row,col" string keys
+ */
+export type SheetStyleData = { [cellKey: string]: CellStyle };
+
+/**
+ * Import result containing sheet data, merge information, and cell styles
  */
 export interface ImportResult {
     sheetData: { [key: string]: (ExcelJS.CellValue)[][] };
     mergeData: { [key: string]: MergeCellSettings[] };
+    styleData: { [key: string]: SheetStyleData };
 }
 
 /**
@@ -79,13 +95,45 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
         return index - 1;
     };
 
+    /**
+     * Extracts font style from an ExcelJS cell if it has any styling
+     */
+    const extractCellStyle = (cell: ExcelJS.Cell): CellStyle | null => {
+        const font = cell.font;
+        if (!font) return null;
+
+        const style: CellStyle = {};
+        let hasStyle = false;
+
+        if (font.bold) {
+            style.bold = true;
+            hasStyle = true;
+        }
+        if (font.italic) {
+            style.italic = true;
+            hasStyle = true;
+        }
+        if (font.underline) {
+            style.underline = true;
+            hasStyle = true;
+        }
+        if (font.strike) {
+            style.strikethrough = true;
+            hasStyle = true;
+        }
+
+        return hasStyle ? style : null;
+    };
+
     const convertXlsxWorkbookToImportResult = (workbook: ExcelJS.Workbook): ImportResult => {
         const sheetData: { [key: string]: (ExcelJS.CellValue)[][] } = {};
         const mergeData: { [key: string]: MergeCellSettings[] } = {};
+        const styleData: { [key: string]: SheetStyleData } = {};
 
         workbook.eachSheet((worksheet: ExcelJS.Worksheet) => {
             const sheetDimensions: ExcelJS.Range = worksheet.dimensions;
             const data: ExcelJS.CellValue[][] = [];
+            const styles: SheetStyleData = {};
 
             const offsetRow = sheetDimensions.top - 1;
             const offsetCol = sheetDimensions.left - 1;
@@ -94,18 +142,27 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
 
             for (let rowNum: number = sheetDimensions.top; rowNum <= sheetDimensions.bottom; rowNum++) {
                 const rowData: ExcelJS.CellValue[] = []
+                const adjustedRow = rowNum - sheetDimensions.top;
 
                 for (let colNum = sheetDimensions.left; colNum <= sheetDimensions.right; colNum++) {
-                    const cell: ExcelJS.Cell = worksheet.getCell(rowNum, colNum)
+                    const cell: ExcelJS.Cell = worksheet.getCell(rowNum, colNum);
+                    const adjustedCol = colNum - sheetDimensions.left;
 
                     const cellData: ExcelJS.CellValue = cell.formula ? `=${cell.formula}` : cell.value;
                     rowData.push(cellData);
+
+                    // Extract cell style if present
+                    const cellStyle = extractCellStyle(cell);
+                    if (cellStyle) {
+                        styles[`${adjustedRow},${adjustedCol}`] = cellStyle;
+                    }
                 }
 
                 data.push(rowData);
             }
 
             sheetData[worksheet.name] = data;
+            styleData[worksheet.name] = styles;
 
             // Extract merge information with bounds validation
             const merges: MergeCellSettings[] = [];
@@ -126,11 +183,9 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
                 }
             }
             mergeData[worksheet.name] = merges;
-
-            console.log(`Sheet "${worksheet.name}" - Dimensions: ${numRows}x${numCols}, Merges:`, merges);
         })
 
-        return { sheetData, mergeData };
+        return { sheetData, mergeData, styleData };
     }
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {

@@ -4,7 +4,7 @@ import Datatable from './components/Datatable';
 import type { DatatableHandle } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
-import type { ImportResult, MergeCellSettings } from './components/TopBar';
+import type { ImportResult, MergeCellSettings, SheetStyleData } from './components/TopBar';
 import SheetTabs from './components/SheetTabs';
 import { HyperFormula } from 'hyperformula';
 import Sidebar from './components/Sidebar';
@@ -40,6 +40,7 @@ function App() {
   const [activeSheetName, setActiveSheetName] = useState<string>('Tabelle1');
   const [sheetsVersion, setSheetsVersion] = useState(0);
   const [sheetMergeData, setSheetMergeData] = useState<{ [key: string]: MergeCellSettings[] }>({});
+  const [sheetStyleData, setSheetStyleData] = useState<{ [key: string]: SheetStyleData }>({});
 
 
   const selectedCellValueAST: FormulaNode | undefined = useMemo(() => {
@@ -214,7 +215,7 @@ function App() {
    * @param result - Import result containing sheet data and merge information
    */
   const handleImport = useCallback((result: ImportResult) => {
-    const { sheetData, mergeData } = result;
+    const { sheetData, mergeData, styleData } = result;
     if (sheetData) {
       hfInstance.batch(() => {
         // Remove all active Sheets
@@ -241,6 +242,7 @@ function App() {
       });
       // Update states
       setSheetMergeData(mergeData);
+      setSheetStyleData(styleData);
       setSheetsVersion(prev => prev + 1);
       handleSheetChange(Object.keys(sheetData)[0]);
     }
@@ -260,6 +262,7 @@ function App() {
               activeSheetName={activeSheetName}
               sheetsVersion={sheetsVersion}
               sheetMergeData={sheetMergeData}
+              sheetStyleData={sheetStyleData}
               ref={datatableRef}
             />
           </div>

@@ -2,7 +2,7 @@ import { HotTable, type HotTableRef } from '@handsontable/react-wrapper';
 import { memo, useCallback, useImperativeHandle, useRef, useMemo, useEffect, type JSX } from 'react';
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
-import type { MergeCellSettings } from './TopBar';
+import type { MergeCellSettings, SheetStyleData } from './TopBar';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 import './Datatable.css';
@@ -49,6 +49,8 @@ interface DatatableProps {
     sheetsVersion?: number;
     /** Merge cell settings per sheet */
     sheetMergeData?: { [key: string]: MergeCellSettings[] };
+    /** Cell style data per sheet */
+    sheetStyleData?: { [key: string]: SheetStyleData };
     /** Ref for imperative handle access */
     ref?: React.Ref<DatatableHandle>;
 }
@@ -87,7 +89,7 @@ export interface DatatableHandle {
  * @param props.sheetsVersion - Version counter for sheet updates
  * @param props.ref - Imperative handle ref
  */
-const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, sheetMergeData, ref}: DatatableProps): JSX.Element[] => {
+const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, sheetMergeData, sheetStyleData, ref}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
     const currentViewedCell = useRef<ViewedCell | null>(null);
@@ -259,6 +261,29 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
         },
     }), [activeSheetName]);
 
+    /**
+     * Creates a cells callback for applying font styles from imported XLSX data
+     */
+    const createCellsCallback = useCallback((sheetName: string) => {
+        const styles = sheetStyleData?.[sheetName];
+        if (!styles || Object.keys(styles).length === 0) {
+            return undefined;
+        }
+
+        return (row: number, col: number): { className?: string } => {
+            const cellStyle = styles[`${row},${col}`];
+            if (!cellStyle) return {};
+
+            const classes: string[] = [];
+            if (cellStyle.bold) classes.push('cell-bold');
+            if (cellStyle.italic) classes.push('cell-italic');
+            if (cellStyle.underline) classes.push('cell-underline');
+            if (cellStyle.strikethrough) classes.push('cell-strikethrough');
+
+            return classes.length > 0 ? { className: classes.join(' ') } : {};
+        };
+    }, [sheetStyleData]);
+
     const createAfterSelectionHandler = useCallback((sheetName: string): (startRow: number, startColumn: number, endRow: number, endCol: number) => void => {
         return (
             startRow: number,
@@ -308,6 +333,7 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                     sheetName: sheetName,
                 }}
                 mergeCells={sheetMergeData?.[sheetName] ?? false}
+                cells={createCellsCallback(sheetName)}
                 minCols = {100}
                 contextMenu={true}
                 /*
