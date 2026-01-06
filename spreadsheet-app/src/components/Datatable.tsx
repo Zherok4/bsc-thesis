@@ -334,7 +334,7 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                 }}
                 mergeCells={sheetMergeData?.[sheetName] ?? false}
                 cells={createCellsCallback(sheetName)}
-                minCols = {100}
+                //minCols = {100}
                 contextMenu={true}
                 /*
                 * AutoRow / Column ==> lead to critical error

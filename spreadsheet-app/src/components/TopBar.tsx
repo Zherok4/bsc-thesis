@@ -125,6 +125,13 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
         return hasStyle ? style : null;
     };
 
+    /**
+     * Appends an empty buffer column to all rows for expansion.
+     */
+    const appendBufferColumn = (data: ExcelJS.CellValue[][]): ExcelJS.CellValue[][] => {
+        return data.map(row => [...row, '']);
+    };
+
     const convertXlsxWorkbookToImportResult = (workbook: ExcelJS.Workbook): ImportResult => {
         const sheetData: { [key: string]: (ExcelJS.CellValue)[][] } = {};
         const mergeData: { [key: string]: MergeCellSettings[] } = {};
@@ -161,7 +168,7 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
                 data.push(rowData);
             }
 
-            sheetData[worksheet.name] = data;
+            sheetData[worksheet.name] = appendBufferColumn(data);
             styleData[worksheet.name] = styles;
 
             // Extract merge information with bounds validation
