@@ -86,7 +86,8 @@ function handleCellReference(params: HandlerParams): void {
             resolvedSheet,
             false,
             undefined,
-            refNode.nodeId
+            refNode.nodeId,
+            context.sourceCell
         );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
@@ -117,7 +118,8 @@ function handleCellReference(params: HandlerParams): void {
             resolvedSheet,
             false,
             undefined,
-            refNode.nodeId
+            refNode.nodeId,
+            context.sourceCell
         );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
@@ -152,7 +154,8 @@ function handleCellReferenceWithFormula(
             onToggleExpand: context.onToggleExpand,
             expansionNodeId: cellExpandId,
         },
-        refNode.nodeId
+        refNode.nodeId,
+        context.sourceCell
     );
     const refEdge = createDefaultEdge(refCreatedNode.id, parentID, handleID);
     nodes.push(refCreatedNode);
@@ -163,10 +166,23 @@ function handleCellReferenceWithFormula(
         // Recursively visit the cell's formula children with circular ref protection
         // Update activeSheetName to the resolved sheet so relative references within
         // the expanded formula resolve to the correct sheet
+
+        // Parse the cell reference to get row/col for sourceCell tracking
+        const sheetId = context.hfInstance.getSheetId(resolvedSheet);
+        const sourceCellAddress = sheetId !== undefined
+            ? context.hfInstance.simpleCellAddressFromString(refNode.reference, sheetId)
+            : null;
+
         const childContext: ExpansionContext = {
             ...context,
             visitedCells: new Set([...visitedCells, cellId]),
             activeSheetName: resolvedSheet,
+            // Set sourceCell for nodes within this expanded branch
+            sourceCell: sourceCellAddress ? {
+                row: sourceCellAddress.row,
+                col: sourceCellAddress.col,
+                sheet: resolvedSheet,
+            } : undefined,
         };
 
         // cellFormula wraps a FormulaNode - visit its children (the top-level expressions)
@@ -199,7 +215,8 @@ function handleCellRange(params: HandlerParams): void {
         startNode.reference,
         endNode.reference,
         rangeNode.sheet || context.activeSheetName,
-        rangeNode.nodeId
+        rangeNode.nodeId,
+        context.sourceCell
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -218,7 +235,8 @@ function handleColumnRange(params: HandlerParams): void {
         colRangeNode.startColumn,
         colRangeNode.endColumn,
         colRangeNode.sheet || context.activeSheetName,
-        colRangeNode.nodeId
+        colRangeNode.nodeId,
+        context.sourceCell
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -237,7 +255,8 @@ function handleRowRange(params: HandlerParams): void {
         rowRangeNode.startRow,
         rowRangeNode.endRow,
         rowRangeNode.sheet || context.activeSheetName,
-        rowRangeNode.nodeId
+        rowRangeNode.nodeId,
+        context.sourceCell
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -319,7 +338,8 @@ function handleGenericFunctionCall(params: HandlerParams): void {
         argFormulas,
         funFormula,
         context.activeSheetName,
-        Object.keys(constantArgs).length > 0 ? constantArgs : undefined
+        Object.keys(constantArgs).length > 0 ? constantArgs : undefined,
+        context.sourceCell
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -421,7 +441,7 @@ function handleConditionalFunctionCall(
         onToggleBranchExpand: context.onToggleExpand,
         branchExpansionIds,
         expandedBranchIndices,
-    }, context.activeSheetName, Object.keys(constantArgs).length > 0 ? constantArgs : undefined);
+    }, context.activeSheetName, Object.keys(constantArgs).length > 0 ? constantArgs : undefined, context.sourceCell);
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);
@@ -593,7 +613,8 @@ function handleBinaryOp(params: HandlerParams): void {
                 astNodeId: rightConstantInfo.astNodeId,
                 type: rightConstantInfo.type,
                 rawValue: rightConstantInfo.rawValue,
-            } : undefined
+            } : undefined,
+            context.sourceCell
         );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);

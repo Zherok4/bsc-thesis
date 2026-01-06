@@ -6,6 +6,7 @@ import type { CellValue, SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useCellHeaders } from "../../hooks";
 import splitIcon from "../../assets/split-svgrepo-com.svg";
+import type { SourceCell } from "../context/GraphEditModeContext";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -25,11 +26,13 @@ export type ReferenceNode = Node<
     astNodeIds?: string[],
     /** Reference key for merged nodes (used for unmerge action) */
     mergedRefKey?: string,
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell,
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey, sourceCell}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
@@ -135,8 +138,9 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             astNodeIds: nodeIds,
             newValue: newReference,
             sheet: activeSheetName,
+            sourceCell,
         });
-    }, [astNodeId, astNodeIds, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode]);
+    }, [astNodeId, astNodeIds, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode, sourceCell]);
 
     const handleCancelEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();

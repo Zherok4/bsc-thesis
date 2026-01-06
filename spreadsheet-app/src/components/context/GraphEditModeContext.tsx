@@ -1,11 +1,26 @@
 import { createContext, useContext } from 'react';
 
 /**
+ * Represents a cell location for source cell tracking in expanded branches.
+ */
+export interface SourceCell {
+    row: number;
+    col: number;
+    sheet: string;
+}
+
+/**
  * Base properties common to all node edits.
  */
 interface BaseNodeEdit {
     /** The AST node IDs to identify the specific nodes to modify (supports merged nodes) */
     astNodeIds: string[];
+    /**
+     * Source cell for edits within expanded branches.
+     * When undefined, edit applies to the synced cell (current cell being viewed).
+     * When defined, edit applies to this cell's formula instead.
+     */
+    sourceCell?: SourceCell;
 }
 
 /**

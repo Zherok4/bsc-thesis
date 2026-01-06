@@ -6,6 +6,7 @@ import { evaluateFormula } from "../../utils";
 import './FunctionNode.css';
 import { getParameterName } from "../../data/functionParameters";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
+import type { SourceCell } from "../context/GraphEditModeContext";
 
 /**
  * Information about a constant argument for editing purposes
@@ -28,6 +29,8 @@ export type FunctionNode = Node<
     sheet: string,
     /** Map of argument index to constant info (only present for constant arguments) */
     constantArgs?: Record<number, ConstantArgInfo>,
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell,
 },
 'FunctionNode'
 >;
@@ -52,7 +55,7 @@ function getConstantValue(formula: string): string | null {
     return null;
 }
 
-export default function FunctionNodeComponent({id, data: {funName, argFormulas, funFormula, sheet, constantArgs}}: NodeProps<FunctionNode>): JSX.Element {
+export default function FunctionNodeComponent({id, data: {funName, argFormulas, funFormula, sheet, constantArgs, sourceCell}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
 
     const residingSheet = sheet;
@@ -101,6 +104,7 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
                                                 astNodeId={constantInfo.astNodeId}
                                                 editId={`${id}-arg-${idx}`}
                                                 className="arg-value"
+                                                sourceCell={sourceCell}
                                             />
                                         )}
                                         {constantValue && !constantInfo && (

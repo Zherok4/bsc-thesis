@@ -6,6 +6,7 @@ import { type CellValue, type SimpleCellAddress } from "hyperformula";
 import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useRangeHeaders } from "../../hooks";
 import splitIcon from "../../assets/split-svgrepo-com.svg";
+import type { SourceCell } from "../context/GraphEditModeContext";
 import "./RangeNode.css"
 
 /**
@@ -48,6 +49,8 @@ export type RangeNode = Node<
     astNodeIds?: string[];
     /** Reference key for merged nodes (used for unmerge action) */
     mergedRefKey?: string;
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell;
 },
 'RangeNode'
 >;
@@ -62,7 +65,7 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
     const isThisNodeBeingEdited = editingNodeId === id;
     const rangeType = data.rangeType ?? "cell"; // Default to cell for backwards compatibility
     const residingSheet = data.sheet;
-    const { astNodeId, astNodeIds, mergedRefKey } = data;
+    const { astNodeId, astNodeIds, mergedRefKey, sourceCell } = data;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -218,6 +221,7 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                     startReference: startRef,
                     endReference: endRef,
                     sheet: activeSheetName,
+                    sourceCell,
                 });
                 break;
             }
@@ -228,6 +232,7 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                     startColumn: colIndexToLetter(startCol),
                     endColumn: colIndexToLetter(endCol),
                     sheet: activeSheetName,
+                    sourceCell,
                 });
                 break;
             }
@@ -238,11 +243,12 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                     startRow: startRow + 1, // Convert to 1-indexed
                     endRow: endRow + 1,
                     sheet: activeSheetName,
+                    sourceCell,
                 });
                 break;
             }
         }
-    }, [astNodeId, astNodeIds, selectedRange, rangeType, activeSheetName, hfInstance, saveEdit, exitEditMode]);
+    }, [astNodeId, astNodeIds, selectedRange, rangeType, activeSheetName, hfInstance, saveEdit, exitEditMode, sourceCell]);
 
     // Cancel edit handler
     const handleCancelEdit = useCallback((e: React.MouseEvent): void => {

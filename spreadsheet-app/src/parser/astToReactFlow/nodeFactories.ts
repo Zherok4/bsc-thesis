@@ -3,6 +3,7 @@ import { generateNodeId, getNodeIdCounter } from "./idGenerator";
 import type { ConstantArgInfo } from "../../components/nodes/FunctionNode";
 import type { ConstantArgInfo as ConditionalConstantArgInfo } from "../../components/nodes/ConditionalNode";
 import type { ConstantOperandInfo } from "../../components/nodes/BinOpNode";
+import type { SourceCell } from "../../components/context/GraphEditModeContext";
 
 /**
  * Factory functions for creating ReactFlow nodes.
@@ -41,13 +42,15 @@ interface ReferenceExpansionConfig {
  * @param hasFormula - Whether the referenced cell contains a formula (enables left handle)
  * @param expansionConfig - Optional expansion configuration (only used when hasFormula is true)
  * @param astNodeId - Optional AST node ID for identifying this node during edits
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createReferenceNode(
     reference: string,
     sheet?: string,
     hasFormula: boolean = false,
     expansionConfig?: ReferenceExpansionConfig,
-    astNodeId?: string
+    astNodeId?: string,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
@@ -57,6 +60,7 @@ export function createReferenceNode(
             sheet,
             hasFormula,
             astNodeId,
+            sourceCell,
             ...(hasFormula && expansionConfig ? {
                 isExpanded: expansionConfig.isExpanded,
                 onToggleExpand: expansionConfig.onToggleExpand,
@@ -73,17 +77,19 @@ export function createReferenceNode(
  * @param endReference - End of the range (e.g., "B10")
  * @param sheet - Sheet name where this range resides
  * @param astNodeId - Optional AST node ID for identifying this node during edits
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createRangeNode(
     startReference: string,
     endReference: string,
     sheet: string,
-    astNodeId?: string
+    astNodeId?: string,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startReference, endReference, sheet, rangeType: "cell", astNodeId },
+        data: { startReference, endReference, sheet, rangeType: "cell", astNodeId, sourceCell },
         type: "RangeNode",
     };
 }
@@ -94,17 +100,19 @@ export function createRangeNode(
  * @param endColumn - End column (e.g., "B")
  * @param sheet - Sheet name where this range resides
  * @param astNodeId - Optional AST node ID for identifying this node during edits
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createColumnRangeNode(
     startColumn: string,
     endColumn: string,
     sheet: string,
-    astNodeId?: string
+    astNodeId?: string,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startColumn, endColumn, sheet, rangeType: "column", astNodeId },
+        data: { startColumn, endColumn, sheet, rangeType: "column", astNodeId, sourceCell },
         type: "RangeNode",
     };
 }
@@ -115,17 +123,19 @@ export function createColumnRangeNode(
  * @param endRow - End row number
  * @param sheet - Sheet name where this range resides
  * @param astNodeId - Optional AST node ID for identifying this node during edits
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createRowRangeNode(
     startRow: number,
     endRow: number,
     sheet: string,
-    astNodeId?: string
+    astNodeId?: string,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startRow, endRow, sheet, rangeType: "row", astNodeId },
+        data: { startRow, endRow, sheet, rangeType: "row", astNodeId, sourceCell },
         type: "RangeNode",
     };
 }
@@ -163,18 +173,20 @@ export function createStringNode(value: string): Node {
  * @param funFormula - The complete function formula string
  * @param sheet - The sheet name where this function resides
  * @param constantArgs - Optional map of argument index to constant info for editable constants
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createFunctionNode(
     funName: string,
     argFormulas: string[],
     funFormula: string,
     sheet: string,
-    constantArgs?: Record<number, ConstantArgInfo>
+    constantArgs?: Record<number, ConstantArgInfo>,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { funName, argFormulas, funFormula, sheet, constantArgs },
+        data: { funName, argFormulas, funFormula, sheet, constantArgs, sourceCell },
         type: "FunctionNode",
     };
 }
@@ -248,18 +260,20 @@ export function createExpandableExpressionNode(
  * @param rightConstant - Optional constant value for right operand
  * @param leftConstantInfo - Optional info about the left constant for editing
  * @param rightConstantInfo - Optional info about the right constant for editing
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createBinOpNode(
     operator: string,
     leftConstant?: string,
     rightConstant?: string,
     leftConstantInfo?: ConstantOperandInfo,
-    rightConstantInfo?: ConstantOperandInfo
+    rightConstantInfo?: ConstantOperandInfo,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo },
+        data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo, sourceCell },
         type: "BinOpNode",
     };
 }
@@ -284,6 +298,7 @@ interface ConditionalExpansionConfig {
  * @param expansionConfig - Configuration for branch expansion
  * @param sheet - The sheet name where this conditional resides
  * @param constantArgs - Optional map of argument index to constant info for editable constants
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createConditionalNode(
     funName: 'IF' | 'IFS',
@@ -291,7 +306,8 @@ export function createConditionalNode(
     funFormula: string,
     expansionConfig: ConditionalExpansionConfig,
     sheet: string,
-    constantArgs?: Record<number, ConditionalConstantArgInfo>
+    constantArgs?: Record<number, ConditionalConstantArgInfo>,
+    sourceCell?: SourceCell
 ): Node {
     return {
         id: generateNodeId(),
@@ -305,6 +321,7 @@ export function createConditionalNode(
             expandedBranchIndices: expansionConfig.expandedBranchIndices,
             sheet,
             constantArgs,
+            sourceCell,
         },
         type: "ConditionalNode",
     };

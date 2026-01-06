@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, type JSX } from 'react';
 import { useGraphEditMode, type GraphEditModeContextValue } from '../context';
+import type { SourceCell } from '../context/GraphEditModeContext';
 import './EditableConstant.css';
 
 /**
@@ -34,6 +35,8 @@ export interface EditableConstantProps {
     title?: string;
     /** Layout variant - 'default' for column layout, 'popover' for floating outside node */
     variant?: EditableConstantVariant;
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell;
 }
 
 /**
@@ -79,6 +82,7 @@ export default function EditableConstant({
     className = '',
     title,
     variant = 'default',
+    sourceCell,
 }: EditableConstantProps): JSX.Element {
     const { editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
     const isThisConstantBeingEdited = editingNodeId === editId;
@@ -132,15 +136,17 @@ export default function EditableConstant({
                 type: 'number',
                 astNodeIds: [astNodeId],
                 newValue: value as number,
+                sourceCell,
             });
         } else {
             saveEdit({
                 type: 'string',
                 astNodeIds: [astNodeId],
                 newValue: value as string,
+                sourceCell,
             });
         }
-    }, [inputValue, type, astNodeId, saveEdit]);
+    }, [inputValue, type, astNodeId, saveEdit, sourceCell]);
 
     const handleCancel = useCallback((e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();

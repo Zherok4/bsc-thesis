@@ -4,6 +4,7 @@ import { Handle, Position } from "@xyflow/react";
 import { abbreviateNumber, truncateMiddle } from "./utils";
 import './BinOpNode.css';
 import EditableConstant, { type ConstantType } from "./EditableConstant";
+import type { SourceCell } from "../context/GraphEditModeContext";
 
 /**
  * Information about a constant operand for editing purposes
@@ -26,6 +27,8 @@ export type BinOpNode = Node<
     leftConstantInfo?: ConstantOperandInfo;
     /** Info about the right constant operand for editing (if it's a constant) */
     rightConstantInfo?: ConstantOperandInfo;
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell;
 },
 'BinOpNode'
 >;
@@ -74,7 +77,7 @@ function formatConstant(value: string): { display: string; full: string } {
  * Displays in horizontal left-to-right format: [left] operator [right] -> result
  * When only one operand is a constant, it is always displayed on the right side.
  */
-export default function BinOpNodeComponent({ id, data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo } }: NodeProps<BinOpNode>): JSX.Element {
+export default function BinOpNodeComponent({ id, data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo, sourceCell } }: NodeProps<BinOpNode>): JSX.Element {
     // When only one constant exists, always show it on the right side for consistency
     const hasOnlyLeftConstant = leftConstant && !rightConstant;
     const hasBothConstants = leftConstant && rightConstant;
@@ -116,6 +119,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             editId={`${id}-left`}
                             title={leftDisplayValue}
                             variant="popover"
+                            sourceCell={sourceCell}
                         />
                     )}
                     {leftDisplayValue && !leftDisplayInfo && (
@@ -139,6 +143,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             editId={rightEditId}
                             title={rightDisplayValue}
                             variant="popover"
+                            sourceCell={sourceCell}
                         />
                     )}
                     {rightDisplayValue && !rightDisplayInfo && (

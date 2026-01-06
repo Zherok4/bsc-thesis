@@ -3,7 +3,7 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer } from '../parser';
+import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
@@ -119,9 +119,56 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   /** Whether there is a pending sync (incoming ast differs from synced ast) */
   const hasPendingSync = ast !== syncedAst;
 
-  /** Saves an edit to a node and exits edit mode */
+  /**
+   * Saves an edit to a node and exits edit mode.
+   * Handles both top-level edits (syncedCell) and expanded branch edits (sourceCell).
+   */
   const saveEdit = useCallback((edit: NodeEdit) => {
-    if (!onNodeEdit || !syncedAst || !syncedCell) {
+    if (!onNodeEdit) {
+      exitEditMode();
+      return;
+    }
+
+    // Determine target cell: sourceCell for expanded nodes, syncedCell for top-level
+    const targetCell = edit.sourceCell ?? syncedCell;
+
+    if (!targetCell) {
+      exitEditMode();
+      return;
+    }
+
+    // Get the AST for the target cell
+    let targetAst: FormulaNode | undefined;
+
+    if (edit.sourceCell) {
+      // Expanded node: fetch and parse the source cell's formula
+      const sheetId = hfInstance.getSheetId(edit.sourceCell.sheet);
+      if (sheetId === undefined) {
+        exitEditMode();
+        return;
+      }
+      const cellAddress = { sheet: sheetId, row: edit.sourceCell.row, col: edit.sourceCell.col };
+      const formula = hfInstance.getCellFormula(cellAddress);
+      if (!formula) {
+        exitEditMode();
+        return;
+      }
+      try {
+        targetAst = parseFormula(formula);
+      } catch {
+        exitEditMode();
+        return;
+      }
+    } else {
+      // Top-level node: use syncedAst
+      if (!syncedAst) {
+        exitEditMode();
+        return;
+      }
+      targetAst = syncedAst as FormulaNode;
+    }
+
+    if (!targetAst) {
       exitEditMode();
       return;
     }
@@ -131,7 +178,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     switch (edit.type) {
       case 'reference': {
         // Pass undefined for sheet if same sheet, so no sheet prefix is added to the AST
-        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const isSameSheet = edit.sheet === targetCell.sheet;
         const newSheet = isSameSheet ? undefined : edit.sheet;
         transformer = createCellReferenceTransformer(edit.newValue, newSheet);
         break;
@@ -143,19 +190,19 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         transformer = createStringLiteralTransformer(edit.newValue);
         break;
       case 'cellRange': {
-        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const isSameSheet = edit.sheet === targetCell.sheet;
         const newSheet = isSameSheet ? undefined : edit.sheet;
         transformer = createCellRangeTransformer(edit.startReference, edit.endReference, newSheet);
         break;
       }
       case 'columnRange': {
-        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const isSameSheet = edit.sheet === targetCell.sheet;
         const newSheet = isSameSheet ? undefined : edit.sheet;
         transformer = createColumnRangeTransformer(edit.startColumn, edit.endColumn, newSheet);
         break;
       }
       case 'rowRange': {
-        const isSameSheet = edit.sheet === syncedCell.sheet;
+        const isSameSheet = edit.sheet === targetCell.sheet;
         const newSheet = isSameSheet ? undefined : edit.sheet;
         transformer = createRowRangeTransformer(edit.startRow, edit.endRow, newSheet);
         break;
@@ -163,7 +210,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     }
 
     // Apply transformation to all AST nodes (supports merged nodes with multiple astNodeIds)
-    let currentAst = syncedAst as FormulaNode;
+    let currentAst = targetAst;
     let anyTransformed = false;
 
     for (const astNodeId of edit.astNodeIds) {
@@ -176,13 +223,18 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
     if (anyTransformed) {
       const newFormula = serializeNode(currentAst);
-      onNodeEdit(newFormula, syncedCell.row, syncedCell.col, syncedCell.sheet);
-      // Update the synced AST so the graph rebuilds with the new formula
-      setSyncedAst(currentAst);
+      onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+
+      // Only update syncedAst if editing the synced cell (not an expanded cell)
+      if (!edit.sourceCell) {
+        setSyncedAst(currentAst);
+      }
+      // Note: For expanded cells, the graph will rebuild on next render and
+      // getCellFormulaAsCollapsedNode will fetch the updated formula from HyperFormula
     }
 
     exitEditMode();
-  }, [onNodeEdit, exitEditMode, syncedAst, syncedCell]);
+  }, [onNodeEdit, exitEditMode, syncedAst, syncedCell, hfInstance]);
 
   /** The cell address currently being viewed in the graph */
   const currentCellAddress = useMemo<string | null>(() => {

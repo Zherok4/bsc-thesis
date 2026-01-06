@@ -1,5 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { HyperFormula } from "hyperformula";
+import type { SourceCell } from "../../components/context/GraphEditModeContext";
 
 /**
  * Represents a ReactFlow graph with nodes and edges
@@ -43,4 +44,10 @@ export interface ExpansionContext {
     skipMergeForRefKey?: string;
     /** Callback to unmerge a merged node for individual editing */
     onUnmerge?: (refKey: string) => void;
+    /**
+     * Source cell for nodes within an expanded branch.
+     * When defined, nodes created in this context belong to this cell's formula.
+     * Used for routing edits to the correct cell when editing expanded nodes.
+     */
+    sourceCell?: SourceCell;
 }

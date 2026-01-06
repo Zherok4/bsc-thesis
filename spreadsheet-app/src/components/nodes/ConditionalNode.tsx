@@ -5,6 +5,7 @@ import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { evaluateFormula } from "../../utils";
 import { getParameterName } from "../../data/functionParameters";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
+import type { SourceCell } from "../context/GraphEditModeContext";
 import './ConditionalNode.css';
 
 /**
@@ -43,6 +44,8 @@ export type ConditionalNode = Node<
     sheet: string;
     /** Map of argument index to constant info (only present for constant arguments) */
     constantArgs?: Record<number, ConstantArgInfo>;
+    /** Source cell for nodes within expanded branches (for edit routing) */
+    sourceCell?: SourceCell;
 },
 'ConditionalNode'
 >;
@@ -111,6 +114,7 @@ export default function ConditionalNodeComponent({
         expandedBranchIndices,
         sheet,
         constantArgs,
+        sourceCell,
     }
 }: NodeProps<ConditionalNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
@@ -127,6 +131,7 @@ export default function ConditionalNodeComponent({
                 branchExpansionIds={branchExpansionIds}
                 expandedSet={expandedSet}
                 constantArgs={constantArgs}
+                sourceCell={sourceCell}
             />
         );
     }
@@ -142,6 +147,7 @@ export default function ConditionalNodeComponent({
             branchExpansionIds={branchExpansionIds}
             expandedSet={expandedSet}
             constantArgs={constantArgs}
+            sourceCell={sourceCell}
         />
     );
 }
@@ -155,6 +161,7 @@ interface IfModeProps {
     branchExpansionIds: string[];
     expandedSet: Set<number>;
     constantArgs?: Record<number, ConstantArgInfo>;
+    sourceCell?: SourceCell;
 }
 
 /**
@@ -169,6 +176,7 @@ function IfModeContent({
     branchExpansionIds,
     expandedSet,
     constantArgs,
+    sourceCell,
 }: IfModeProps): JSX.Element {
 
     const residingSheet = sheet;
@@ -272,6 +280,7 @@ function IfModeContent({
                                             astNodeId={constantInfo.astNodeId}
                                             editId={`${nodeId}-arg-1`}
                                             className="arg-value"
+                                            sourceCell={sourceCell}
                                         />
                                     );
                                 }
@@ -326,6 +335,7 @@ function IfModeContent({
                                             astNodeId={constantInfo.astNodeId}
                                             editId={`${nodeId}-arg-2`}
                                             className="arg-value"
+                                            sourceCell={sourceCell}
                                         />
                                     );
                                 }
@@ -364,6 +374,7 @@ interface IfsModeProps {
     branchExpansionIds: string[];
     expandedSet: Set<number>;
     constantArgs?: Record<number, ConstantArgInfo>;
+    sourceCell?: SourceCell;
 }
 
 /**
@@ -378,6 +389,7 @@ function IfsModeContent({
     branchExpansionIds,
     expandedSet,
     constantArgs,
+    sourceCell,
 }: IfsModeProps): JSX.Element {
     // Build condition-value pairs
     const pairs = useMemo(() => {
@@ -487,6 +499,7 @@ function IfsModeContent({
                                                         astNodeId={constantInfo.astNodeId}
                                                         editId={`${nodeId}-arg-${pair.valueIndex}`}
                                                         className="arg-value"
+                                                        sourceCell={sourceCell}
                                                     />
                                                 );
                                             }
