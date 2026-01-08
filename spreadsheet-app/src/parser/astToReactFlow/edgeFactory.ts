@@ -15,8 +15,9 @@ export function createDefaultEdge(
     target: string,
     handleID?: string
 ): Edge {
+    const edgeId = handleID ? `${source}-${target}-${handleID}` : `${source}-${target}`;
     return {
-        id: `${source}-${target}`,
+        id: edgeId,
         source,
         target,
         type: "simplebezier",

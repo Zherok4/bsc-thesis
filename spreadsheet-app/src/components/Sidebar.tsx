@@ -1,10 +1,10 @@
-import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider } from '@xyflow/react';
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider, addEdge, type OnConnect, type Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
 import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula } from '../parser';
-import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig } from '../parser/astToReactFlow';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
@@ -76,7 +76,7 @@ const nodeTypes = {
 function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges] = useEdgesState<Edge>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
@@ -356,6 +356,19 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     }
   }, [onNodesChange]);
 
+  /**
+   * Handles new edge connections created by the user.
+   * Currently only adds the edge visually without backend logic.
+   */
+  const onConnect: OnConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      const edge = createDefaultEdge(connection.source, connection.target, connection.targetHandle ?? undefined);
+      setEdges((currentEdges) => addEdge(edge, currentEdges));
+    },
+    [setEdges]
+  );
+
   useEffect(() => {
     if (isEditModeActive) return;
 
@@ -444,6 +457,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={handleNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
             nodesDraggable={false}
             zoomOnDoubleClick={false}
           >
