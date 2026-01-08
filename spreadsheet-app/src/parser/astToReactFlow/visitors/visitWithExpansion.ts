@@ -621,7 +621,9 @@ function handleBinaryOp(params: HandlerParams): void {
                 type: rightConstantInfo.type,
                 rawValue: rightConstantInfo.rawValue,
             } : undefined,
-            context.sourceCell
+            context.sourceCell,
+            binaryNode.left.nodeId,
+            binaryNode.right.nodeId
         );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);

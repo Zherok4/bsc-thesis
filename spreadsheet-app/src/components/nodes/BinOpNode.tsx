@@ -27,6 +27,10 @@ export type BinOpNode = Node<
     leftConstantInfo?: ConstantOperandInfo;
     /** Info about the right constant operand for editing (if it's a constant) */
     rightConstantInfo?: ConstantOperandInfo;
+    /** AST node ID for the left operand (for edge deletion) */
+    leftOperandAstNodeId?: string;
+    /** AST node ID for the right operand (for edge deletion) */
+    rightOperandAstNodeId?: string;
     /** Source cell for nodes within expanded branches (for edit routing) */
     sourceCell?: SourceCell;
 },

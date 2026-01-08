@@ -56,6 +56,8 @@ export {
 export {
     serializeNode,
     transformAST,
+    findAndSerializeNode,
+    findAstNodeType,
     createCellReferenceTransformer,
     createNumberLiteralTransformer,
     createStringLiteralTransformer,

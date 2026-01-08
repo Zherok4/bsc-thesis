@@ -87,6 +87,96 @@ export function transformAST(
 }
 
 /**
+ * Finds an AST node by its nodeId and returns its serialized form.
+ * @param ast - The root AST to search in
+ * @param targetNodeId - The nodeId to find
+ * @returns The serialized expression string, or null if not found
+ */
+export function findAndSerializeNode(ast: FormulaNode, targetNodeId: string): string | null {
+    function find(node: ASTNode): ASTNode | null {
+        if (node.nodeId === targetNodeId) {
+            return node;
+        }
+
+        switch (node.type) {
+            case 'Formula':
+                return find(node.expression);
+
+            case 'BinaryOp':
+                return find(node.left) ?? find(node.right);
+
+            case 'UnaryOp':
+            case 'Percent':
+                return find(node.operand);
+
+            case 'FunctionCall':
+                for (const arg of node.arguments) {
+                    const result = find(arg);
+                    if (result) return result;
+                }
+                return null;
+
+            case 'CellRange':
+                return find(node.start) ?? find(node.end);
+
+            default:
+                return null;
+        }
+    }
+
+    const foundNode = find(ast);
+    if (foundNode) {
+        return serializeNode(foundNode);
+    }
+    return null;
+}
+
+/**
+ * Finds an AST node by its nodeId and returns its type.
+ * @param ast - The root AST to search in
+ * @param targetNodeId - The nodeId to find
+ * @returns The node type string, or null if not found
+ */
+export function findAstNodeType(ast: FormulaNode, targetNodeId: string): ASTNode['type'] | null {
+    function find(node: ASTNode): ASTNode | null {
+        if (node.nodeId === targetNodeId) {
+            return node;
+        }
+
+        switch (node.type) {
+            case 'Formula':
+                return find(node.expression);
+
+            case 'BinaryOp':
+                return find(node.left) ?? find(node.right);
+
+            case 'UnaryOp':
+            case 'Percent':
+                return find(node.operand);
+
+            case 'FunctionCall':
+                for (const arg of node.arguments) {
+                    const result = find(arg);
+                    if (result) return result;
+                }
+                return null;
+
+            case 'CellRange':
+                return find(node.start) ?? find(node.end);
+
+            default:
+                return null;
+        }
+    }
+
+    const foundNode = find(ast);
+    if (foundNode) {
+        return foundNode.type;
+    }
+    return null;
+}
+
+/**
  * Creates a transformer that produces an updated CellReference node.
  * @param newReference - The new reference string (e.g., "B2")
  * @param newSheet - Optional new sheet name

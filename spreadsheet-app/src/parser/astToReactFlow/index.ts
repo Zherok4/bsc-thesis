@@ -30,7 +30,7 @@ export {
 } from "./nodeFactories";
 
 // Edge factory
-export { createDefaultEdge } from "./edgeFactory";
+export { createDefaultEdge, type UserEdgeData } from "./edgeFactory";
 
 // Visitor functions
 export {

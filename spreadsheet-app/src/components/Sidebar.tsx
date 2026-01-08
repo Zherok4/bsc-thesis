@@ -3,8 +3,8 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer } from '../parser';
-import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell } from '../parser/astToReactFlow';
+import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer } from '../parser';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, type UserEdgeData, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
@@ -77,6 +77,9 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  /** Stores user-created edge metadata (survives graph rebuilds) */
+  const userEdgeDataRef = useRef<Map<string, UserEdgeData>>(new Map());
 
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
@@ -444,7 +447,11 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         return;
       }
 
-      // 7. Create transformer and apply
+      // 7. Capture the original expression before transforming (for undo on edge delete)
+      const originalExpression = findAndSerializeNode(targetAst, targetAstNodeId);
+      console.log('[onConnect] Original expression:', originalExpression);
+
+      // 8. Create transformer and apply
       const transformer = createExpressionReplacementTransformer(sourceFormula);
       const result = transformAST(targetAst, targetAstNodeId, transformer);
       console.log('[onConnect] Transform result:', result.transformed, 'New AST:', result.ast);
@@ -462,8 +469,26 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         console.log('[onConnect] Transform not applied. transformed:', result.transformed, 'onNodeEdit:', !!onNodeEdit);
       }
 
-      // 8. Add visual edge (graph will rebuild on formula change, but add for immediate feedback)
+      // 9. Add visual edge and store user data with stable key (survives graph rebuilds)
       const edge = createDefaultEdge(connection.source, connection.target, connection.targetHandle ?? undefined);
+
+      if (originalExpression && connection.targetHandle) {
+        // Use stable key based on cell location + handle (not node IDs which change on rebuild)
+        const stableKey = `${targetCell.sheet}-${targetCell.row}-${targetCell.col}-${connection.targetHandle}`;
+        const userData: UserEdgeData = {
+          isUserCreated: true,
+          originalExpression,
+          targetHandle: connection.targetHandle,
+          targetCell: {
+            row: targetCell.row,
+            col: targetCell.col,
+            sheet: targetCell.sheet,
+          },
+        };
+        userEdgeDataRef.current.set(stableKey, userData);
+        console.log('[onConnect] Stored edge data with stable key:', stableKey, userData);
+      }
+
       setEdges((currentEdges) => addEdge(edge, currentEdges));
     },
     [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges]
@@ -491,6 +516,141 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
       return validation.isValid;
     },
     [nodes]
+  );
+
+  /**
+   * Determines the replacement value based on the AST node type being replaced.
+   * StringLiteral -> "", all others -> 0
+   */
+  const getReplacementValue = useCallback((ast: FormulaNode, astNodeId: string): string => {
+    const nodeType = findAstNodeType(ast, astNodeId);
+    if (nodeType === 'StringLiteral') {
+      return '""';
+    }
+    return '0';
+  }, []);
+
+  /**
+   * Checks if a handle is a valid deletion target (argument handle or operand handle).
+   */
+  const isValidDeletionHandle = useCallback((targetHandle: string): boolean => {
+    return targetHandle.startsWith('arghandle-') || targetHandle === 'operand';
+  }, []);
+
+  /**
+   * Handles edge deletion - replaces the argument with an appropriate constant.
+   * Works for edges connected to argument handles (arghandle-*) or operand handles.
+   * Replacement value is based on source node type: numbers -> 0, strings -> ""
+   */
+  const onEdgesDelete = useCallback(
+    (deletedEdges: Edge[]) => {
+      for (const edge of deletedEdges) {
+        const targetHandle = edge.targetHandle ?? '';
+        console.log('[onEdgesDelete] Processing edge:', edge.id, 'targetHandle:', targetHandle);
+
+        // Only process edges connected to valid handles
+        if (!isValidDeletionHandle(targetHandle)) {
+          console.log('[onEdgesDelete] Skipping - not a valid deletion handle');
+          continue;
+        }
+
+        // Find the target node
+        const targetNode = nodes.find(n => n.id === edge.target);
+
+        if (!targetNode) {
+          console.warn('[onEdgesDelete] Target node not found:', edge.target);
+          continue;
+        }
+
+        // Get the cell info from the node (expanded nodes have sourceCell, root uses syncedCell)
+        const nodeSourceCell = getSourceCell(targetNode);
+        const targetCell = nodeSourceCell ?? syncedCell;
+        const isForSyncedCell = !nodeSourceCell;
+
+        if (!targetCell) {
+          console.warn('[onEdgesDelete] No target cell available');
+          continue;
+        }
+
+        console.log('[onEdgesDelete] Target cell:', targetCell, 'isForSyncedCell:', isForSyncedCell);
+
+        // Get the current AST node ID using the handle
+        const currentAstNodeId = getTargetAstNodeId(targetNode, targetHandle);
+        if (!currentAstNodeId) {
+          console.warn('[onEdgesDelete] Could not get AST node ID for handle:', targetHandle);
+          continue;
+        }
+
+        console.log('[onEdgesDelete] AST node ID:', currentAstNodeId);
+
+        // Get the AST - use syncedAst for synced cell, fetch from HyperFormula for expanded cells
+        let currentAst: FormulaNode | undefined;
+
+        if (isForSyncedCell) {
+          // Use the already-parsed syncedAst for the synced cell
+          currentAst = syncedAst as FormulaNode | undefined;
+          console.log('[onEdgesDelete] Using syncedAst');
+        } else {
+          // Fetch from HyperFormula for expanded cells
+          const sheetId = hfInstance.getSheetId(targetCell.sheet);
+          if (sheetId === undefined) {
+            console.warn('[onEdgesDelete] Could not find sheet:', targetCell.sheet);
+            continue;
+          }
+
+          const currentFormula = hfInstance.getCellFormula({
+            sheet: sheetId,
+            row: targetCell.row,
+            col: targetCell.col,
+          });
+
+          if (!currentFormula) {
+            console.warn('[onEdgesDelete] No formula found in cell');
+            continue;
+          }
+
+          console.log('[onEdgesDelete] Current formula from HF:', currentFormula);
+
+          try {
+            currentAst = parseFormula(currentFormula);
+          } catch (e) {
+            console.warn('[onEdgesDelete] Could not parse current formula:', e);
+            continue;
+          }
+        }
+
+        if (!currentAst) {
+          console.warn('[onEdgesDelete] No AST available');
+          continue;
+        }
+
+        // Determine replacement value based on AST node type being replaced
+        const replacementValue = getReplacementValue(currentAst, currentAstNodeId);
+        console.log('[onEdgesDelete] AST node type:', findAstNodeType(currentAst, currentAstNodeId), 'Replacement value:', replacementValue);
+
+        // Create transformer to replace with the appropriate constant
+        const transformer = createExpressionReplacementTransformer(replacementValue);
+        const result = transformAST(currentAst, currentAstNodeId, transformer);
+
+        if (result.transformed && onNodeEdit) {
+          const newFormula = serializeNode(result.ast);
+          console.log('[onEdgesDelete] Replaced with', replacementValue, ', new formula:', newFormula);
+          onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+
+          // Update syncedAst if we modified the synced cell
+          if (isForSyncedCell) {
+            setSyncedAst(result.ast);
+          }
+
+          // Clean up any stored user data for this connection
+          const stableKey = `${targetCell.sheet}-${targetCell.row}-${targetCell.col}-${targetHandle}`;
+          userEdgeDataRef.current.delete(stableKey);
+        } else {
+          console.warn('[onEdgesDelete] Could not transform AST');
+        }
+      }
+    },
+    [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle]
   );
 
   useEffect(() => {
@@ -583,6 +743,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onEdgesDelete={onEdgesDelete}
             isValidConnection={isValidConnection}
             nodesDraggable={false}
             zoomOnDoubleClick={false}

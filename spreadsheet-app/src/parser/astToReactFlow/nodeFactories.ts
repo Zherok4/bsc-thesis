@@ -266,6 +266,8 @@ export function createExpandableExpressionNode(
  * @param leftConstantInfo - Optional info about the left constant for editing
  * @param rightConstantInfo - Optional info about the right constant for editing
  * @param sourceCell - Optional source cell for nodes within expanded branches
+ * @param leftOperandAstNodeId - Optional AST node ID for left operand (for edge deletion)
+ * @param rightOperandAstNodeId - Optional AST node ID for right operand (for edge deletion)
  */
 export function createBinOpNode(
     operator: string,
@@ -273,12 +275,23 @@ export function createBinOpNode(
     rightConstant?: string,
     leftConstantInfo?: ConstantOperandInfo,
     rightConstantInfo?: ConstantOperandInfo,
-    sourceCell?: SourceCell
+    sourceCell?: SourceCell,
+    leftOperandAstNodeId?: string,
+    rightOperandAstNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo, sourceCell },
+        data: {
+            operator,
+            leftConstant,
+            rightConstant,
+            leftConstantInfo,
+            rightConstantInfo,
+            sourceCell,
+            leftOperandAstNodeId,
+            rightOperandAstNodeId,
+        },
         type: "BinOpNode",
     };
 }
