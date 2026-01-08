@@ -227,16 +227,20 @@ function App() {
           }
         }
 
-        // Add all new sheets
-        for (const [sheetName, data] of Object.entries(sheetData)) {
+        // First pass: Add all sheets (so cross-sheet references can resolve)
+        for (const sheetName of Object.keys(sheetData)) {
           if (hfInstance.isItPossibleToAddSheet(sheetName)) {
             hfInstance.addSheet(sheetName);
-            const sheetId = hfInstance.getSheetId(sheetName);
-            if (sheetId !== undefined) {
-              // TODO: First normalize data ==> first row has to be equal length of longest row
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              hfInstance.setSheetContent(sheetId, data as any);
-            }
+          }
+        }
+
+        // Second pass: Set content (now all sheets exist for formula evaluation)
+        for (const [sheetName, data] of Object.entries(sheetData)) {
+          const sheetId = hfInstance.getSheetId(sheetName);
+          if (sheetId !== undefined) {
+            // TODO: First normalize data ==> first row has to be equal length of longest row
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            hfInstance.setSheetContent(sheetId, data as any);
           }
         }
       });
