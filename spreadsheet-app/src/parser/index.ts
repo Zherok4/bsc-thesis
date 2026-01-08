@@ -62,6 +62,7 @@ export {
     createCellRangeTransformer,
     createColumnRangeTransformer,
     createRowRangeTransformer,
+    createExpressionReplacementTransformer,
 } from './serializer'
 
 export type {

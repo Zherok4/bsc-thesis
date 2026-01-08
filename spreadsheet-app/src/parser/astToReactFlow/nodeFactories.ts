@@ -174,6 +174,7 @@ export function createStringNode(value: string): Node {
  * @param sheet - The sheet name where this function resides
  * @param constantArgs - Optional map of argument index to constant info for editable constants
  * @param sourceCell - Optional source cell for nodes within expanded branches
+ * @param argAstNodeIds - Optional map of argument index to AST node ID for edge connections
  */
 export function createFunctionNode(
     funName: string,
@@ -181,12 +182,13 @@ export function createFunctionNode(
     funFormula: string,
     sheet: string,
     constantArgs?: Record<number, ConstantArgInfo>,
-    sourceCell?: SourceCell
+    sourceCell?: SourceCell,
+    argAstNodeIds?: Record<number, string>
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { funName, argFormulas, funFormula, sheet, constantArgs, sourceCell },
+        data: { funName, argFormulas, funFormula, sheet, constantArgs, sourceCell, argAstNodeIds },
         type: "FunctionNode",
     };
 }
@@ -225,6 +227,7 @@ interface ExpressionArgument {
  * @param onToggleExpand - Callback to toggle expansion state
  * @param isConnectedToFunctionArg - Whether this node is connected to a function argument handle
  * @param sheet - The sheet name where this expression resides
+ * @param argAstNodeIds - Optional map of argument index to AST node ID for edge connections
  */
 export function createExpandableExpressionNode(
     formula: string,
@@ -233,7 +236,8 @@ export function createExpandableExpressionNode(
     isExpanded: boolean,
     onToggleExpand: (nodeId: string) => void,
     isConnectedToFunctionArg: boolean = false,
-    sheet: string = ""
+    sheet: string = "",
+    argAstNodeIds?: Record<number, string>
 ): Node {
     const nodeId = generateNodeId();
     return {
@@ -248,6 +252,7 @@ export function createExpandableExpressionNode(
             nodeId,
             isConnectedToFunctionArg,
             sheet,
+            argAstNodeIds,
         },
         type: "ExpandableExpressionNode",
     };
@@ -299,6 +304,7 @@ interface ConditionalExpansionConfig {
  * @param sheet - The sheet name where this conditional resides
  * @param constantArgs - Optional map of argument index to constant info for editable constants
  * @param sourceCell - Optional source cell for nodes within expanded branches
+ * @param argAstNodeIds - Optional map of argument index to AST node ID for edge connections
  */
 export function createConditionalNode(
     funName: 'IF' | 'IFS',
@@ -307,7 +313,8 @@ export function createConditionalNode(
     expansionConfig: ConditionalExpansionConfig,
     sheet: string,
     constantArgs?: Record<number, ConditionalConstantArgInfo>,
-    sourceCell?: SourceCell
+    sourceCell?: SourceCell,
+    argAstNodeIds?: Record<number, string>
 ): Node {
     return {
         id: generateNodeId(),
@@ -322,6 +329,7 @@ export function createConditionalNode(
             sheet,
             constantArgs,
             sourceCell,
+            argAstNodeIds,
         },
         type: "ConditionalNode",
     };

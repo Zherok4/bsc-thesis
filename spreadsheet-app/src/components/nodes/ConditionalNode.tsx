@@ -46,6 +46,8 @@ export type ConditionalNode = Node<
     constantArgs?: Record<number, ConstantArgInfo>;
     /** Source cell for nodes within expanded branches (for edit routing) */
     sourceCell?: SourceCell;
+    /** Map of argument index to AST node ID (for all arguments, used in edge connections) */
+    argAstNodeIds?: Record<number, string>;
 },
 'ConditionalNode'
 >;

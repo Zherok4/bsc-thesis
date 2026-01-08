@@ -3,8 +3,8 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula } from '../parser';
-import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge } from '../parser/astToReactFlow';
+import { transformAST, serializeNode, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer } from '../parser';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
@@ -358,15 +358,139 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /**
    * Handles new edge connections created by the user.
-   * Currently only adds the edge visually without backend logic.
+   * Modifies the underlying formula by replacing the target argument with the source node's value.
    */
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
+      console.log('[onConnect] Connection:', connection);
       if (!connection.source || !connection.target) return;
+
+      // 1. Get source and target nodes
+      const sourceNode = nodes.find(n => n.id === connection.source);
+      const targetNode = nodes.find(n => n.id === connection.target);
+      console.log('[onConnect] Source node:', sourceNode?.type, sourceNode?.data);
+      console.log('[onConnect] Target node:', targetNode?.type, targetNode?.data);
+
+      if (!sourceNode || !targetNode) return;
+
+      // 2. Validate the connection
+      const validation = validateConnection(
+        sourceNode,
+        targetNode,
+        connection.targetHandle ?? null
+      );
+      console.log('[onConnect] Validation result:', validation);
+      if (!validation.isValid) {
+        console.warn('Invalid connection:', validation.errorMessage);
+        return;
+      }
+
+      // 3. Get target AST node ID
+      const targetAstNodeId = getTargetAstNodeId(
+        targetNode,
+        connection.targetHandle ?? null
+      );
+      console.log('[onConnect] Target AST node ID:', targetAstNodeId);
+      if (!targetAstNodeId) {
+        console.warn('Could not determine target AST node');
+        // Still add the visual edge even if we can't modify the formula
+        const edge = createDefaultEdge(connection.source, connection.target, connection.targetHandle ?? undefined);
+        setEdges((currentEdges) => addEdge(edge, currentEdges));
+        return;
+      }
+
+      // 4. Determine source cell (for expanded nodes) and target cell
+      const sourceCell = getSourceCell(targetNode);
+      const targetCell = sourceCell ?? syncedCell;
+      console.log('[onConnect] Source cell:', sourceCell, 'Target cell:', targetCell);
+
+      if (!targetCell) {
+        console.warn('No target cell available');
+        return;
+      }
+
+      // 5. Get source formula representation
+      const sourceFormula = getSourceNodeFormula(sourceNode, targetCell.sheet);
+      console.log('[onConnect] Source formula:', sourceFormula);
+      if (!sourceFormula) {
+        console.warn('Could not get formula from source node');
+        return;
+      }
+
+      // 6. Get the target AST
+      let targetAst: FormulaNode | undefined;
+      if (sourceCell) {
+        // Expanded node: parse from HyperFormula
+        const sheetId = hfInstance.getSheetId(sourceCell.sheet);
+        if (sheetId === undefined) return;
+        const formula = hfInstance.getCellFormula({
+          sheet: sheetId,
+          row: sourceCell.row,
+          col: sourceCell.col
+        });
+        if (!formula) return;
+        try {
+          targetAst = parseFormula(formula);
+        } catch {
+          return;
+        }
+      } else {
+        targetAst = syncedAst as FormulaNode | undefined;
+      }
+      console.log('[onConnect] Target AST:', targetAst);
+
+      if (!targetAst) {
+        console.warn('No target AST available');
+        return;
+      }
+
+      // 7. Create transformer and apply
+      const transformer = createExpressionReplacementTransformer(sourceFormula);
+      const result = transformAST(targetAst, targetAstNodeId, transformer);
+      console.log('[onConnect] Transform result:', result.transformed, 'New AST:', result.ast);
+
+      if (result.transformed && onNodeEdit) {
+        const newFormula = serializeNode(result.ast);
+        console.log('[onConnect] New formula:', newFormula, 'Calling onNodeEdit...');
+        onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+
+        // Update syncedAst if editing the synced cell (not an expanded cell)
+        if (!sourceCell) {
+          setSyncedAst(result.ast);
+        }
+      } else {
+        console.log('[onConnect] Transform not applied. transformed:', result.transformed, 'onNodeEdit:', !!onNodeEdit);
+      }
+
+      // 8. Add visual edge (graph will rebuild on formula change, but add for immediate feedback)
       const edge = createDefaultEdge(connection.source, connection.target, connection.targetHandle ?? undefined);
       setEdges((currentEdges) => addEdge(edge, currentEdges));
     },
-    [setEdges]
+    [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges]
+  );
+
+  /**
+   * Validates connections during drag to provide visual feedback.
+   * Returns true if the connection would be valid.
+   */
+  const isValidConnection = useCallback(
+    (connection: Edge | Connection): boolean => {
+      if (!connection.source || !connection.target) return false;
+
+      const sourceNode = nodes.find(n => n.id === connection.source);
+      const targetNode = nodes.find(n => n.id === connection.target);
+
+      if (!sourceNode || !targetNode) return false;
+
+      const validation = validateConnection(
+        sourceNode,
+        targetNode,
+        connection.targetHandle ?? null
+      );
+
+      return validation.isValid;
+    },
+    [nodes]
   );
 
   useEffect(() => {
@@ -459,6 +583,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            isValidConnection={isValidConnection}
             nodesDraggable={false}
             zoomOnDoubleClick={false}
           >

@@ -44,3 +44,8 @@ export { toGraph, toGraphWithExpansion } from "./graphBuilders";
 
 // Reference merging
 export { mergeDuplicateReferences } from "./mergeReferences";
+
+// Connection utilities (for edge creation)
+export { validateConnection, type ValidationResult } from "./connectionValidator";
+export { getSourceNodeFormula } from "./sourceNodeSerializer";
+export { getTargetAstNodeId, getSourceCell } from "./handleMapper";

@@ -30,6 +30,8 @@ export type ExpandableExpressionNode = Node<
     isConnectedToFunctionArg?: boolean,
     /** Sheet name where this expression resides */
     sheet: string,
+    /** Map of argument index to AST node ID (for edge connections) */
+    argAstNodeIds?: Record<number, string>,
 },
 'ExpandableExpressionNode'
 >;

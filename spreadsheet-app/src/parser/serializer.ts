@@ -13,6 +13,7 @@ import type {
     StringLiteralNode,
     BooleanLiteralNode,
 } from './visitor';
+import { parseFormula } from './visitor';
 
 /**
  * A transformer function that creates a new node from an existing one.
@@ -425,4 +426,38 @@ function serializeStringLiteral(node: StringLiteralNode): string {
  */
 function serializeBooleanLiteral(node: BooleanLiteralNode): string {
     return node.value ? 'TRUE' : 'FALSE';
+}
+
+/**
+ * Creates a transformer that replaces any AST node with a new expression.
+ * The new expression is parsed from a formula string.
+ * @param newExpression - The expression string to replace with (e.g., "A1", "SUM(A1:B10)")
+ *                        Do NOT include the leading "=" - just the expression part
+ * @returns A transformer function that replaces the target node
+ */
+export function createExpressionReplacementTransformer(
+    newExpression: string
+): NodeTransformer {
+    return (node: ASTNode): ASTNode => {
+        // Parse the new expression as a formula (adding = prefix)
+        const fullFormula = `=${newExpression}`;
+        let parsed: FormulaNode;
+        try {
+            parsed = parseFormula(fullFormula);
+        } catch (error) {
+            // If parsing fails, return the original node unchanged
+            console.warn(`Failed to parse expression "${newExpression}":`, error);
+            return node;
+        }
+
+        // The parsed formula wraps the expression in a FormulaNode
+        // Extract the actual expression and preserve the original nodeId
+        const newNode = parsed.expression;
+
+        // Preserve the original nodeId so the AST tracking remains consistent
+        return {
+            ...newNode,
+            nodeId: node.nodeId,
+        };
+    };
 }
