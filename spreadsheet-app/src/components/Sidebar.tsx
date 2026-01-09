@@ -5,11 +5,13 @@ import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
 import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, type UserEdgeData, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell } from '../parser/astToReactFlow';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, type JSX } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
-import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange } from './context';
+import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange, ToastProvider, useToast } from './context';
+import ToastContainer from './Toast';
+import { useFormulaHistory } from './hooks';
 import type { HyperFormula } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/ReferenceNode';
 import RangeNodeComponent from './nodes/RangeNode';
@@ -75,6 +77,8 @@ const nodeTypes = {
 
 function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
   const { fitView } = useReactFlow();
+  const { showToast } = useToast();
+  const formulaHistory = useFormulaHistory();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -226,6 +230,10 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
     if (anyTransformed) {
       const newFormula = serializeNode(currentAst);
+
+      // Push to history for undo/redo
+      formulaHistory.push(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+
       onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
 
       // Only update syncedAst if editing the synced cell (not an expanded cell)
@@ -237,7 +245,71 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     }
 
     exitEditMode();
-  }, [onNodeEdit, exitEditMode, syncedAst, syncedCell, hfInstance]);
+  }, [onNodeEdit, exitEditMode, syncedAst, syncedCell, hfInstance, formulaHistory]);
+
+  /**
+   * Wrapper for onNodeEdit that also pushes to history for undo/redo.
+   * Use this instead of calling onNodeEdit directly.
+   */
+  const applyFormulaEdit = useCallback((newFormula: string, row: number, col: number, sheet: string) => {
+    if (!onNodeEdit) return;
+
+    // Push the new state to history (the current state was already pushed by previous edit or initial capture)
+    formulaHistory.push(newFormula, row, col, sheet);
+
+    // Apply the edit
+    onNodeEdit(newFormula, row, col, sheet);
+  }, [onNodeEdit, formulaHistory]);
+
+  /**
+   * Handles undo action - restores previous formula state
+   */
+  const handleUndo = useCallback(() => {
+    const entry = formulaHistory.undo();
+    if (entry && onNodeEdit) {
+      onNodeEdit(entry.formula, entry.cell.row, entry.cell.col, entry.cell.sheet);
+
+      // Update syncedAst if this is for the synced cell so graph rebuilds
+      if (syncedCell &&
+          entry.cell.row === syncedCell.row &&
+          entry.cell.col === syncedCell.col &&
+          entry.cell.sheet === syncedCell.sheet) {
+        try {
+          const newAst = parseFormula(entry.formula);
+          setSyncedAst(newAst);
+        } catch {
+          // If parsing fails, just update via onNodeEdit
+        }
+      }
+
+      showToast('Undo', 'info');
+    }
+  }, [formulaHistory, onNodeEdit, showToast, syncedCell]);
+
+  /**
+   * Handles redo action - restores next formula state
+   */
+  const handleRedo = useCallback(() => {
+    const entry = formulaHistory.redo();
+    if (entry && onNodeEdit) {
+      onNodeEdit(entry.formula, entry.cell.row, entry.cell.col, entry.cell.sheet);
+
+      // Update syncedAst if this is for the synced cell so graph rebuilds
+      if (syncedCell &&
+          entry.cell.row === syncedCell.row &&
+          entry.cell.col === syncedCell.col &&
+          entry.cell.sheet === syncedCell.sheet) {
+        try {
+          const newAst = parseFormula(entry.formula);
+          setSyncedAst(newAst);
+        } catch {
+          // If parsing fails, just update via onNodeEdit
+        }
+      }
+
+      showToast('Redo', 'info');
+    }
+  }, [formulaHistory, onNodeEdit, showToast, syncedCell]);
 
   /** The cell address currently being viewed in the graph */
   const currentCellAddress = useMemo<string | null>(() => {
@@ -269,18 +341,30 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /** Sync the graph to the current cell's AST */
   const handleSync = useCallback(() => {
+    // Clear history when syncing to a new cell
+    formulaHistory.clear();
+
     setSyncedAst(ast);
     if (selectedCell) {
       const newSyncedCell = { row: selectedCell.row, col: selectedCell.col, sheet: activeSheetName };
       setSyncedCell(newSyncedCell);
       setViewedCellHighlight(newSyncedCell.row, newSyncedCell.col, newSyncedCell.sheet);
+
+      // Capture initial formula for undo
+      const sheetId = hfInstance.getSheetId(activeSheetName);
+      if (sheetId !== undefined) {
+        const initialFormula = hfInstance.getCellFormula({ sheet: sheetId, row: selectedCell.row, col: selectedCell.col });
+        if (initialFormula) {
+          formulaHistory.push(initialFormula, selectedCell.row, selectedCell.col, activeSheetName);
+        }
+      }
     } else {
       setSyncedCell(null);
       clearViewedCellHighlight();
     }
     setExpandedNodeIds(new Set());
     fitViewOnNextRenderRef.current = true;
-  }, [ast, selectedCell, activeSheetName, setViewedCellHighlight, clearViewedCellHighlight]);
+  }, [ast, selectedCell, activeSheetName, setViewedCellHighlight, clearViewedCellHighlight, formulaHistory, hfInstance]);
 
   const collapsedTree = useMemo<CollapsedNode | null>(() => {
     if (syncedAst === undefined) return null;
@@ -382,9 +466,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         targetNode,
         connection.targetHandle ?? null
       );
-      console.log('[onConnect] Validation result:', validation);
       if (!validation.isValid) {
-        console.warn('Invalid connection:', validation.errorMessage);
+        showToast(validation.errorMessage ?? 'Invalid connection', 'error');
         return;
       }
 
@@ -458,15 +541,13 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
       if (result.transformed && onNodeEdit) {
         const newFormula = serializeNode(result.ast);
-        console.log('[onConnect] New formula:', newFormula, 'Calling onNodeEdit...');
-        onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+        applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+        showToast('Connection created', 'success');
 
         // Update syncedAst if editing the synced cell (not an expanded cell)
         if (!sourceCell) {
           setSyncedAst(result.ast);
         }
-      } else {
-        console.log('[onConnect] Transform not applied. transformed:', result.transformed, 'onNodeEdit:', !!onNodeEdit);
       }
 
       // 9. Add visual edge and store user data with stable key (survives graph rebuilds)
@@ -491,7 +572,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
       setEdges((currentEdges) => addEdge(edge, currentEdges));
     },
-    [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges]
+    [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit]
   );
 
   /**
@@ -534,7 +615,10 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
    * Checks if a handle is a valid deletion target (argument handle or operand handle).
    */
   const isValidDeletionHandle = useCallback((targetHandle: string): boolean => {
-    return targetHandle.startsWith('arghandle-') || targetHandle === 'operand';
+    return targetHandle.startsWith('arghandle-') ||
+           targetHandle === 'operand' ||
+           targetHandle === 'left-operand' ||
+           targetHandle === 'right-operand';
   }, []);
 
   /**
@@ -634,8 +718,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
         if (result.transformed && onNodeEdit) {
           const newFormula = serializeNode(result.ast);
-          console.log('[onEdgesDelete] Replaced with', replacementValue, ', new formula:', newFormula);
-          onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+          applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+          showToast('Edge deleted', 'success');
 
           // Update syncedAst if we modified the synced cell
           if (isForSyncedCell) {
@@ -646,11 +730,11 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
           const stableKey = `${targetCell.sheet}-${targetCell.row}-${targetCell.col}-${targetHandle}`;
           userEdgeDataRef.current.delete(stableKey);
         } else {
-          console.warn('[onEdgesDelete] Could not transform AST');
+          showToast('Could not delete edge', 'error');
         }
       }
     },
-    [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle]
+    [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle, showToast, applyFormulaEdit]
   );
 
   useEffect(() => {
@@ -710,17 +794,33 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to exit edit mode
       if (e.key === 'Escape' && isEditModeActive) {
         exitEditMode();
         if (selectedCell !== null) {
           scrollToCell(selectedCell.row, selectedCell.col, activeSheetName)
         }
+        return;
+      }
+
+      // Undo: Ctrl+Z (or Cmd+Z on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Redo: Ctrl+Shift+Z or Ctrl+Y (or Cmd+Shift+Z on Mac)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'Z' || e.key === 'y')) {
+        e.preventDefault();
+        handleRedo();
+        return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditModeActive, exitEditMode]);
+  }, [isEditModeActive, exitEditMode, handleUndo, handleRedo, selectedCell, scrollToCell, activeSheetName]);
 
   return (
     <div className={`sidebar-inner ${isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
@@ -756,18 +856,25 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
               hasPendingSync={hasPendingSync}
               pendingCellAddress={pendingCellAddress}
               onSync={handleSync}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={formulaHistory.canUndo}
+              canRedo={formulaHistory.canRedo}
             />
           </ReactFlow>
         </HyperFormulaProvider>
       </GraphEditModeContext.Provider>
+      <ToastContainer />
     </div>
   );
 }
 
-export default function Sidebar(props: SidebarProps) {
+export default function Sidebar(props: SidebarProps): JSX.Element {
   return (
-    <ReactFlowProvider>
-      <SidebarInner {...props} />
-    </ReactFlowProvider>
+    <ToastProvider>
+      <ReactFlowProvider>
+        <SidebarInner {...props} />
+      </ReactFlowProvider>
+    </ToastProvider>
   );
 }

@@ -107,10 +107,11 @@ export function validateConnection(
 
     // Validate handle for BinOpNode
     if (targetType === 'BinOpNode') {
-        if (targetHandle !== 'operand') {
+        const validBinOpHandles = ['operand', 'left-operand', 'right-operand'];
+        if (!targetHandle || !validBinOpHandles.includes(targetHandle)) {
             return {
                 isValid: false,
-                errorMessage: 'BinOpNode only accepts connections on operand handle',
+                errorMessage: 'BinOpNode only accepts connections on operand handles',
             };
         }
     }

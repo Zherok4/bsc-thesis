@@ -58,6 +58,29 @@
   margin: 4px 2px;
 }
 
+/* Undo/Redo buttons */
+.toolbar-button.undo-button,
+.toolbar-button.redo-button {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.toolbar-button.undo-button:not(.disabled):hover,
+.toolbar-button.redo-button:not(.disabled):hover {
+  background: var(--accent-light, #f6f8fa);
+  color: var(--text-primary, #24292e);
+}
+
+.toolbar-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-button.disabled:hover {
+  background: transparent;
+  color: var(--text-secondary, #6a737d);
+}
+
 .current-cell-indicator {
   display: flex;
   align-items: center;

@@ -641,7 +641,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "operand",
+                "left-operand",
                 `${collapsedNodeId}-left`
             );
             childIdx++;
@@ -655,7 +655,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "operand",
+                "right-operand",
                 `${collapsedNodeId}-right`
             );
         }
@@ -744,7 +744,8 @@ function handleExpandableExpression(params: HandlerParams): void {
             context.onToggleExpand,
             isConnectedToFunctionArg,
             context.activeSheetName,
-            argAstNodeIds
+            argAstNodeIds,
+            context.sourceCell
         );
         // Override the nodeId in data to use our stable collapsed ID
         createdNode.data.nodeId = collapsedNodeId;
@@ -786,7 +787,8 @@ function handleExpandableExpression(params: HandlerParams): void {
             context.onToggleExpand,
             isConnectedToFunctionArg,
             context.activeSheetName,
-            argAstNodeIds
+            argAstNodeIds,
+            context.sourceCell
         );
         createdNode.data.nodeId = collapsedNodeId;
 

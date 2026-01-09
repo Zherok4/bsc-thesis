@@ -52,30 +52,35 @@ export function getTargetAstNodeId(
         }
 
         case 'BinOpNode': {
-            // BinOpNode uses a single "operand" handle for the non-constant operand
-            if (targetHandle !== 'operand') {
-                return null;
-            }
-
             // Check if we have the operand AST node IDs
             const leftOperandAstNodeId = data.leftOperandAstNodeId as string | undefined;
             const rightOperandAstNodeId = data.rightOperandAstNodeId as string | undefined;
             const leftConstant = data.leftConstant as string | undefined;
             const rightConstant = data.rightConstant as string | undefined;
 
-            // The operand handle connects to the non-constant operand
-            // If left is constant, the edge connects to right operand
-            // If right is constant, the edge connects to left operand
-            // If neither is constant, prefer left (the edge comes from the left side)
-            if (leftConstant && !rightConstant && rightOperandAstNodeId) {
+            // New explicit handle IDs for dual-handle support
+            if (targetHandle === 'left-operand' && leftOperandAstNodeId) {
+                return leftOperandAstNodeId;
+            }
+            if (targetHandle === 'right-operand' && rightOperandAstNodeId) {
                 return rightOperandAstNodeId;
             }
-            if (rightConstant && !leftConstant && leftOperandAstNodeId) {
-                return leftOperandAstNodeId;
-            }
-            // If neither is constant, the edge connects to left operand
-            if (!leftConstant && !rightConstant && leftOperandAstNodeId) {
-                return leftOperandAstNodeId;
+
+            // Backward compatibility: "operand" handle (deprecated)
+            // The operand handle connects to the non-constant operand
+            if (targetHandle === 'operand') {
+                // If left is constant, the edge connects to right operand
+                if (leftConstant && !rightConstant && rightOperandAstNodeId) {
+                    return rightOperandAstNodeId;
+                }
+                // If right is constant, the edge connects to left operand
+                if (rightConstant && !leftConstant && leftOperandAstNodeId) {
+                    return leftOperandAstNodeId;
+                }
+                // If neither is constant, the edge connects to left operand
+                if (!leftConstant && !rightConstant && leftOperandAstNodeId) {
+                    return leftOperandAstNodeId;
+                }
             }
 
             return null;

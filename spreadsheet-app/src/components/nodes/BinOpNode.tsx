@@ -100,17 +100,34 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
     // e.g., `5 > x` displayed as `[x] < 5`
     const displayOperator = hasOnlyLeftConstant ? getMirroredOperator(operator) : operator;
 
+    // Determine how many handles to show
+    const showLeftHandle = !leftConstant;
+    const showRightHandle = !rightConstant;
+    const showBothHandles = showLeftHandle && showRightHandle;
+
     return (
         <div className={`node-wrapper binop-node-wrapper`}>
             <div className="selected-indicator"></div>
             <div className="binop-node">
-                {/* Single input handle on the left side */}
-                <Handle
-                    type="target"
-                    position={Position.Left}
-                    id="operand"
-                    className="binop-handle-input"
-                />
+                {/* Left operand handle - show when left is NOT a constant */}
+                {showLeftHandle && (
+                    <Handle
+                        type="target"
+                        position={Position.Left}
+                        id="left-operand"
+                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-left' : ''}`}
+                    />
+                )}
+
+                {/* Right operand handle - show when right is NOT a constant */}
+                {showRightHandle && (
+                    <Handle
+                        type="target"
+                        position={Position.Left}
+                        id="right-operand"
+                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-right' : ''}`}
+                    />
+                )}
 
                 {/* Left operand - only show constant if both sides have constants */}
                 <div className={`binop-operand binop-left ${!leftDisplayValue ? 'binop-empty' : ''}`}>

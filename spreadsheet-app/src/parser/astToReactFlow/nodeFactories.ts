@@ -228,6 +228,7 @@ interface ExpressionArgument {
  * @param isConnectedToFunctionArg - Whether this node is connected to a function argument handle
  * @param sheet - The sheet name where this expression resides
  * @param argAstNodeIds - Optional map of argument index to AST node ID for edge connections
+ * @param sourceCell - Optional source cell for nodes within expanded branches
  */
 export function createExpandableExpressionNode(
     formula: string,
@@ -237,7 +238,8 @@ export function createExpandableExpressionNode(
     onToggleExpand: (nodeId: string) => void,
     isConnectedToFunctionArg: boolean = false,
     sheet: string = "",
-    argAstNodeIds?: Record<number, string>
+    argAstNodeIds?: Record<number, string>,
+    sourceCell?: SourceCell
 ): Node {
     const nodeId = generateNodeId();
     return {
@@ -253,6 +255,7 @@ export function createExpandableExpressionNode(
             isConnectedToFunctionArg,
             sheet,
             argAstNodeIds,
+            sourceCell,
         },
         type: "ExpandableExpressionNode",
     };
