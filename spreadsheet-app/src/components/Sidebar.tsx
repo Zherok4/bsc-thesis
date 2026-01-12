@@ -434,6 +434,10 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   }, [syncedAst]);
 
   const handleToggleExpand = useCallback((nodeId: string) => {
+    // Don't allow expansion changes in edit mode to prevent stale state
+    // (graph rebuilds are blocked in edit mode, so expansion wouldn't be visible anyway)
+    if (isEditModeActive) return;
+
     setExpandedNodeIds(prev => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
@@ -443,7 +447,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
       }
       return next;
     });
-  }, []);
+  }, [isEditModeActive]);
 
   /** Configuration for merging duplicate reference nodes */
   const mergeConfig: MergeConfig = useMemo(() => ({
@@ -693,10 +697,16 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   /**
    * Called when user starts dragging an edge from a source handle.
    * Pre-computes valid target handles for smart highlighting.
+   * Auto-enters edit mode for consistent UX with node editing.
    */
   const onConnectStart: OnConnectStart = useCallback(
     (_, params) => {
       if (!params.nodeId) return;
+
+      // Auto-enter edit mode when starting to drag an edge
+      if (!isEditModeActive) {
+        enterEditMode();
+      }
 
       const sourceNode = nodes.find(n => n.id === params.nodeId);
       if (!sourceNode) return;
@@ -704,7 +714,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
       const validHandles = computeValidTargetHandles(sourceNode);
       connectionDrag.startDrag(params.nodeId, sourceNode.type ?? '', validHandles);
     },
-    [nodes, computeValidTargetHandles, connectionDrag]
+    [nodes, computeValidTargetHandles, connectionDrag, isEditModeActive, enterEditMode]
   );
 
   /**
