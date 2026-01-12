@@ -1,7 +1,7 @@
 import type { NodeProps, Node } from "@xyflow/react"
 import { Handle, Position } from "@xyflow/react";
 import { useCallback, type JSX } from "react";
-import { useHyperFormula } from "../context";
+import { useHyperFormula, useConnectionDrag } from "../context";
 import { evaluateFormula } from "../../utils";
 import { abbreviateNumber } from "./utils";
 import './ExpandableExpressionNode.css'
@@ -43,6 +43,7 @@ export type ExpandableExpressionNode = Node<
  */
 export default function ExpandableExpressionNodeComponent(props: NodeProps<ExpandableExpressionNode>): JSX.Element {
     const { hfInstance } = useHyperFormula();
+    const { state: dragState, isHandleValid } = useConnectionDrag();
     const { formula, displayFormula, isExpanded, onToggleExpand, nodeId, arguments: args = [], sheet } = props.data;
 
     const residingSheet = sheet;
@@ -53,6 +54,12 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
     const handleDoubleClick = useCallback(() => {
         onToggleExpand(nodeId);
     }, [onToggleExpand, nodeId]);
+
+    // Check handle validity for smart highlighting
+    const getHandleClass = (handleId: string): string => {
+        const isValid = !dragState.isDragging || isHandleValid(props.id, handleId);
+        return isValid ? '' : 'handle-invalid';
+    };
 
     return (
         <div
@@ -66,29 +73,32 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
 
             <div className="math-expression-body">
                 <div className="math-inputs">
-                    {args.map((arg, idx) => (
-                        <div key={arg.label} className="math-variable">
-                            {!arg.constantValue && (
-                                <Handle
-                                    type="target"
-                                    position={Position.Left}
-                                    id={`arghandle-${idx}`}
-                                    className="math-handle-input"
-                                />
-                            )}
-                            <span className="variable-name">{arg.label}</span>
-                            {arg.constantValue && (
-                                <span className="variable-value">{arg.constantValue}</span>
-                            )}
-                        </div>
-                    ))}
+                    {args.map((arg, idx) => {
+                        const handleId = `arghandle-${idx}`;
+                        return (
+                            <div key={arg.label} className="math-variable">
+                                {!arg.constantValue && (
+                                    <Handle
+                                        type="target"
+                                        position={Position.Left}
+                                        id={handleId}
+                                        className={`math-handle-input ${getHandleClass(handleId)}`}
+                                    />
+                                )}
+                                <span className="variable-name">{arg.label}</span>
+                                {arg.constantValue && (
+                                    <span className="variable-value">{arg.constantValue}</span>
+                                )}
+                            </div>
+                        );
+                    })}
                     {args.length === 0 && (
                         <div className="math-variable">
                             <Handle
                                 type="target"
                                 position={Position.Left}
                                 id="input"
-                                className="math-handle-input"
+                                className={`math-handle-input ${getHandleClass('input')}`}
                             />
                         </div>
                     )}

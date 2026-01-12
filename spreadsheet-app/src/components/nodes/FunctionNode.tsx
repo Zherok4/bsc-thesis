@@ -1,10 +1,11 @@
 import type { JSX } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
-import { useHyperFormula, type HyperFormulaContextValue } from "../context";
+import { useHyperFormula, type HyperFormulaContextValue, useConnectionDrag } from "../context";
 import { evaluateFormula } from "../../utils";
 import './FunctionNode.css';
 import { getParameterName } from "../../data/functionParameters";
+import { isVariadicFunction } from "../../data/variadicFunctions";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
 import type { SourceCell } from "../context/GraphEditModeContext";
 
@@ -33,6 +34,8 @@ export type FunctionNode = Node<
     sourceCell?: SourceCell,
     /** Map of argument index to AST node ID (for all arguments, used in edge connections) */
     argAstNodeIds?: Record<number, string>,
+    /** AST node ID of the FunctionCall node itself (for adding arguments to variadic functions) */
+    functionAstNodeId?: string,
 },
 'FunctionNode'
 >;
@@ -57,16 +60,20 @@ function getConstantValue(formula: string): string | null {
     return null;
 }
 
-export default function FunctionNodeComponent({id, data: {funName, argFormulas, funFormula, sheet, constantArgs, sourceCell}}: NodeProps<FunctionNode>): JSX.Element {
+export default function FunctionNodeComponent({id, data: {funName, argFormulas, funFormula, sheet, constantArgs, sourceCell, functionAstNodeId}}: NodeProps<FunctionNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
+    const { state: dragState, isHandleValid } = useConnectionDrag();
 
     const residingSheet = sheet;
 
     // Note: No useMemo - we need fresh values on every render when cell values change
     const output: string = evaluateFormula(funFormula, hfInstance, residingSheet);
 
+    // Show drop zone for variadic functions when dragging
+    const showDropZone = dragState.isDragging && isVariadicFunction(funName) && functionAstNodeId;
+
     return (
-        <div className="node-wrapper">
+        <div className="node-wrapper" data-function-ast-node-id={functionAstNodeId}>
             <div className="selected-indicator"></div>
 
             <div className="func-node">
@@ -87,13 +94,15 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
                             argFormulas.map((formula, idx) => {
                                 const constantValue = getConstantValue(formula);
                                 const constantInfo = constantArgs?.[idx];
+                                const handleId = `arghandle-${idx}`;
+                                const isValid = !dragState.isDragging || isHandleValid(id, handleId);
                                 return (
                                     <div key={idx} className="arg">
                                         <Handle
                                             type="target"
                                             position={Position.Left}
-                                            id={`arghandle-${idx}`}
-                                            className="arg-handle"
+                                            id={handleId}
+                                            className={`arg-handle ${!isValid ? 'handle-invalid' : ''}`}
                                         />
                                         <span className="arg-label">{getParameterName(funName, idx)}</span>
                                         {constantValue && constantInfo && (
@@ -114,6 +123,13 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
                                 );
                             })
                         }
+
+                        {/* Drop zone for adding arguments to variadic functions */}
+                        {showDropZone && (
+                            <div className="variadic-drop-zone" data-drop-zone="true">
+                                <span className="drop-zone-text">+ Add argument</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="result">

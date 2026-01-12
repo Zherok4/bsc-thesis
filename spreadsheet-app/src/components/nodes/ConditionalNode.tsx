@@ -1,7 +1,7 @@
 import { type JSX, useMemo, useCallback } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
-import { useHyperFormula, type HyperFormulaContextValue } from "../context";
+import { useHyperFormula, type HyperFormulaContextValue, useConnectionDrag } from "../context";
 import { evaluateFormula } from "../../utils";
 import { getParameterName } from "../../data/functionParameters";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
@@ -120,6 +120,7 @@ export default function ConditionalNodeComponent({
     }
 }: NodeProps<ConditionalNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
+    const { state: dragState, isHandleValid } = useConnectionDrag();
     const expandedSet = useMemo(() => new Set(expandedBranchIndices), [expandedBranchIndices]);
 
     if (funName === 'IF') {
@@ -134,6 +135,8 @@ export default function ConditionalNodeComponent({
                 expandedSet={expandedSet}
                 constantArgs={constantArgs}
                 sourceCell={sourceCell}
+                isDragging={dragState.isDragging}
+                isHandleValid={isHandleValid}
             />
         );
     }
@@ -150,6 +153,8 @@ export default function ConditionalNodeComponent({
             expandedSet={expandedSet}
             constantArgs={constantArgs}
             sourceCell={sourceCell}
+            isDragging={dragState.isDragging}
+            isHandleValid={isHandleValid}
         />
     );
 }
@@ -164,6 +169,8 @@ interface IfModeProps {
     expandedSet: Set<number>;
     constantArgs?: Record<number, ConstantArgInfo>;
     sourceCell?: SourceCell;
+    isDragging: boolean;
+    isHandleValid: (nodeId: string, handleId: string) => boolean;
 }
 
 /**
@@ -179,9 +186,17 @@ function IfModeContent({
     expandedSet,
     constantArgs,
     sourceCell,
+    isDragging,
+    isHandleValid,
 }: IfModeProps): JSX.Element {
 
     const residingSheet = sheet;
+
+    // Check handle validity for smart highlighting
+    const getHandleClass = (handleId: string): string => {
+        const isValid = !isDragging || isHandleValid(nodeId, handleId);
+        return isValid ? '' : 'handle-invalid';
+    };
 
     // Note: No useMemo for formula evaluations - we need fresh values on every render
     const conditionResult = evaluateFormula(argFormulas[0], hfInstance, residingSheet);
@@ -231,7 +246,7 @@ function IfModeContent({
                                 type="target"
                                 position={Position.Left}
                                 id="arghandle-0"
-                                className="arg-handle condition-handle"
+                                className={`arg-handle condition-handle ${getHandleClass('arghandle-0')}`}
                             />
                             <span className="arg-label">{getParameterName('IF', 0)}</span>
                             <span className={`condition-badge ${isTruthy ? 'truthy' : 'falsy'}`}>
@@ -257,7 +272,7 @@ function IfModeContent({
                                 type="target"
                                 position={Position.Left}
                                 id="arghandle-1"
-                                className="arg-handle"
+                                className={`arg-handle ${getHandleClass('arghandle-1')}`}
                             />
                             <span className="arg-label">{getParameterName('IF', 1)}</span>
                             {(() => {
@@ -312,7 +327,7 @@ function IfModeContent({
                                 type="target"
                                 position={Position.Left}
                                 id="arghandle-2"
-                                className="arg-handle"
+                                className={`arg-handle ${getHandleClass('arghandle-2')}`}
                             />
                             <span className="arg-label">{getParameterName('IF', 2)}</span>
                             {(() => {
@@ -368,6 +383,8 @@ interface IfsModeProps {
     expandedSet: Set<number>;
     constantArgs?: Record<number, ConstantArgInfo>;
     sourceCell?: SourceCell;
+    isDragging: boolean;
+    isHandleValid: (nodeId: string, handleId: string) => boolean;
 }
 
 /**
@@ -383,7 +400,15 @@ function IfsModeContent({
     expandedSet,
     constantArgs,
     sourceCell,
+    isDragging,
+    isHandleValid,
 }: IfsModeProps): JSX.Element {
+    // Check handle validity for smart highlighting
+    const getHandleClass = (handleId: string): string => {
+        const isValid = !isDragging || isHandleValid(nodeId, handleId);
+        return isValid ? '' : 'handle-invalid';
+    };
+
     // Build condition-value pairs
     const pairs = useMemo(() => {
         const result: Array<{ condition: string; value: string; conditionIndex: number; valueIndex: number }> = [];
@@ -444,7 +469,7 @@ function IfsModeContent({
                                             type="target"
                                             position={Position.Left}
                                             id={`arghandle-${pair.conditionIndex}`}
-                                            className="arg-handle condition-handle"
+                                            className={`arg-handle condition-handle ${getHandleClass(`arghandle-${pair.conditionIndex}`)}`}
                                         />
                                         <span className="arg-label">{getParameterName('IFS', pair.conditionIndex)}</span>
                                         <span className={`condition-badge ${isAfterActive ? 'skipped' : (isTruthyResult(conditionResults[pairIndex]) ? 'truthy' : 'falsy')}`}>
@@ -467,7 +492,7 @@ function IfsModeContent({
                                             type="target"
                                             position={Position.Left}
                                             id={`arghandle-${pair.valueIndex}`}
-                                            className="arg-handle"
+                                            className={`arg-handle ${getHandleClass(`arghandle-${pair.valueIndex}`)}`}
                                         />
                                         <span className="arg-label">{getParameterName('IFS', pair.valueIndex)}</span>
                                         {(() => {

@@ -130,3 +130,32 @@
         box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.5), 0 0 12px rgba(245, 158, 11, 0.3);
     }
 }
+
+/* Variadic function drop zone - for adding arguments by dropping connections */
+.variadic-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    margin-top: 4px;
+    border: 2px dashed var(--sheet-accent);
+    border-radius: 6px;
+    background: var(--sheet-accent-light);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.variadic-drop-zone:hover {
+    background: var(--sheet-accent);
+    border-style: solid;
+}
+
+.variadic-drop-zone:hover .drop-zone-text {
+    color: white;
+}
+
+.drop-zone-text {
+    font-size: var(--node-font-size-sm);
+    color: var(--sheet-accent);
+    font-weight: 500;
+}

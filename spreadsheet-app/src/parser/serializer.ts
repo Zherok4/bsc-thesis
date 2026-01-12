@@ -551,3 +551,88 @@ export function createExpressionReplacementTransformer(
         };
     };
 }
+
+/**
+ * Result of adding an argument to a function.
+ */
+export interface AddArgumentResult {
+    /** The transformed AST */
+    ast: FormulaNode;
+    /** The index of the newly added argument */
+    newArgIndex: number;
+    /** Whether the transformation was successful */
+    success: boolean;
+}
+
+/**
+ * Adds a new argument to a FunctionCall node in the AST.
+ * Creates a deep clone of the AST, adding the new argument to the function with the specified nodeId.
+ * @param ast - The AST to transform (will be cloned, not mutated)
+ * @param functionNodeId - The nodeId of the FunctionCall node to add the argument to
+ * @param newArgumentFormula - The formula string for the new argument (e.g., "A1", "B2:C5")
+ * @returns The transformed AST, new argument index, and success status
+ */
+export function addFunctionArgument(
+    ast: FormulaNode,
+    functionNodeId: string,
+    newArgumentFormula: string
+): AddArgumentResult {
+    // Parse the new argument as a formula
+    const fullFormula = `=${newArgumentFormula}`;
+    let newArgNode: ASTNode;
+    try {
+        const parsed = parseFormula(fullFormula);
+        newArgNode = parsed.expression;
+    } catch (error) {
+        console.warn(`Failed to parse argument "${newArgumentFormula}":`, error);
+        return { ast, newArgIndex: -1, success: false };
+    }
+
+    let newArgIndex = -1;
+    let transformed = false;
+
+    function visit(node: ASTNode): ASTNode {
+        if (node.nodeId === functionNodeId && node.type === 'FunctionCall') {
+            transformed = true;
+            const funNode = node as FunctionCallNode;
+            newArgIndex = funNode.arguments.length;
+
+            return {
+                ...funNode,
+                arguments: [...funNode.arguments, newArgNode],
+            };
+        }
+
+        switch (node.type) {
+            case 'Formula':
+                return { ...node, expression: visit(node.expression) };
+
+            case 'BinaryOp':
+                return { ...node, left: visit(node.left), right: visit(node.right) };
+
+            case 'UnaryOp':
+            case 'Percent':
+                return { ...node, operand: visit(node.operand) };
+
+            case 'FunctionCall':
+                return { ...node, arguments: node.arguments.map(visit) };
+
+            case 'CellRange':
+                return {
+                    ...node,
+                    start: visit(node.start) as CellReferenceNode,
+                    end: visit(node.end) as CellReferenceNode,
+                };
+
+            default:
+                return { ...node };
+        }
+    }
+
+    const newAst = visit(ast) as FormulaNode;
+    return {
+        ast: newAst,
+        newArgIndex,
+        success: transformed,
+    };
+}

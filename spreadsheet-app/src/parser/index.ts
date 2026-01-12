@@ -65,9 +65,11 @@ export {
     createColumnRangeTransformer,
     createRowRangeTransformer,
     createExpressionReplacementTransformer,
+    addFunctionArgument,
 } from './serializer'
 
 export type {
     NodeTransformer,
     TransformResult,
+    AddArgumentResult,
 } from './serializer'

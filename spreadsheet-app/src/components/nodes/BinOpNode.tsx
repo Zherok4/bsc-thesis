@@ -5,6 +5,7 @@ import { abbreviateNumber, truncateMiddle } from "./utils";
 import './BinOpNode.css';
 import EditableConstant, { type ConstantType } from "./EditableConstant";
 import type { SourceCell } from "../context/GraphEditModeContext";
+import { useConnectionDrag } from "../context";
 
 /**
  * Information about a constant operand for editing purposes
@@ -82,6 +83,8 @@ function formatConstant(value: string): { display: string; full: string } {
  * When only one operand is a constant, it is always displayed on the right side.
  */
 export default function BinOpNodeComponent({ id, data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo, sourceCell } }: NodeProps<BinOpNode>): JSX.Element {
+    const { state: dragState, isHandleValid } = useConnectionDrag();
+
     // When only one constant exists, always show it on the right side for consistency
     const hasOnlyLeftConstant = leftConstant && !rightConstant;
     const hasBothConstants = leftConstant && rightConstant;
@@ -105,6 +108,10 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
     const showRightHandle = !rightConstant;
     const showBothHandles = showLeftHandle && showRightHandle;
 
+    // Check handle validity for smart highlighting
+    const isLeftHandleValid = !dragState.isDragging || isHandleValid(id, 'left-operand');
+    const isRightHandleValid = !dragState.isDragging || isHandleValid(id, 'right-operand');
+
     return (
         <div className={`node-wrapper binop-node-wrapper`}>
             <div className="selected-indicator"></div>
@@ -115,7 +122,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                         type="target"
                         position={Position.Left}
                         id="left-operand"
-                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-left' : ''}`}
+                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-left' : ''} ${!isLeftHandleValid ? 'handle-invalid' : ''}`}
                     />
                 )}
 
@@ -125,7 +132,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                         type="target"
                         position={Position.Left}
                         id="right-operand"
-                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-right' : ''}`}
+                        className={`binop-handle-input ${showBothHandles ? 'binop-handle-right' : ''} ${!isRightHandleValid ? 'handle-invalid' : ''}`}
                     />
                 )}
 

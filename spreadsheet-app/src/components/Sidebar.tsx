@@ -1,15 +1,15 @@
-import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider, addEdge, type OnConnect, type Connection } from '@xyflow/react';
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider, addEdge, type OnConnect, type Connection, type OnConnectStart, type OnConnectEnd } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer } from '../parser';
-import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, type UserEdgeData, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell } from '../parser/astToReactFlow';
+import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer, addFunctionArgument } from '../parser';
+import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, type UserEdgeData, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell, getTargetHandlesForNode } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo, type JSX } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
 import { collapseNode, type CollapsedNode } from '../parser/collapseAST';
 import TwoTextNodeComponent from './nodes/TwoTextNode';
-import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange, ToastProvider, useToast } from './context';
+import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange, ToastProvider, useToast, ConnectionDragProvider, useConnectionDrag } from './context';
 import ToastContainer from './Toast';
 import { useFormulaHistory } from './hooks';
 import type { HyperFormula, ExportedChange } from 'hyperformula';
@@ -661,6 +661,173 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     [nodes]
   );
 
+  // Connection drag context for smart handle highlighting
+  const connectionDrag = useConnectionDrag();
+
+  /**
+   * Computes all valid target handles for a given source node.
+   * Used for smart highlighting during edge drag.
+   */
+  const computeValidTargetHandles = useCallback((sourceNode: Node | undefined): Set<string> => {
+    const validHandles = new Set<string>();
+    if (!sourceNode) return validHandles;
+
+    for (const targetNode of nodes) {
+      // Skip self-connections
+      if (targetNode.id === sourceNode.id) continue;
+
+      // Get all potential handles for this target node
+      const handles = getTargetHandlesForNode(targetNode);
+
+      for (const handleId of handles) {
+        const validation = validateConnection(sourceNode, targetNode, handleId);
+        if (validation.isValid) {
+          validHandles.add(`${targetNode.id}:${handleId}`);
+        }
+      }
+    }
+
+    return validHandles;
+  }, [nodes]);
+
+  /**
+   * Called when user starts dragging an edge from a source handle.
+   * Pre-computes valid target handles for smart highlighting.
+   */
+  const onConnectStart: OnConnectStart = useCallback(
+    (_, params) => {
+      if (!params.nodeId) return;
+
+      const sourceNode = nodes.find(n => n.id === params.nodeId);
+      if (!sourceNode) return;
+
+      const validHandles = computeValidTargetHandles(sourceNode);
+      connectionDrag.startDrag(params.nodeId, sourceNode.type ?? '', validHandles);
+    },
+    [nodes, computeValidTargetHandles, connectionDrag]
+  );
+
+  /**
+   * Handles dropping a connection onto a variadic function's drop zone.
+   * Creates a new argument and establishes the connection.
+   */
+  const handleVariadicDrop = useCallback(
+    (sourceNodeId: string, targetNodeId: string, functionAstNodeId: string) => {
+      const sourceNode = nodes.find(n => n.id === sourceNodeId);
+      const targetNode = nodes.find(n => n.id === targetNodeId);
+
+      if (!sourceNode || !targetNode) return;
+
+      // Get the cell info from the target node (expanded nodes have sourceCell, root uses syncedCell)
+      const nodeSourceCell = getSourceCell(targetNode);
+      const targetCell = nodeSourceCell ?? syncedCell;
+
+      if (!targetCell) {
+        console.warn('[handleVariadicDrop] No target cell available');
+        return;
+      }
+
+      // Get source formula representation
+      const sourceFormula = getSourceNodeFormula(sourceNode, targetCell.sheet);
+      if (!sourceFormula) {
+        console.warn('[handleVariadicDrop] Could not get formula from source node');
+        return;
+      }
+
+      // Get the target AST and original formula for undo
+      let targetAst: FormulaNode | undefined;
+      let originalFormula: string | undefined;
+      if (nodeSourceCell) {
+        // Expanded node: parse from HyperFormula
+        const sheetId = hfInstance.getSheetId(nodeSourceCell.sheet);
+        if (sheetId === undefined) return;
+        const formula = hfInstance.getCellFormula({
+          sheet: sheetId,
+          row: nodeSourceCell.row,
+          col: nodeSourceCell.col
+        });
+        if (!formula) return;
+        originalFormula = formula;
+        try {
+          targetAst = parseFormula(formula);
+        } catch {
+          return;
+        }
+      } else {
+        targetAst = syncedAst as FormulaNode | undefined;
+      }
+
+      if (!targetAst) {
+        console.warn('[handleVariadicDrop] No target AST available');
+        return;
+      }
+
+      // Add the new argument to the function
+      const result = addFunctionArgument(targetAst, functionAstNodeId, sourceFormula);
+      if (!result.success) {
+        console.warn('[handleVariadicDrop] Failed to add argument');
+        return;
+      }
+
+      // Apply the new formula with undo support
+      if (onNodeEdit) {
+        const newFormula = serializeNode(result.ast);
+
+        // For expanded cells, capture original formula for undo before applying edit
+        if (nodeSourceCell && originalFormula) {
+          formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+        }
+
+        applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+        showToast('Argument added', 'success');
+
+        // Update syncedAst if editing the synced cell (not an expanded cell)
+        if (!nodeSourceCell) {
+          setSyncedAst(result.ast);
+        }
+      }
+
+      // Create visual edge to the new handle
+      const newHandleId = `arghandle-${result.newArgIndex}`;
+      const edge = createDefaultEdge(sourceNodeId, targetNodeId, newHandleId);
+      setEdges((currentEdges) => addEdge(edge, currentEdges));
+    },
+    [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, formulaHistory]
+  );
+
+  /**
+   * Called when user finishes dragging an edge (drop or cancel).
+   * Detects drops on variadic function drop zones and handles them.
+   */
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event) => {
+      // Check if we dropped on a variadic drop zone
+      const mouseEvent = event as MouseEvent;
+      const element = document.elementFromPoint(mouseEvent.clientX, mouseEvent.clientY);
+      const dropZone = element?.closest('.variadic-drop-zone');
+
+      // Use ref-based getter to avoid stale closure issues
+      const sourceNodeId = connectionDrag.getSourceNodeId();
+
+      if (dropZone && sourceNodeId) {
+        // Find the target node by traversing up to the React Flow node wrapper
+        const nodeElement = dropZone.closest('.react-flow__node');
+        const targetNodeId = nodeElement?.getAttribute('data-id');
+
+        // Get the function AST node ID from the wrapper
+        const nodeWrapper = dropZone.closest('.node-wrapper');
+        const functionAstNodeId = nodeWrapper?.getAttribute('data-function-ast-node-id');
+
+        if (targetNodeId && functionAstNodeId) {
+          handleVariadicDrop(sourceNodeId, targetNodeId, functionAstNodeId);
+        }
+      }
+
+      connectionDrag.endDrag();
+    },
+    [connectionDrag, handleVariadicDrop]
+  );
+
   /**
    * Determines the replacement value based on the AST node type being replaced.
    * StringLiteral -> "", all others -> 0
@@ -905,6 +1072,8 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onConnectStart={onConnectStart}
+            onConnectEnd={onConnectEnd}
             onEdgesDelete={onEdgesDelete}
             isValidConnection={isValidConnection}
             nodesDraggable={false}
@@ -935,7 +1104,9 @@ export default function Sidebar(props: SidebarProps): JSX.Element {
   return (
     <ToastProvider>
       <ReactFlowProvider>
-        <SidebarInner {...props} />
+        <ConnectionDragProvider>
+          <SidebarInner {...props} />
+        </ConnectionDragProvider>
       </ReactFlowProvider>
     </ToastProvider>
   );

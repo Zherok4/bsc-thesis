@@ -30,3 +30,13 @@ export type {
   Toast,
   ToastContextValue
 } from './ToastContext';
+
+export {
+  ConnectionDragProvider,
+  useConnectionDrag,
+  ConnectionDragContext
+} from './ConnectionDragContext';
+
+export type {
+  ConnectionDragContextValue
+} from './ConnectionDragContext';

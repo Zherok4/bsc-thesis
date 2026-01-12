@@ -49,3 +49,4 @@ export { mergeDuplicateReferences } from "./mergeReferences";
 export { validateConnection, type ValidationResult } from "./connectionValidator";
 export { getSourceNodeFormula } from "./sourceNodeSerializer";
 export { getTargetAstNodeId, getSourceCell } from "./handleMapper";
+export { getTargetHandlesForNode, isSourceNodeType } from "./handleUtils";

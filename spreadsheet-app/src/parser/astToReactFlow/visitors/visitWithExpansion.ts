@@ -343,7 +343,8 @@ function handleGenericFunctionCall(params: HandlerParams): void {
         context.activeSheetName,
         Object.keys(constantArgs).length > 0 ? constantArgs : undefined,
         context.sourceCell,
-        argAstNodeIds
+        argAstNodeIds,
+        funNode.nodeId  // Pass the FunctionCall's AST node ID for variadic argument addition
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);

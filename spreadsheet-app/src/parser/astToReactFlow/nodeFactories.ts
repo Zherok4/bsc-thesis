@@ -175,6 +175,7 @@ export function createStringNode(value: string): Node {
  * @param constantArgs - Optional map of argument index to constant info for editable constants
  * @param sourceCell - Optional source cell for nodes within expanded branches
  * @param argAstNodeIds - Optional map of argument index to AST node ID for edge connections
+ * @param functionAstNodeId - Optional AST node ID of the FunctionCall itself (for variadic argument addition)
  */
 export function createFunctionNode(
     funName: string,
@@ -183,12 +184,13 @@ export function createFunctionNode(
     sheet: string,
     constantArgs?: Record<number, ConstantArgInfo>,
     sourceCell?: SourceCell,
-    argAstNodeIds?: Record<number, string>
+    argAstNodeIds?: Record<number, string>,
+    functionAstNodeId?: string
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { funName, argFormulas, funFormula, sheet, constantArgs, sourceCell, argAstNodeIds },
+        data: { funName, argFormulas, funFormula, sheet, constantArgs, sourceCell, argAstNodeIds, functionAstNodeId },
         type: "FunctionNode",
     };
 }
