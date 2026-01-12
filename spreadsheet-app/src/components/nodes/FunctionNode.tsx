@@ -1,4 +1,4 @@
-import { type JSX, useMemo } from "react";
+import type { JSX } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
@@ -62,10 +62,8 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
 
     const residingSheet = sheet;
 
-    const output: string = useMemo<string>(
-        () => evaluateFormula(funFormula, hfInstance, residingSheet),
-        [funFormula, hfInstance, residingSheet]
-    );
+    // Note: No useMemo - we need fresh values on every render when cell values change
+    const output: string = evaluateFormula(funFormula, hfInstance, residingSheet);
 
     return (
         <div className="node-wrapper">

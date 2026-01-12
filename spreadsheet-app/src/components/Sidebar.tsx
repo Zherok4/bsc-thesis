@@ -12,7 +12,7 @@ import TwoTextNodeComponent from './nodes/TwoTextNode';
 import { HyperFormulaProvider, GraphEditModeContext, type NodeEdit, type SelectedRange, ToastProvider, useToast } from './context';
 import ToastContainer from './Toast';
 import { useFormulaHistory } from './hooks';
-import type { HyperFormula } from 'hyperformula';
+import type { HyperFormula, ExportedChange } from 'hyperformula';
 import ReferenceNodeComponent from './nodes/ReferenceNode';
 import RangeNodeComponent from './nodes/RangeNode';
 import NumberNodeComponent from './nodes/NumberNode';
@@ -125,6 +125,30 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /** Whether there is a pending sync (incoming ast differs from synced ast) */
   const hasPendingSync = ast !== syncedAst;
+
+  /** Counter that increments when synced cell's dependencies change, triggers graph rebuild */
+  const [valuesVersion, setValuesVersion] = useState(0);
+
+  /**
+   * Subscribe to HyperFormula value changes and update graph when any cell changes.
+   * We trigger on all changes because expanded nodes can show data from any
+   * referenced cell, and those cells have their own transitive dependencies.
+   */
+  useEffect(() => {
+    if (!syncedCell) return;
+
+    const handler = (_changes: ExportedChange[]): void => {
+      // Trigger rebuild on any value change since expanded nodes can show
+      // data from any cell in the dependency tree
+      setValuesVersion(v => v + 1);
+    };
+
+    hfInstance.on('valuesUpdated', handler);
+
+    return () => {
+      hfInstance.off('valuesUpdated', handler);
+    };
+  }, [hfInstance, syncedCell]);
 
   /**
    * Auto-sync the graph when the synced cell's formula is edited
@@ -795,7 +819,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     if (fitViewOnNextRenderRef.current) {
       setTimeout(() => fitView({ padding: FIT_VIEW_PADDING }), 0);
     }
-  }, [collapsedTree, buildGraph, setNodes, setEdges, fitView]);
+  }, [collapsedTree, buildGraph, setNodes, setEdges, fitView, valuesVersion]);
 
   useEffect(() => {
     if (!needsRelayout || measuredDimensions.size === 0) {

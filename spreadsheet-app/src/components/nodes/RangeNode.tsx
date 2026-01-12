@@ -99,29 +99,31 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
 
 
     // Get truncated cell values (only for cell ranges)
-    const cellValuesTruncated = useMemo<CellValue[] | undefined>(() => {
-        if (rangeType !== "cell") return undefined;
+    // Note: No useMemo - we need fresh values on every render when cell values change
+    let cellValuesTruncated: CellValue[] | undefined;
+    if (rangeType !== "cell") {
+        cellValuesTruncated = undefined;
+    } else if (simpleCellAddressStart && simpleCellAddressEnd) {
         const VALUECAP = 1;
         const values: CellValue[] = [];
-        if (simpleCellAddressStart && simpleCellAddressEnd) {
-            const startRow = Math.min(simpleCellAddressStart.row, simpleCellAddressEnd.row);
-            const startCol = Math.min(simpleCellAddressStart.col, simpleCellAddressEnd.col);
-            const endRow = Math.max(simpleCellAddressStart.row, simpleCellAddressEnd.row);
-            const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
-            for (let row = startRow, valueCount = 0; row <= endRow && valueCount < VALUECAP; row++) {
-                for (let col = startCol; col <= endCol && valueCount < VALUECAP; col++) {
-                    try {
-                        values.push(hfInstance.getCellValue({ col, row, sheet: sheetId || 0 }));
-                    } catch {
-                        values.push('#REF!');
-                    }
-                    valueCount++;
+        const startRow = Math.min(simpleCellAddressStart.row, simpleCellAddressEnd.row);
+        const startCol = Math.min(simpleCellAddressStart.col, simpleCellAddressEnd.col);
+        const endRow = Math.max(simpleCellAddressStart.row, simpleCellAddressEnd.row);
+        const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
+        for (let row = startRow, valueCount = 0; row <= endRow && valueCount < VALUECAP; row++) {
+            for (let col = startCol; col <= endCol && valueCount < VALUECAP; col++) {
+                try {
+                    values.push(hfInstance.getCellValue({ col, row, sheet: sheetId || 0 }));
+                } catch {
+                    values.push('#REF!');
                 }
+                valueCount++;
             }
-            return values;
         }
-        return undefined;
-    }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd, hfInstance, sheetId]);
+        cellValuesTruncated = values;
+    } else {
+        cellValuesTruncated = undefined;
+    }
 
     // Get header labels for cell ranges
     const { label: headerLabel } = useRangeHeaders(

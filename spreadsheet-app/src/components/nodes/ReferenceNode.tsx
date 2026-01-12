@@ -53,16 +53,18 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         return hfInstance.simpleCellAddressFromString(reference, sheetId || 0)
     }, [reference, sheetId, hfInstance]);
     
-    const cellValue = useMemo<CellValue | undefined>(() => {
-        if (!simpleCellAddress) {
-            return undefined;
-        }
+    // Note: No useMemo here - we need fresh values on every render
+    // since cell values can change and we want to display current data
+    let cellValue: CellValue | undefined;
+    if (!simpleCellAddress) {
+        cellValue = undefined;
+    } else {
         try {
-            return hfInstance.getCellValue(simpleCellAddress);
+            cellValue = hfInstance.getCellValue(simpleCellAddress);
         } catch {
-            return '#REF!';
+            cellValue = '#REF!';
         }
-    }, [simpleCellAddress, hfInstance]);
+    }
 
     const { label: headerLabel } = useCellHeaders(
         hfInstance,

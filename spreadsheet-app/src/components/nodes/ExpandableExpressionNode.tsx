@@ -1,6 +1,6 @@
 import type { NodeProps, Node } from "@xyflow/react"
 import { Handle, Position } from "@xyflow/react";
-import { useMemo, useCallback, type JSX } from "react";
+import { useCallback, type JSX } from "react";
 import { useHyperFormula } from "../context";
 import { evaluateFormula } from "../../utils";
 import { abbreviateNumber } from "./utils";
@@ -47,10 +47,8 @@ export default function ExpandableExpressionNodeComponent(props: NodeProps<Expan
 
     const residingSheet = sheet;
 
-    const evaluatedOutput = useMemo(
-        () => evaluateFormula(formula, hfInstance, residingSheet),
-        [formula, hfInstance, residingSheet]
-    );
+    // Note: No useMemo - we need fresh values on every render when cell values change
+    const evaluatedOutput = evaluateFormula(formula, hfInstance, residingSheet);
 
     const handleDoubleClick = useCallback(() => {
         onToggleExpand(nodeId);

@@ -183,22 +183,13 @@ function IfModeContent({
 
     const residingSheet = sheet;
 
-    const conditionResult = useMemo(
-        () => evaluateFormula(argFormulas[0], hfInstance, residingSheet),
-        [argFormulas, hfInstance, residingSheet]
-    );
-
-    const isTruthy = useMemo(() => isTruthyResult(conditionResult), [conditionResult]);
+    // Note: No useMemo for formula evaluations - we need fresh values on every render
+    const conditionResult = evaluateFormula(argFormulas[0], hfInstance, residingSheet);
+    const isTruthy = isTruthyResult(conditionResult);
 
     // Evaluate each branch's value
-    const trueBranchValue = useMemo(
-        () => evaluateFormula(argFormulas[1] || '', hfInstance, residingSheet),
-        [argFormulas, hfInstance, residingSheet]
-    );
-    const falseBranchValue = useMemo(
-        () => evaluateFormula(argFormulas[2] || '', hfInstance, residingSheet),
-        [argFormulas, hfInstance, residingSheet]
-    );
+    const trueBranchValue = evaluateFormula(argFormulas[1] || '', hfInstance, residingSheet);
+    const falseBranchValue = evaluateFormula(argFormulas[2] || '', hfInstance, residingSheet);
 
     // Active branch: 0 = true branch, 1 = false branch
     const activeBranchIndex = isTruthy ? 0 : 1;
@@ -409,19 +400,10 @@ function IfsModeContent({
 
     const residingSheet = sheet;
 
-    // Evaluate conditions to find first truthy
-    const conditionResults = useMemo(() => {
-        return pairs.map(pair => evaluateFormula(pair.condition, hfInstance, residingSheet));
-    }, [pairs, hfInstance, residingSheet]);
-
-    // Evaluate each value
-    const valueResults = useMemo(() => {
-        return pairs.map(pair => evaluateFormula(pair.value, hfInstance, residingSheet));
-    }, [pairs, hfInstance, residingSheet]);
-
-    const activePairIndex = useMemo(() => {
-        return conditionResults.findIndex(result => isTruthyResult(result));
-    }, [conditionResults]);
+    // Note: No useMemo for formula evaluations - we need fresh values on every render
+    const conditionResults = pairs.map(pair => evaluateFormula(pair.condition, hfInstance, residingSheet));
+    const valueResults = pairs.map(pair => evaluateFormula(pair.value, hfInstance, residingSheet));
+    const activePairIndex = conditionResults.findIndex(result => isTruthyResult(result));
 
     const handleToggle = useCallback((index: number) => (e: React.MouseEvent) => {
         e.stopPropagation();
