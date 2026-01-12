@@ -127,6 +127,44 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   const hasPendingSync = ast !== syncedAst;
 
   /**
+   * Auto-sync the graph when the synced cell's formula is edited
+   * (via Handsontable or FormulaBar). Queries HyperFormula directly
+   * to handle cases where selection changes before AST updates.
+   */
+  useEffect(() => {
+    if (!syncedCell) return;
+
+    const sheetId = hfInstance.getSheetId(syncedCell.sheet);
+    if (sheetId === undefined) return;
+
+    const currentFormula = hfInstance.getCellFormula({
+      sheet: sheetId,
+      row: syncedCell.row,
+      col: syncedCell.col,
+    });
+
+    if (!currentFormula) {
+      // Cell no longer has a formula, clear the synced AST
+      if (syncedAst !== undefined) {
+        setSyncedAst(undefined);
+      }
+      return;
+    }
+
+    try {
+      const currentAst = parseFormula(currentFormula);
+      const currentSerialized = serializeNode(currentAst);
+      const syncedSerialized = syncedAst ? serializeNode(syncedAst as FormulaNode) : '';
+
+      if (currentSerialized !== syncedSerialized) {
+        setSyncedAst(currentAst);
+      }
+    } catch {
+      // Parsing failed, ignore
+    }
+  }, [syncedCell, hfInstance, syncedAst, ast, selectedCell]);
+
+  /**
    * Saves an edit to a node and exits edit mode.
    * Handles both top-level edits (syncedCell) and expanded branch edits (sourceCell).
    */
