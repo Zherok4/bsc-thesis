@@ -3,7 +3,7 @@ import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
 import type { ASTNode, FormulaNode } from '../parser';
-import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer, addFunctionArgument } from '../parser';
+import { transformAST, serializeNode, findAndSerializeNode, findAstNodeType, createCellReferenceTransformer, createNumberLiteralTransformer, createStringLiteralTransformer, createCellRangeTransformer, createColumnRangeTransformer, createRowRangeTransformer, parseFormula, createExpressionReplacementTransformer, addFunctionArgument, swapExpressions } from '../parser';
 import { toGraphWithExpansion, resetNodeIdCounter, type ExpansionContext, type MergeConfig, createDefaultEdge, type UserEdgeData, validateConnection, getSourceNodeFormula, getTargetAstNodeId, getSourceCell, getTargetHandlesForNode } from '../parser/astToReactFlow';
 import { useEffect, useRef, useState, useCallback, useMemo, type JSX } from 'react';
 import { applyDagreLayout, type NodeDimensionsMap } from '../parser/dagreLayout';
@@ -23,6 +23,17 @@ import ResultNodeComponent from './nodes/ResultNode';
 import BinOpNodeComponent from './nodes/BinOpNode';
 import ConditionalNodeComponent from './nodes/ConditionalNode';
 import GraphToolbar from './GraphToolbar';
+import { ConnectionDropPopover } from './ConnectionDropPopover';
+
+/**
+ * State for a pending swap/replace connection when dropping on an occupied handle
+ */
+interface PendingSwapConnection {
+  /** The new connection being made */
+  connection: Connection;
+  /** The existing edge that occupies the target handle */
+  existingEdge: Edge;
+}
 
 /**
  * Props for the Sidebar component that renders an AST as a ReactFlow graph.
@@ -128,6 +139,9 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /** Counter that increments when synced cell's dependencies change, triggers graph rebuild */
   const [valuesVersion, setValuesVersion] = useState(0);
+
+  /** Pending connection when user drops on an occupied handle - shows Replace/Swap popover */
+  const [pendingSwap, setPendingSwap] = useState<PendingSwapConnection | null>(null);
 
   /**
    * Subscribe to HyperFormula value changes and update graph when any cell changes.
@@ -537,6 +551,20 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         return;
       }
 
+      // 2.5. Check if the target handle is already occupied
+      const existingEdge = edges.find(
+        e => e.target === connection.target && e.targetHandle === connection.targetHandle
+      );
+
+      if (existingEdge) {
+        // Show popover with Replace/Swap options
+        setPendingSwap({
+          connection,
+          existingEdge,
+        });
+        return; // Don't apply connection yet - wait for user choice
+      }
+
       // 3. Get target AST node ID
       const targetAstNodeId = getTargetAstNodeId(
         targetNode,
@@ -638,7 +666,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
       setEdges((currentEdges) => addEdge(edge, currentEdges));
     },
-    [nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit]
+    [nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit]
   );
 
   /**
@@ -837,6 +865,243 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     },
     [connectionDrag, handleVariadicDrop]
   );
+
+  /**
+   * Handles the "Replace" action from the pending swap popover.
+   * Replaces the existing connection's source with the new connection's source.
+   */
+  const handlePendingReplace = useCallback(() => {
+    if (!pendingSwap) return;
+
+    const { connection } = pendingSwap;
+
+    // Find source and target nodes
+    const sourceNode = nodes.find(n => n.id === connection.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+
+    if (!sourceNode || !targetNode) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Get target AST node ID
+    const targetAstNodeId = getTargetAstNodeId(targetNode, connection.targetHandle ?? null);
+    if (!targetAstNodeId) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Get the target cell
+    const sourceCell = getSourceCell(targetNode);
+    const targetCell = sourceCell ?? syncedCell;
+    if (!targetCell) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Get source formula representation
+    const sourceFormula = getSourceNodeFormula(sourceNode, targetCell.sheet);
+    if (!sourceFormula) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Get the target AST
+    let targetAst: FormulaNode | undefined;
+    if (sourceCell) {
+      const sheetId = hfInstance.getSheetId(sourceCell.sheet);
+      if (sheetId === undefined) {
+        setPendingSwap(null);
+        return;
+      }
+      const formula = hfInstance.getCellFormula({
+        sheet: sheetId,
+        row: sourceCell.row,
+        col: sourceCell.col
+      });
+      if (!formula) {
+        setPendingSwap(null);
+        return;
+      }
+      try {
+        targetAst = parseFormula(formula);
+      } catch {
+        setPendingSwap(null);
+        return;
+      }
+    } else {
+      targetAst = syncedAst as FormulaNode | undefined;
+    }
+
+    if (!targetAst) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Apply the replacement transformation
+    const transformer = createExpressionReplacementTransformer(sourceFormula);
+    const result = transformAST(targetAst, targetAstNodeId, transformer);
+
+    if (result.transformed && onNodeEdit) {
+      const newFormula = serializeNode(result.ast);
+      applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+      showToast('Connection replaced', 'success');
+
+      if (!sourceCell) {
+        setSyncedAst(result.ast);
+      }
+    }
+
+    // Add visual edge
+    const edge = createDefaultEdge(connection.source, connection.target, connection.targetHandle ?? undefined);
+    setEdges((currentEdges) => {
+      // Remove the old edge first, then add the new one
+      const filtered = currentEdges.filter(e => e.id !== pendingSwap.existingEdge.id);
+      return addEdge(edge, filtered);
+    });
+
+    setPendingSwap(null);
+    exitEditMode();
+  }, [pendingSwap, nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, exitEditMode]);
+
+  /**
+   * Handles the "Swap" action from the pending swap popover.
+   * Swaps the positions of the two connections.
+   */
+  const handlePendingSwap = useCallback(() => {
+    if (!pendingSwap) return;
+
+    const { connection, existingEdge } = pendingSwap;
+
+    // Find source nodes for both connections
+    const newSourceNode = nodes.find(n => n.id === connection.source);
+    const existingSourceNode = nodes.find(n => n.id === existingEdge.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+
+    if (!newSourceNode || !existingSourceNode || !targetNode) {
+      setPendingSwap(null);
+      showToast('Could not find nodes for swap', 'error');
+      return;
+    }
+
+    // Get the target cell
+    const sourceCell = getSourceCell(targetNode);
+    const targetCell = sourceCell ?? syncedCell;
+    if (!targetCell) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Get the target AST node ID (where the existing edge is connected)
+    const targetAstNodeId = getTargetAstNodeId(targetNode, connection.targetHandle ?? null);
+    if (!targetAstNodeId) {
+      setPendingSwap(null);
+      showToast('Could not determine target position', 'error');
+      return;
+    }
+
+    // Find where the new source is coming from (what handle it was connected to)
+    const newSourcePreviousEdge = edges.find(e => e.source === connection.source && e.id !== existingEdge.id);
+
+    if (!newSourcePreviousEdge) {
+      // New source wasn't connected anywhere - can't swap, just do replace
+      showToast('Source not connected - using replace instead', 'info');
+      handlePendingReplace();
+      return;
+    }
+
+    // Get the second target node (where newSource was previously connected)
+    const secondTargetNode = nodes.find(n => n.id === newSourcePreviousEdge.target);
+    if (!secondTargetNode) {
+      setPendingSwap(null);
+      showToast('Could not find second target node', 'error');
+      return;
+    }
+
+    // Get the second AST node ID
+    const secondAstNodeId = getTargetAstNodeId(secondTargetNode, newSourcePreviousEdge.targetHandle ?? null);
+    if (!secondAstNodeId) {
+      setPendingSwap(null);
+      showToast('Could not determine second position', 'error');
+      return;
+    }
+
+    // Get the target AST
+    let targetAst: FormulaNode | undefined;
+    if (sourceCell) {
+      const sheetId = hfInstance.getSheetId(sourceCell.sheet);
+      if (sheetId === undefined) {
+        setPendingSwap(null);
+        return;
+      }
+      const formula = hfInstance.getCellFormula({
+        sheet: sheetId,
+        row: sourceCell.row,
+        col: sourceCell.col
+      });
+      if (!formula) {
+        setPendingSwap(null);
+        return;
+      }
+      try {
+        targetAst = parseFormula(formula);
+      } catch {
+        setPendingSwap(null);
+        return;
+      }
+    } else {
+      targetAst = syncedAst as FormulaNode | undefined;
+    }
+
+    if (!targetAst) {
+      setPendingSwap(null);
+      return;
+    }
+
+    // Perform the swap in the AST
+    const swapResult = swapExpressions(targetAst, targetAstNodeId, secondAstNodeId);
+
+    if (!swapResult.swapped) {
+      setPendingSwap(null);
+      showToast('Could not swap expressions', 'error');
+      return;
+    }
+
+    if (onNodeEdit) {
+      const newFormula = serializeNode(swapResult.ast);
+      applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
+      showToast('Arguments swapped', 'success');
+
+      if (!sourceCell) {
+        setSyncedAst(swapResult.ast);
+      }
+    }
+
+    // Update visual edges - swap the sources
+    setEdges((currentEdges) => {
+      return currentEdges.map(e => {
+        if (e.id === existingEdge.id) {
+          // The existing edge now points from newSource
+          return { ...e, source: connection.source! };
+        }
+        if (e.id === newSourcePreviousEdge.id) {
+          // The previous edge now points from existingSource
+          return { ...e, source: existingEdge.source };
+        }
+        return e;
+      });
+    });
+
+    setPendingSwap(null);
+    exitEditMode();
+  }, [pendingSwap, nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, handlePendingReplace, exitEditMode]);
+
+  /**
+   * Cancels the pending swap/replace action.
+   */
+  const handlePendingCancel = useCallback(() => {
+    setPendingSwap(null);
+  }, []);
 
   /**
    * Determines the replacement value based on the AST node type being replaced.
@@ -1106,6 +1371,15 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
         </HyperFormulaProvider>
       </GraphEditModeContext.Provider>
       <ToastContainer />
+      {pendingSwap && (
+        <ConnectionDropPopover
+          targetNodeId={pendingSwap.connection.target!}
+          targetHandle={pendingSwap.connection.targetHandle!}
+          onReplace={handlePendingReplace}
+          onSwap={handlePendingSwap}
+          onCancel={handlePendingCancel}
+        />
+      )}
     </div>
   );
 }

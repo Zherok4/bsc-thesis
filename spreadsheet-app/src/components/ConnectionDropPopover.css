@@ -1,0 +1,117 @@
+/* Connection Drop Popover - appears when dropping on occupied handle */
+@import './nodes/nodes.css';
+
+.connection-drop-popover {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    margin-top: -10px;
+    z-index: 10000;
+    animation: popover-fade-in 0.12s ease-out;
+}
+
+@keyframes popover-fade-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -100%) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -100%) scale(1);
+    }
+}
+
+.connection-drop-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--node-bg);
+    border: 1px solid var(--node-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(27, 31, 35, 0.12);
+    min-width: 120px;
+}
+
+/* Arrow pointing down */
+.connection-drop-popover-content::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--node-border);
+}
+
+.connection-drop-popover-content::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--node-bg);
+}
+
+.connection-drop-popover-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.connection-drop-popover-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.connection-drop-btn {
+    flex: 1;
+    padding: 5px 10px;
+    border: 1px solid var(--node-border);
+    border-radius: 4px;
+    background: var(--node-bg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.connection-drop-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.connection-drop-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Replace button - subtle gray */
+.connection-drop-btn.replace-btn {
+    color: var(--text-secondary);
+    border-color: var(--node-border);
+    background: var(--accent-light);
+}
+
+.connection-drop-btn.replace-btn:hover {
+    background: var(--node-border);
+    color: var(--text-primary);
+}
+
+/* Swap button - orange accent (matches edit mode) */
+.connection-drop-btn.swap-btn {
+    color: var(--edit-mode-border);
+    border-color: var(--edit-mode-border);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.connection-drop-btn.swap-btn:hover {
+    background: var(--edit-mode-border);
+    color: white;
+    border-color: var(--edit-mode-border);
+}

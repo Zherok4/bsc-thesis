@@ -636,3 +636,127 @@ export function addFunctionArgument(
         success: transformed,
     };
 }
+
+/**
+ * Result of swapping two expressions in an AST.
+ */
+export interface SwapExpressionsResult {
+    /** The transformed AST */
+    ast: FormulaNode;
+    /** Whether the swap was successful */
+    swapped: boolean;
+}
+
+/**
+ * Swaps two expressions in an AST by their node IDs.
+ * Creates a deep clone of the AST with the two nodes exchanged.
+ * @param ast - The AST to transform (will be cloned, not mutated)
+ * @param nodeId1 - The nodeId of the first node to swap
+ * @param nodeId2 - The nodeId of the second node to swap
+ * @returns The transformed AST and whether the swap was successful
+ */
+export function swapExpressions(
+    ast: FormulaNode,
+    nodeId1: string,
+    nodeId2: string
+): SwapExpressionsResult {
+    // First, find both nodes to get their subtrees
+    let node1: ASTNode | null = null;
+    let node2: ASTNode | null = null;
+
+    function findNode(node: ASTNode, targetId: string): ASTNode | null {
+        if (node.nodeId === targetId) {
+            return node;
+        }
+
+        switch (node.type) {
+            case 'Formula':
+                return findNode(node.expression, targetId);
+            case 'BinaryOp':
+                return findNode(node.left, targetId) ?? findNode(node.right, targetId);
+            case 'UnaryOp':
+            case 'Percent':
+                return findNode(node.operand, targetId);
+            case 'FunctionCall':
+                for (const arg of node.arguments) {
+                    const result = findNode(arg, targetId);
+                    if (result) return result;
+                }
+                return null;
+            case 'CellRange':
+                return findNode(node.start, targetId) ?? findNode(node.end, targetId);
+            default:
+                return null;
+        }
+    }
+
+    node1 = findNode(ast, nodeId1);
+    node2 = findNode(ast, nodeId2);
+
+    if (!node1 || !node2) {
+        return { ast, swapped: false };
+    }
+
+    // Deep clone a node (to avoid sharing references)
+    function cloneNode(node: ASTNode): ASTNode {
+        switch (node.type) {
+            case 'Formula':
+                return { ...node, expression: cloneNode(node.expression) };
+            case 'BinaryOp':
+                return { ...node, left: cloneNode(node.left), right: cloneNode(node.right) };
+            case 'UnaryOp':
+            case 'Percent':
+                return { ...node, operand: cloneNode(node.operand) };
+            case 'FunctionCall':
+                return { ...node, arguments: node.arguments.map(cloneNode) };
+            case 'CellRange':
+                return {
+                    ...node,
+                    start: cloneNode(node.start) as CellReferenceNode,
+                    end: cloneNode(node.end) as CellReferenceNode,
+                };
+            default:
+                return { ...node };
+        }
+    }
+
+    // Clone the nodes to swap (preserving their subtrees)
+    const cloned1 = cloneNode(node1);
+    const cloned2 = cloneNode(node2);
+
+    // Now visit the AST and swap: when we find nodeId1, replace with cloned2 (keeping nodeId1)
+    // When we find nodeId2, replace with cloned1 (keeping nodeId2)
+    function visit(node: ASTNode): ASTNode {
+        if (node.nodeId === nodeId1) {
+            // Replace with cloned2, but keep the original nodeId
+            return { ...cloned2, nodeId: nodeId1 };
+        }
+        if (node.nodeId === nodeId2) {
+            // Replace with cloned1, but keep the original nodeId
+            return { ...cloned1, nodeId: nodeId2 };
+        }
+
+        switch (node.type) {
+            case 'Formula':
+                return { ...node, expression: visit(node.expression) };
+            case 'BinaryOp':
+                return { ...node, left: visit(node.left), right: visit(node.right) };
+            case 'UnaryOp':
+            case 'Percent':
+                return { ...node, operand: visit(node.operand) };
+            case 'FunctionCall':
+                return { ...node, arguments: node.arguments.map(visit) };
+            case 'CellRange':
+                return {
+                    ...node,
+                    start: visit(node.start) as CellReferenceNode,
+                    end: visit(node.end) as CellReferenceNode,
+                };
+            default:
+                return { ...node };
+        }
+    }
+
+    const newAst = visit(ast) as FormulaNode;
+    return { ast: newAst, swapped: true };
+}

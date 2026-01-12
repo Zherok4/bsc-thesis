@@ -66,10 +66,12 @@ export {
     createRowRangeTransformer,
     createExpressionReplacementTransformer,
     addFunctionArgument,
+    swapExpressions,
 } from './serializer'
 
 export type {
     NodeTransformer,
     TransformResult,
     AddArgumentResult,
+    SwapExpressionsResult,
 } from './serializer'
