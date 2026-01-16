@@ -322,7 +322,10 @@ function handleGenericFunctionCall(params: HandlerParams): void {
 
     // Build constant args info for editable constants
     const constantArgs: Record<number, { astNodeId: string; type: 'number' | 'string'; rawValue: string | number }> = {};
+    // Build AST node ID mapping for all arguments (used for edge connections)
+    const argAstNodeIds: Record<number, string> = {};
     funNode.arguments.forEach((arg, idx) => {
+        argAstNodeIds[idx] = arg.nodeId;
         const info = getConstantInfo(arg);
         if (info) {
             constantArgs[idx] = {
@@ -339,7 +342,9 @@ function handleGenericFunctionCall(params: HandlerParams): void {
         funFormula,
         context.activeSheetName,
         Object.keys(constantArgs).length > 0 ? constantArgs : undefined,
-        context.sourceCell
+        context.sourceCell,
+        argAstNodeIds,
+        funNode.nodeId  // Pass the FunctionCall's AST node ID for variadic argument addition
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
@@ -426,7 +431,10 @@ function handleConditionalFunctionCall(
 
     // Build constant args info for editable constants
     const constantArgs: Record<number, { astNodeId: string; type: 'number' | 'string'; rawValue: string | number }> = {};
+    // Build AST node ID mapping for all arguments (used for edge connections)
+    const argAstNodeIds: Record<number, string> = {};
     funNode.arguments.forEach((arg, idx) => {
+        argAstNodeIds[idx] = arg.nodeId;
         const info = getConstantInfo(arg);
         if (info) {
             constantArgs[idx] = {
@@ -441,7 +449,7 @@ function handleConditionalFunctionCall(
         onToggleBranchExpand: context.onToggleExpand,
         branchExpansionIds,
         expandedBranchIndices,
-    }, context.activeSheetName, Object.keys(constantArgs).length > 0 ? constantArgs : undefined, context.sourceCell);
+    }, context.activeSheetName, Object.keys(constantArgs).length > 0 ? constantArgs : undefined, context.sourceCell, argAstNodeIds);
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);
     edges.push(createdEdge);
@@ -614,7 +622,9 @@ function handleBinaryOp(params: HandlerParams): void {
                 type: rightConstantInfo.type,
                 rawValue: rightConstantInfo.rawValue,
             } : undefined,
-            context.sourceCell
+            context.sourceCell,
+            binaryNode.left.nodeId,
+            binaryNode.right.nodeId
         );
         const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
         nodes.push(createdNode);
@@ -632,7 +642,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "operand",
+                "left-operand",
                 `${collapsedNodeId}-left`
             );
             childIdx++;
@@ -646,7 +656,7 @@ function handleBinaryOp(params: HandlerParams): void {
                 edges,
                 createdNode.id,
                 context,
-                "operand",
+                "right-operand",
                 `${collapsedNodeId}-right`
             );
         }
@@ -720,6 +730,12 @@ function handleExpandableExpression(params: HandlerParams): void {
             collapsedNode.children
         );
 
+        // Build argAstNodeIds from children's original AST nodes
+        const argAstNodeIds: Record<number, string> = {};
+        collapsedNode.children.forEach((child, idx) => {
+            argAstNodeIds[idx] = child.original.nodeId;
+        });
+
         // Create expandable node (collapsed or expanded state)
         const createdNode = createExpandableExpressionNode(
             collapsedNode.label,
@@ -728,7 +744,9 @@ function handleExpandableExpression(params: HandlerParams): void {
             isExpanded,
             context.onToggleExpand,
             isConnectedToFunctionArg,
-            context.activeSheetName
+            context.activeSheetName,
+            argAstNodeIds,
+            context.sourceCell
         );
         // Override the nodeId in data to use our stable collapsed ID
         createdNode.data.nodeId = collapsedNodeId;
@@ -756,6 +774,12 @@ function handleExpandableExpression(params: HandlerParams): void {
             collapsedNode.children
         );
 
+        // Build argAstNodeIds from children's original AST nodes
+        const argAstNodeIds: Record<number, string> = {};
+        collapsedNode.children.forEach((child, idx) => {
+            argAstNodeIds[idx] = child.original.nodeId;
+        });
+
         const createdNode = createExpandableExpressionNode(
             collapsedNode.label,
             displayFormula,
@@ -763,7 +787,9 @@ function handleExpandableExpression(params: HandlerParams): void {
             isExpanded,
             context.onToggleExpand,
             isConnectedToFunctionArg,
-            context.activeSheetName
+            context.activeSheetName,
+            argAstNodeIds,
+            context.sourceCell
         );
         createdNode.data.nodeId = collapsedNodeId;
 

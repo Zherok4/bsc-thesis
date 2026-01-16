@@ -16,6 +16,14 @@ interface GraphToolbarProps {
   pendingCellAddress: string | null;
   /** Callback to sync the graph to the current cell's AST */
   onSync: () => void;
+  /** Callback to undo the last formula change */
+  onUndo: () => void;
+  /** Callback to redo the last undone formula change */
+  onRedo: () => void;
+  /** Whether undo is available */
+  canUndo: boolean;
+  /** Whether redo is available */
+  canRedo: boolean;
 }
 
 /**
@@ -23,7 +31,17 @@ interface GraphToolbarProps {
  * Allows switching between preview mode (read-only) and edit mode.
  * Includes a sync button to manually update the graph to the current selection.
  */
-export default function GraphToolbar({ currentCellAddress, currentCell, hasPendingSync, pendingCellAddress, onSync }: GraphToolbarProps): ReactElement {
+export default function GraphToolbar({
+  currentCellAddress,
+  currentCell,
+  hasPendingSync,
+  pendingCellAddress,
+  onSync,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+}: GraphToolbarProps): ReactElement {
   const { isEditModeActive, enterEditMode, exitEditMode }: GraphEditModeContextValue = useGraphEditMode();
   const { scrollToCell }: HyperFormulaContextValue = useHyperFormula();
 
@@ -58,6 +76,25 @@ export default function GraphToolbar({ currentCellAddress, currentCell, hasPendi
         title="Edit mode"
         aria-label="Edit mode"
       >
+      </button>
+      <div className="toolbar-divider" />
+      <button
+        className={`toolbar-button undo-button ${canUndo ? '' : 'disabled'}`}
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        aria-label="Undo"
+      >
+        &#x21B6;
+      </button>
+      <button
+        className={`toolbar-button redo-button ${canRedo ? '' : 'disabled'}`}
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+        aria-label="Redo"
+      >
+        &#x21B7;
       </button>
       <div className="toolbar-divider" />
       {currentCellAddress && (

@@ -131,6 +131,39 @@
   transition: all 0.2s ease;
 }
 
+.react-flow__handle:hover {
+  transform: scale(3);
+}
+
+/* Edge styles */
+.react-flow__edge-path {
+  transition: stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--sheet-accent) !important;
+  stroke-width: 7px !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--edit-mode-border) !important;
+  stroke-width: 8px !important;
+}
+
+/* Pulsing animation for selected edges */
+.react-flow__edge.selected .react-flow__edge-path {
+  animation: edge-pulse 1s ease-in-out infinite;
+}
+
+@keyframes edge-pulse {
+  0%, 100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.6;
+  }
+}
+
 .handle-top {
   top: -4px;
   left: 50%;
@@ -194,6 +227,18 @@
 
 .react-flow__node.inactive-path .react-flow__handle {
   opacity: 0.5;
+}
+
+/* Invalid handle styling - for handles that cannot accept the current drag */
+.react-flow__handle.handle-invalid {
+  background-color: #e5e7eb !important;
+  border-color: #d1d5da !important;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.react-flow__handle.handle-invalid:hover {
+  transform: none !important;
 }
 
 

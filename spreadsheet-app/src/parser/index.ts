@@ -56,15 +56,22 @@ export {
 export {
     serializeNode,
     transformAST,
+    findAndSerializeNode,
+    findAstNodeType,
     createCellReferenceTransformer,
     createNumberLiteralTransformer,
     createStringLiteralTransformer,
     createCellRangeTransformer,
     createColumnRangeTransformer,
     createRowRangeTransformer,
+    createExpressionReplacementTransformer,
+    addFunctionArgument,
+    swapExpressions,
 } from './serializer'
 
 export type {
     NodeTransformer,
     TransformResult,
+    AddArgumentResult,
+    SwapExpressionsResult,
 } from './serializer'

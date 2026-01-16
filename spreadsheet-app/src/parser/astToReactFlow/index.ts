@@ -30,7 +30,7 @@ export {
 } from "./nodeFactories";
 
 // Edge factory
-export { createDefaultEdge } from "./edgeFactory";
+export { createDefaultEdge, type UserEdgeData } from "./edgeFactory";
 
 // Visitor functions
 export {
@@ -44,3 +44,9 @@ export { toGraph, toGraphWithExpansion } from "./graphBuilders";
 
 // Reference merging
 export { mergeDuplicateReferences } from "./mergeReferences";
+
+// Connection utilities (for edge creation)
+export { validateConnection, type ValidationResult } from "./connectionValidator";
+export { getSourceNodeFormula } from "./sourceNodeSerializer";
+export { getTargetAstNodeId, getSourceCell } from "./handleMapper";
+export { getTargetHandlesForNode, isSourceNodeType } from "./handleUtils";

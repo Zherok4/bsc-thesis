@@ -1,6 +1,6 @@
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
-import { useMemo, type JSX } from "react";
+import type { JSX } from "react";
 import { useHyperFormula, type HyperFormulaContextValue } from "../context";
 import { evaluateFormula } from "../../utils";
 import "./ResultNode.css"
@@ -16,10 +16,8 @@ export type ResultNode = Node<
 export default function ResultNodeComponent({data: {formula, sheet}}: NodeProps<ResultNode>): JSX.Element {
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
 
-    const output = useMemo<string>(
-        () => evaluateFormula(formula, hfInstance, sheet),
-        [formula, hfInstance, sheet]
-    );
+    // Note: No useMemo - we need fresh values on every render when cell values change
+    const output: string = evaluateFormula(formula, hfInstance, sheet);
 
     return (
         <div className="node-wrapper">

@@ -6,8 +6,9 @@ import type { ASTNode, BinaryOpNode, CellRangeNode, CellReferenceNode, ColumnRan
  * Wraps the name in single quotes if it contains spaces or special characters.
  */
 function formatSheetName(sheet: string): string {
-    // Quote sheet names that contain spaces or special characters
-    if (/[\s'!]/.test(sheet)) {
+    // Quote sheet names that contain characters outside HyperFormula's allowed set
+    // Valid unquoted: letters (including Unicode \u00C0-\u02AF), digits, underscores
+    if (!/^[A-Za-z\u00C0-\u02AF0-9_]+$/.test(sheet)) {
         return `'${sheet}'`;
     }
     return sheet;
