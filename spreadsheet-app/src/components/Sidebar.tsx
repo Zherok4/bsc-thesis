@@ -96,7 +96,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   /** Stores user-created edge metadata (survives graph rebuilds) */
   const userEdgeDataRef = useRef<Map<string, UserEdgeData>>(new Map());
 
-  /** Tracks whether edge selection should be allowed (only on double-click) */
+  /** Tracks whether edge selection should be allowed (double-click or single-click when in edit mode) */
   const allowEdgeSelectionRef = useRef(false);
 
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
@@ -1107,12 +1107,22 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   }, []);
 
   /**
-   * Prevents edge selection on single click.
-   * Edges can only be selected/edited via double-click.
+   * Handles edge click - allows selection when already in edit mode.
+   * When not in edit mode, does nothing (use double-click to enter edit mode).
    */
-  const onEdgeClick: EdgeMouseHandler = useCallback((_event, _edge) => {
-    // Don't select edge on single click - do nothing
-  }, []);
+  const onEdgeClick: EdgeMouseHandler = useCallback((_event, edge) => {
+    if (isEditModeActive) {
+      // Allow selection when already in edit mode
+      allowEdgeSelectionRef.current = true;
+      setEdges((eds) =>
+        eds.map((e) => ({
+          ...e,
+          selected: e.id === edge.id,
+        }))
+      );
+    }
+    // When not in edit mode, do nothing - require double-click to enter edit mode
+  }, [isEditModeActive, setEdges]);
 
   /**
    * Enables edge selection and edit mode on double-click.
@@ -1135,11 +1145,11 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /**
    * Wraps onEdgesChange to filter out edge selection changes unless explicitly allowed.
-   * This ensures edges can only be selected via double-click.
+   * This ensures edges can only be selected via double-click or single-click when in edit mode.
    */
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
     const filteredChanges = changes.filter((change) => {
-      // Block selection changes unless explicitly allowed (via double-click)
+      // Block selection changes unless explicitly allowed (via double-click or edit mode click)
       if (change.type === 'select' && !allowEdgeSelectionRef.current) {
         return false;
       }
