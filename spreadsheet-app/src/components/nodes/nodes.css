@@ -146,7 +146,7 @@
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #ef4444 !important;
+  stroke: var(--edit-mode-border) !important;
   stroke-width: 8px !important;
 }
 

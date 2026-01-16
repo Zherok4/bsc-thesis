@@ -1,4 +1,4 @@
-import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider, addEdge, type OnConnect, type Connection, type OnConnectStart, type OnConnectEnd } from '@xyflow/react';
+import { ReactFlow, Background, Controls, useNodesState, useEdgesState, type Edge, type EdgeChange, type Node, type NodeChange, type NodeDimensionChange, useReactFlow, ReactFlowProvider, addEdge, type OnConnect, type Connection, type OnConnectStart, type OnConnectEnd, type EdgeMouseHandler } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './nodes/nodes.css';
 import './Sidebar.css';
@@ -95,6 +95,9 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
 
   /** Stores user-created edge metadata (survives graph rebuilds) */
   const userEdgeDataRef = useRef<Map<string, UserEdgeData>>(new Map());
+
+  /** Tracks whether edge selection should be allowed (only on double-click) */
+  const allowEdgeSelectionRef = useRef(false);
 
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
 
@@ -1104,6 +1107,50 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
   }, []);
 
   /**
+   * Prevents edge selection on single click.
+   * Edges can only be selected/edited via double-click.
+   */
+  const onEdgeClick: EdgeMouseHandler = useCallback((_event, _edge) => {
+    // Don't select edge on single click - do nothing
+  }, []);
+
+  /**
+   * Enables edge selection and edit mode on double-click.
+   */
+  const onEdgeDoubleClick: EdgeMouseHandler = useCallback((_event, edge) => {
+    // Enter edit mode
+    if (!isEditModeActive) {
+      enterEditMode();
+    }
+    // Allow the selection change to go through
+    allowEdgeSelectionRef.current = true;
+    // Select this edge
+    setEdges((eds) =>
+      eds.map((e) => ({
+        ...e,
+        selected: e.id === edge.id,
+      }))
+    );
+  }, [isEditModeActive, enterEditMode, setEdges]);
+
+  /**
+   * Wraps onEdgesChange to filter out edge selection changes unless explicitly allowed.
+   * This ensures edges can only be selected via double-click.
+   */
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const filteredChanges = changes.filter((change) => {
+      // Block selection changes unless explicitly allowed (via double-click)
+      if (change.type === 'select' && !allowEdgeSelectionRef.current) {
+        return false;
+      }
+      return true;
+    });
+    // Reset the flag after processing
+    allowEdgeSelectionRef.current = false;
+    onEdgesChange(filteredChanges);
+  }, [onEdgesChange]);
+
+  /**
    * Determines the replacement value based on the AST node type being replaced.
    * StringLiteral -> "", all others -> 0
    */
@@ -1345,13 +1392,15 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={handleNodesChange}
-            onEdgesChange={onEdgesChange}
+            onEdgesChange={handleEdgesChange}
             onConnect={onConnect}
             onConnectStart={onConnectStart}
             onConnectEnd={onConnectEnd}
             onEdgesDelete={onEdgesDelete}
+            onEdgeClick={onEdgeClick}
+            onEdgeDoubleClick={onEdgeDoubleClick}
             isValidConnection={isValidConnection}
-            nodesDraggable={false}
+            nodesDraggable={true}
             zoomOnDoubleClick={false}
           >
             <Background />
