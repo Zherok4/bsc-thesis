@@ -1,0 +1,14 @@
+\begin{thebibliography}{1}
+
+\bibitem{hermans_detecting_2012}
+Felienne Hermans, Martin Pinzger, and Arie van Deursen.
+\newblock Detecting and visualizing inter-worksheet smells in spreadsheets.
+\newblock In {\em 2012 34th {International} {Conference} on {Software} {Engineering} ({ICSE})}, pages 441--451, June 2012.
+\newblock ISSN: 1558-1225.
+
+\bibitem{srinivasa_ragavan_spreadsheet_2021}
+Sruti Srinivasa~Ragavan, Advait Sarkar, and Andrew~D Gordon.
+\newblock Spreadsheet {Comprehension}: {Guesswork}, {Giving} {Up} and {Going} {Back} to the {Author}.
+\newblock In {\em Proceedings of the 2021 {CHI} {Conference} on {Human} {Factors} in {Computing} {Systems}}, pages 1--21, Yokohama Japan, May 2021. ACM.
+
+\end{thebibliography}

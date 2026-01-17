@@ -1,0 +1,37 @@
+% TODO: Tell that we assume that the user clicks on a node to preview the formula and see the dependencies etc. ==> i.e to answer why we even click on a cell ?
+\section{The presentation layer}
+% TODO: more goals i.e for manipualtion ?
+For the presentation layer there are 3 important goals:
+\begin{enumerate}
+    \item improve self-descriptiveness of the hidden data of the datatable
+    \item improve bidirectionality between the tool and the datatable
+    \item minimize the cognitive load of the user
+\end{enumerate}
+
+\subsection{Flow graph justification}
+The decision to represent the hidden data as a flow graph was driven by the nature of the underlying state of spreadsheet formulas, the dependency graph.
+A flow graph allows us to uncover this state and enables the user to see the dependencies rather than by reading formulas and parsing it on their own.
+The flow direction is left to right. This should mirror the spatial convention for spreadsheets, where the inputs of a formula are located in columns on the left side of the formula.
+
+\subsection{Layout strategy}
+Placing the datatable-view and flow-graph-view side by side serves two purposes. First by having them as near as possible to each other it should reduce the cognitive distance between datatable-view and flow-graph-view. Secondly by strictly separating the both views i.e not having a popover or even an overlay strategy, prevents the occlusion of other important cells.
+% TODO: insert image of the two views
+
+\subsection{Node design}
+
+\subsection{Interaction design}
+The flow graph not only serves as a visualization but also as an interface for the exploration and manipulation of the datatable. Interactions are organized into two distinct modes: the \textbf{preview} mode and the \textbf{edit} mode. This seperation should provide clear visual feedback when changes will affect the underlying data of the datatable.
+\subsubsection{Preview Mode}
+The Preview Mode is the default state and is intended for the exploration. Hovering over a reference node highlights the corresponding cell or range in the datatable. This allows the user to survey the dependency at the current position in the datatable. Clicking on a reference node scrolls the datatable to the corresponding cell or range to enable closer inspection of the dependencies.
+\subsubsection{Edit Mode}
+Edit Mode is always entered through an explicit user action:
+\begin{enumerate}
+    \item clicking on the edit button
+    \item double-clicking on an inline value or address
+    \item double-clicking an edge
+    \item dragging from a connection handle
+\end{enumerate}
+While the user is in edit mode the graph synchronization is paused to maintain a stable working state.
+% picture of the component and arrows what i.e value / addres / connection handle is.
+
+\subsection{Bidirectional editing}

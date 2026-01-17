@@ -1,0 +1,21 @@
+\changetocdepth {2}
+\babel@toc {english}{}\relax 
+\contentsline {chapter}{Contents}{iii}{section*.2}%
+\contentsline {chapter}{\chapternumberline {1}Introduction}{1}{chapter.1}%
+\contentsline {chapter}{\chapternumberline {2}System Design}{2}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Architectural overview}{2}{section.2.1}%
+\contentsline {section}{\numberline {2.2}The presentation layer}{3}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}Flow graph justification}{3}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Layout strategy}{3}{subsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.2.3}Node design}{3}{subsection.2.2.3}%
+\contentsline {subsection}{\numberline {2.2.4}Interaction design}{3}{subsection.2.2.4}%
+\contentsline {subsubsection}{Preview Mode}{3}{section*.7}%
+\contentsline {subsubsection}{Edit Mode}{4}{section*.8}%
+\contentsline {subsection}{\numberline {2.2.5}Bidirectional editing}{4}{subsection.2.2.5}%
+\contentsline {chapter}{\chapternumberline {3}Notation and Preliminaries}{5}{chapter.3}%
+\contentsline {paragraph}{Expectation.}{5}{section*.12}%
+\contentsline {chapter}{\chapternumberline {4}Conclusion}{8}{chapter.4}%
+\contentsline {paragraph}{Summary of Contributions.}{8}{section*.19}%
+\contentsline {paragraph}{Limitations and Possible Extensions.}{9}{section*.20}%
+\contentsline {chapter}{Bibliography}{10}{chapter*.21}%
+\contentsline {chapter}{Dummy Appendix}{11}{appendix*.22}%

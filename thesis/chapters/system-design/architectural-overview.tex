@@ -1,0 +1,26 @@
+\section{Architectural overview}
+To ensure strict separation between visualization and calculation the system implements a layered component architecture. 
+%TODO: Improve wording why layers are needed.
+\begin{enumerate}
+    \item The presentation Layer
+    \item The state and Context Layer
+    \item The business Logic Layer
+    \item The data Layer
+\end{enumerate}
+% Presentation Layer
+The \textbf{presentation} Layer is responsible for interactions and rendering. It implements a split-view displaying the datatable and flow-graph simultaneously. 
+%TODO: Explain why Split-View ==> what is called the locality i.e distance of context ??
+This layer only presents the data from the state layer and dispatch ssers interactions. It does not directly manipulate the data.
+% State Layer
+In the second layer, the \textbf{state \& context Layer}, ... %TODO: explain the second layer
+
+% Business Logic Layer
+The \textbf{business logic layer} encapsulates all the transformer to enable the bidirectionality. For the Spreadsheet to flow graph direction, first the parser translates an unstructured formula String into an AST\footnote{Abstract Syntax Tree}. To bridge the gap between AST and flow graph we need another transformer which maps elements of the AST to elements of the flow graph. The use of an intermediate AST was deliberately chosen over raw string manipulation to ensure correctness when handling complex and deeply nested formulas for a very small performance cost.
+For the inverse direction, going from flow graph to a formula string, is the serializer responsible. 
+% TODO: Maybe more explanation what the Serializer does ?  
+% Data Layer
+The foundation of the architecture, the \textbf{data layer}, manages all operations of the datatable. By delegating every operation to this layer, the system ensures consistency and therefore provides synchronization between the two views.
+
+% TODO: add an image which describes this layout
+
+
