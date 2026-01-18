@@ -28,6 +28,7 @@ export {
 
 export type {
   Toast,
+  ToastType,
   ToastContextValue
 } from './ToastContext';
 

@@ -12,6 +12,9 @@ export interface Toast {
     type: 'success' | 'error' | 'info';
 }
 
+/** Type alias for toast notification types */
+export type ToastType = Toast['type'];
+
 /**
  * Context value for managing toast notifications
  */

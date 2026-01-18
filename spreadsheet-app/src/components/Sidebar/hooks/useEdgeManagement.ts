@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import type { Edge, EdgeChange, EdgeMouseHandler } from '@xyflow/react';
+import type { Edge, EdgeChange, EdgeMouseHandler, Node } from '@xyflow/react';
 import type { ASTNode, FormulaNode } from '../../../parser';
 import {
     transformAST,
@@ -17,7 +17,7 @@ import type { ToastType } from '../../context';
  * Parameters for the useEdgeManagement hook
  */
 export interface UseEdgeManagementParams {
-    nodes: { id: string; data: Record<string, unknown> }[];
+    nodes: Node[];
     setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
     onEdgesChange: (changes: EdgeChange[]) => void;
     syncedAst: ASTNode | undefined;
