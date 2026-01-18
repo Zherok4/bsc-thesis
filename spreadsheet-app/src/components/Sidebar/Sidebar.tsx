@@ -57,6 +57,8 @@ export interface SidebarProps {
   clearViewedCellHighlight: () => void;
   /** Callback when a node edit is saved. Receives the new formula and cell position to update. */
   onNodeEdit?: (newFormula: string, row: number, col: number, sheet: string) => void;
+  /** Deselect any selected cells in the spreadsheet (prevents keyboard events from affecting cells) */
+  deselectCell?: () => void;
 }
 
 const nodeTypes = {
@@ -72,7 +74,7 @@ const nodeTypes = {
   ConditionalNode: ConditionalNodeComponent,
 };
 
-function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit }: SidebarProps) {
+function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, setViewedCellHighlight, clearViewedCellHighlight, onNodeEdit, deselectCell }: SidebarProps) {
   const { fitView } = useReactFlow();
   const { showToast } = useToast();
   const formulaHistory = useFormulaHistory();
@@ -87,10 +89,17 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     isEditModeActive,
     editingNodeId,
     editingUnmergedRefKey,
-    enterEditMode,
+    enterEditMode: enterEditModeInternal,
     exitEditMode,
     handleUnmerge,
   } = useEditMode();
+
+  // Wrapper that deselects spreadsheet cells before entering edit mode
+  // This prevents keyboard events (like Delete) from affecting the spreadsheet
+  const enterEditMode = useCallback((nodeId?: string) => {
+    deselectCell?.();
+    enterEditModeInternal(nodeId);
+  }, [deselectCell, enterEditModeInternal]);
 
   // Use the extracted node expansion hook
   const {
@@ -240,6 +249,7 @@ function SidebarInner({ ast, hfInstance, activeSheetName, selectedCell, selected
     applyFormulaEdit,
     isEditModeActive,
     enterEditMode,
+    exitEditMode,
     userEdgeDataRef,
   });
 

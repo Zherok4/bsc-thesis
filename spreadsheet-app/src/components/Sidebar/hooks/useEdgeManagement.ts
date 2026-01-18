@@ -12,6 +12,9 @@ import { getTargetAstNodeId, getSourceCell, type UserEdgeData } from '../../../p
 import type { HyperFormula } from 'hyperformula';
 import type { CellPosition } from './useEdgeConnections';
 import type { ToastType } from '../../context';
+import { createLogger } from '../../../utils/logger';
+
+const log = createLogger('useEdgeManagement');
 
 /**
  * Parameters for the useEdgeManagement hook
@@ -29,6 +32,7 @@ export interface UseEdgeManagementParams {
     applyFormulaEdit: (formula: string, row: number, col: number, sheet: string) => void;
     isEditModeActive: boolean;
     enterEditMode: (nodeId?: string) => void;
+    exitEditMode: () => void;
     userEdgeDataRef: React.MutableRefObject<Map<string, UserEdgeData>>;
 }
 
@@ -59,6 +63,7 @@ export function useEdgeManagement({
     applyFormulaEdit,
     isEditModeActive,
     enterEditMode,
+    exitEditMode,
     userEdgeDataRef,
 }: UseEdgeManagementParams): UseEdgeManagementReturn {
     /** Tracks whether edge selection should be allowed (double-click or single-click when in edit mode) */
@@ -147,13 +152,26 @@ export function useEdgeManagement({
      */
     const onEdgesDelete = useCallback(
         (deletedEdges: Edge[]) => {
+            // Debug: Check synced cell formula at start of edge deletion
+            if (syncedCell) {
+                const sheetId = hfInstance.getSheetId(syncedCell.sheet);
+                if (sheetId !== undefined) {
+                    const syncedFormula = hfInstance.getCellFormula({
+                        sheet: sheetId,
+                        row: syncedCell.row,
+                        col: syncedCell.col,
+                    });
+                    log.debug(`Edge deletion started - syncedCell: ${JSON.stringify(syncedCell)}, formula: ${syncedFormula}`);
+                }
+            }
+
             for (const edge of deletedEdges) {
                 const targetHandle = edge.targetHandle ?? '';
-                console.log('[onEdgesDelete] Processing edge:', edge.id, 'targetHandle:', targetHandle);
+                log.debug(`Processing edge: ${edge.id}, handle: ${targetHandle}`);
 
                 // Only process edges connected to valid handles
                 if (!isValidDeletionHandle(targetHandle)) {
-                    console.log('[onEdgesDelete] Skipping - not a valid deletion handle');
+                    log.debug(`Skipping - not a valid deletion handle: ${targetHandle}`);
                     continue;
                 }
 
@@ -161,7 +179,7 @@ export function useEdgeManagement({
                 const targetNode = nodes.find(n => n.id === edge.target);
 
                 if (!targetNode) {
-                    console.warn('[onEdgesDelete] Target node not found:', edge.target);
+                    log.warn(`Target node not found: ${edge.target}`);
                     continue;
                 }
 
@@ -170,21 +188,23 @@ export function useEdgeManagement({
                 const targetCell = nodeSourceCell ?? syncedCell;
                 const isForSyncedCell = !nodeSourceCell;
 
+                log.debug(`Cell info retrieved - nodeSourceCell: ${JSON.stringify(nodeSourceCell)}`);
+
                 if (!targetCell) {
-                    console.warn('[onEdgesDelete] No target cell available');
+                    log.warn('No target cell available');
                     continue;
                 }
 
-                console.log('[onEdgesDelete] Target cell:', targetCell, 'isForSyncedCell:', isForSyncedCell);
+                log.debug(`Target cell: ${JSON.stringify(targetCell)}, isForSyncedCell: ${isForSyncedCell}`);
 
                 // Get the current AST node ID using the handle
                 const currentAstNodeId = getTargetAstNodeId(targetNode, targetHandle);
                 if (!currentAstNodeId) {
-                    console.warn('[onEdgesDelete] Could not get AST node ID for handle:', targetHandle);
+                    log.warn(`Could not get AST node ID for handle: ${targetHandle}`);
                     continue;
                 }
 
-                console.log('[onEdgesDelete] AST node ID:', currentAstNodeId);
+                log.debug(`AST node ID: ${currentAstNodeId}`);
 
                 // Get the AST - use syncedAst for synced cell, fetch from HyperFormula for expanded cells
                 let currentAst: FormulaNode | undefined;
@@ -192,12 +212,12 @@ export function useEdgeManagement({
                 if (isForSyncedCell) {
                     // Use the already-parsed syncedAst for the synced cell
                     currentAst = syncedAst as FormulaNode | undefined;
-                    console.log('[onEdgesDelete] Using syncedAst');
+                    log.debug('Using syncedAst');
                 } else {
                     // Fetch from HyperFormula for expanded cells
                     const sheetId = hfInstance.getSheetId(targetCell.sheet);
                     if (sheetId === undefined) {
-                        console.warn('[onEdgesDelete] Could not find sheet:', targetCell.sheet);
+                        log.warn(`Could not find sheet: ${targetCell.sheet}`);
                         continue;
                     }
 
@@ -208,28 +228,28 @@ export function useEdgeManagement({
                     });
 
                     if (!currentFormula) {
-                        console.warn('[onEdgesDelete] No formula found in cell');
+                        log.warn('No formula found in cell');
                         continue;
                     }
 
-                    console.log('[onEdgesDelete] Current formula from HF:', currentFormula);
+                    log.debug(`Current formula from HyperFormula: ${currentFormula}`);
 
                     try {
                         currentAst = parseFormula(currentFormula);
                     } catch (e) {
-                        console.warn('[onEdgesDelete] Could not parse current formula:', e);
+                        log.warn(`Could not parse current formula: ${e}`);
                         continue;
                     }
                 }
 
                 if (!currentAst) {
-                    console.warn('[onEdgesDelete] No AST available');
+                    log.warn('No AST available');
                     continue;
                 }
 
                 // Determine replacement value based on AST node type being replaced
                 const replacementValue = getReplacementValue(currentAst, currentAstNodeId);
-                console.log('[onEdgesDelete] AST node type:', findAstNodeType(currentAst, currentAstNodeId), 'Replacement value:', replacementValue);
+                log.debug(`Replacement value: ${replacementValue}, AST node type: ${findAstNodeType(currentAst, currentAstNodeId)}`);
 
                 // Create transformer to replace with the appropriate constant
                 const transformer = createExpressionReplacementTransformer(replacementValue);
@@ -237,6 +257,7 @@ export function useEdgeManagement({
 
                 if (result.transformed && onNodeEdit) {
                     const newFormula = serializeNode(result.ast);
+                    log.debug(`Applying formula: ${newFormula} to cell: ${JSON.stringify(targetCell)}`);
                     applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
                     showToast('Edge deleted', 'success');
 
@@ -248,12 +269,18 @@ export function useEdgeManagement({
                     // Clean up any stored user data for this connection
                     const stableKey = `${targetCell.sheet}-${targetCell.row}-${targetCell.col}-${targetHandle}`;
                     userEdgeDataRef.current.delete(stableKey);
+
+                    // Exit edit mode after a short delay to allow Handsontable to finish updating
+                    // This prevents React re-renders from interfering with the spreadsheet update
+                    setTimeout(() => {
+                        exitEditMode();
+                    }, 10);
                 } else {
                     showToast('Could not delete edge', 'error');
                 }
             }
         },
-        [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle, showToast, applyFormulaEdit, setSyncedAst, userEdgeDataRef]
+        [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle, showToast, applyFormulaEdit, setSyncedAst, userEdgeDataRef, exitEditMode]
     );
 
     return {
