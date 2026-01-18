@@ -39,6 +39,34 @@ export type BinOpNode = Node<
 >;
 
 /**
+ * Checks if an operator can have its operands swapped for display purposes.
+ * Commutative operators (+, *, =, <>) can be freely swapped.
+ * Comparison operators can be mirrored.
+ * Non-commutative operators (-, /) cannot be swapped.
+ */
+function canSwapOperands(operator: string): boolean {
+    switch (operator) {
+        case "+":
+        case "*":
+        case "=":
+        case "<>":
+        case "&":
+            return true;
+        case ">":
+        case "<":
+        case ">=":
+        case "<=":
+            return true; // Can be mirrored
+        case "-":
+        case "/":
+        case "^":
+            return false;
+        default:
+            return false;
+    }
+}
+
+/**
  * Mirrors asymmetric comparison operators.
  * Used when the left operand is displayed on the right side.
  * For example: `5 > x` becomes `x < 5` when displayed.
@@ -85,28 +113,34 @@ function formatConstant(value: string): { display: string; full: string } {
 export default function BinOpNodeComponent({ id, data: { operator, leftConstant, rightConstant, leftConstantInfo, rightConstantInfo, sourceCell } }: NodeProps<BinOpNode>): JSX.Element {
     const { state: dragState, isHandleValid } = useConnectionDrag();
 
-    // When only one constant exists, always show it on the right side for consistency
+    // Only swap operands for commutative/mirrorable operators
+    const canSwap = canSwapOperands(operator);
     const hasOnlyLeftConstant = leftConstant && !rightConstant;
-    const hasBothConstants = leftConstant && rightConstant;
 
-    // Determine what to show on the left side (only show constant if both sides have constants)
-    const showLeftConstant = hasBothConstants && leftConstant;
-    const leftDisplayValue = showLeftConstant ? leftConstant : undefined;
-    const leftDisplayInfo = showLeftConstant ? leftConstantInfo : undefined;
+    // For swappable operators with only left constant, move it to right for consistency
+    const shouldSwap = canSwap && hasOnlyLeftConstant;
 
-    // Determine what to show on the right side (show right constant, or left constant if only left exists)
-    const rightDisplayValue = hasOnlyLeftConstant ? leftConstant : rightConstant;
-    const rightDisplayInfo = hasOnlyLeftConstant ? leftConstantInfo : rightConstantInfo;
-    const rightEditId = hasOnlyLeftConstant ? `${id}-left` : `${id}-right`;
+    // Determine what to show on each side
+    const leftDisplayValue = shouldSwap ? undefined : leftConstant;
+    const leftDisplayInfo = shouldSwap ? undefined : leftConstantInfo;
+    const rightDisplayValue = shouldSwap ? leftConstant : rightConstant;
+    const rightDisplayInfo = shouldSwap ? leftConstantInfo : rightConstantInfo;
+    const rightEditId = shouldSwap ? `${id}-left` : `${id}-right`;
 
-    // Mirror the operator when the left constant is displayed on the right side
-    // e.g., `5 > x` displayed as `[x] < 5`
-    const displayOperator = hasOnlyLeftConstant ? getMirroredOperator(operator) : operator;
+    // Mirror the operator when swapping (e.g., `5 > x` displayed as `[x] < 5`)
+    const displayOperator = shouldSwap ? getMirroredOperator(operator) : operator;
 
-    // Determine how many handles to show
+    // Determine which handles to show (based on original operand positions)
     const showLeftHandle = !leftConstant;
     const showRightHandle = !rightConstant;
     const showBothHandles = showLeftHandle && showRightHandle;
+
+    // Determine where to show ghost placeholders (based on visual display positions)
+    // When swapping, the right operand's edge visually appears on the left
+    const showLeftGhost = !leftDisplayValue && (
+        (shouldSwap && showRightHandle) || (!shouldSwap && showLeftHandle)
+    );
+    const showRightGhost = !rightDisplayValue && !shouldSwap && showRightHandle;
 
     // Check handle validity for smart highlighting
     const isLeftHandleValid = !dragState.isDragging || isHandleValid(id, 'left-operand');
@@ -116,7 +150,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
         <div className={`node-wrapper binop-node-wrapper`}>
             <div className="selected-indicator"></div>
             <div className="binop-node">
-                {/* Left operand handle - show when left is NOT a constant */}
+                {/* Left operand handle - positioned on left edge */}
                 {showLeftHandle && (
                     <Handle
                         type="target"
@@ -126,7 +160,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                     />
                 )}
 
-                {/* Right operand handle - show when right is NOT a constant */}
+                {/* Right operand handle - positioned on left edge */}
                 {showRightHandle && (
                     <Handle
                         type="target"
@@ -136,8 +170,8 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                     />
                 )}
 
-                {/* Left operand - only show constant if both sides have constants */}
-                <div className={`binop-operand binop-left ${!leftDisplayValue ? 'binop-empty' : ''}`}>
+                {/* Left operand */}
+                <div className={`binop-operand binop-left ${!leftDisplayValue && !showLeftGhost ? 'binop-empty' : ''}`}>
                     {leftDisplayValue && leftDisplayInfo && (
                         <EditableConstant
                             displayValue={formatConstant(leftDisplayValue).display}
@@ -155,13 +189,14 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             {formatConstant(leftDisplayValue).display}
                         </span>
                     )}
+                    {showLeftGhost && <span className="binop-ghost-placeholder">x</span>}
                 </div>
 
                 {/* Operator */}
                 <span className="binop-operator">{getDisplayOperator(displayOperator)}</span>
 
-                {/* Right operand - shows the single constant when only one exists */}
-                <div className={`binop-operand binop-right ${!rightDisplayValue ? 'binop-empty' : ''}`}>
+                {/* Right operand */}
+                <div className={`binop-operand binop-right ${!rightDisplayValue && !showRightGhost ? 'binop-empty' : ''}`}>
                     {rightDisplayValue && rightDisplayInfo && (
                         <EditableConstant
                             displayValue={formatConstant(rightDisplayValue).display}
@@ -179,6 +214,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             {formatConstant(rightDisplayValue).display}
                         </span>
                     )}
+                    {showRightGhost && <span className="binop-ghost-placeholder">x</span>}
                 </div>
 
                 {/* Output handle on the right side */}

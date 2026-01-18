@@ -58,8 +58,8 @@
     padding-right: 2px;
 }
 
-/* Collapse empty operand containers */
-.binop-operand.binop-empty {
+/* Collapse empty operand containers (only if no ghost placeholder) */
+.binop-operand.binop-empty:not(:has(.binop-ghost-placeholder)) {
     min-width: 0;
     padding: 0;
 }
@@ -88,6 +88,14 @@
     right: -12px;
     top: 50%;
     transform: translateY(-50%);
+}
+
+/* Ghost placeholder for incoming connections */
+.binop-ghost-placeholder {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size-sm);
+    font-style: italic;
+    color: var(--text-tertiary);
 }
 
 /* Non-editable constant display (fallback) */
