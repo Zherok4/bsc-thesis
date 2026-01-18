@@ -3,9 +3,12 @@ import { memo, useCallback, useImperativeHandle, useRef, useMemo, useEffect, typ
 import { registerAllModules } from 'handsontable/registry';
 import { HyperFormula } from 'hyperformula';
 import type { MergeCellSettings, SheetStyleData } from './TopBar';
+import { createLogger } from '../utils/logger';
 import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 import './Datatable.css';
+
+const log = createLogger('Datatable');
 
 registerAllModules();
 
@@ -63,6 +66,8 @@ export interface DatatableHandle {
     updateCell: (newValue: string, row: number, col: number) => void;
     /** Select a cell at the specified position */
     selectCell: (row: number, col: number) => void;
+    /** Deselect any selected cells (prevents keyboard events from affecting spreadsheet) */
+    deselectCell: () => void;
     /** Load data into the active sheet */
     loadData: (data: (string | number | null)[][]) => void;
     /** Scroll the viewport to show a specific cell */
@@ -133,10 +138,13 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
 
     useImperativeHandle(ref, () => ({
         updateCell: (newValue: string, row: number, col: number) => {
+            log.debug(`updateCell called: row=${row}, col=${col}, sheet=${activeSheetName}`);
             const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
             const hotInstance = hotTableRef?.hotInstance;
             if (hotInstance) {
-                hotInstance.setDataAtCell(row, col, newValue)
+                hotInstance.setDataAtCell(row, col, newValue);
+            } else {
+                log.warn(`No hotInstance found for sheet: ${activeSheetName}`);
             }
         },
         selectCell: (row: number, col: number) => {
@@ -144,6 +152,13 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
             const hotInstance = hotTableRef?.hotInstance;
             if (hotInstance) {
                 hotInstance.selectCell(row, col);
+            }
+        },
+        deselectCell: () => {
+            const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
+            const hotInstance = hotTableRef?.hotInstance;
+            if (hotInstance) {
+                hotInstance.deselectCell();
             }
         },
         loadData: (data: (string | number | null)[][]) => {
@@ -308,6 +323,17 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
         };
     }, [onCellSelect, onRangeSelect, activeSheetName]);
 
+    /**
+     * Creates an afterChange handler to log all cell changes for debugging
+     */
+    const createAfterChangeHandler = useCallback((sheetName: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (changes: any[] | null, source: string): void => {
+            if (!changes) return;
+            log.debug(`Cell changes detected on ${sheetName} (source: ${source})`, changes);
+        };
+    }, []);
+
     // TODO: afterEdit hook ==> also an Edit can change current Value State
     return (sheetNames.map((sheetName: string) => (
         <div
@@ -348,6 +374,7 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                 outsideClickDeselects={false}
                 // HOOKS / EVENTS
                 afterSelection={createAfterSelectionHandler(sheetName)}
+                afterChange={createAfterChangeHandler(sheetName)}
         />
         </div>
     )));

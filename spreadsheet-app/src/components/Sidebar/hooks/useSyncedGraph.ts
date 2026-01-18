@@ -4,6 +4,9 @@ import { serializeNode, parseFormula } from '../../../parser';
 import type { HyperFormula, ExportedChange } from 'hyperformula';
 import type { FormulaHistoryState } from '../../../hooks';
 import type { CellPosition } from './useEdgeConnections';
+import { createLogger } from '../../../utils/logger';
+
+const log = createLogger('useSyncedGraph');
 
 /**
  * Parameters for the useSyncedGraph hook
@@ -115,8 +118,11 @@ export function useSyncedGraph({
             col: syncedCell.col,
         });
 
+        log.debug(`Auto-sync check - syncedCell: ${JSON.stringify(syncedCell)}, formula: ${currentFormula}`);
+
         if (!currentFormula) {
             // Cell no longer has a formula, clear the synced AST
+            log.warn(`No formula found for synced cell - clearing syncedAst: ${JSON.stringify(syncedCell)}`);
             if (syncedAst !== undefined) {
                 setSyncedAst(undefined);
             }

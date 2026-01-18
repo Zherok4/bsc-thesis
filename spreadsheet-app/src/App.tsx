@@ -11,6 +11,9 @@ import Sidebar from './components/Sidebar';
 import type { FormulaNode } from './parser';
 import { parseFormula } from './parser';
 import type { SelectedRange } from './components/context/HyperFormulaContext';
+import { createLogger } from './utils/logger';
+
+const log = createLogger('App');
 
 const options : {licenseKey : string, useArrayArithmetic: boolean} = {
   licenseKey: 'gpl-v3',
@@ -48,10 +51,10 @@ function App() {
     if (isFormula(selectedCellValue)) {
       try {
         const ast: FormulaNode = parseFormula(selectedCellValue);
-        console.log(ast);
-        return ast;  
+        log.debug('Parsed formula AST', ast);
+        return ast;
       } catch (error) {
-        console.log(error)
+        log.debug('Failed to parse formula', error);
         return undefined;
       }
     }
@@ -182,6 +185,14 @@ function App() {
     }
   }, []);
 
+  /** Deselect any selected cells in the spreadsheet (prevents keyboard events from affecting cells) */
+  const deselectCell = useCallback(() => {
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.deselectCell();
+    }
+  }, []);
+
   /**
    * Handles node edits from the graph view.
    * Updates the cell with the new formula and refreshes the state.
@@ -191,6 +202,8 @@ function App() {
    * @param sheet - The sheet containing the cell to update
    */
   const handleNodeEdit = useCallback((newFormula: string, row: number, col: number, sheet: string) => {
+    log.debug(`handleNodeEdit called: row=${row}, col=${col}, sheet=${sheet}`);
+
     // Switch to the target sheet if different from current
     if (sheet !== activeSheetName) {
       handleSheetChange(sheet);
@@ -198,6 +211,7 @@ function App() {
 
     const currentDatatable = datatableRef.current;
     if (currentDatatable) {
+      log.debug(`Calling updateCell: row=${row}, col=${col}`);
       currentDatatable.updateCell(newFormula, row, col);
     }
 
@@ -289,6 +303,7 @@ function App() {
             setViewedCellHighlight={setViewedCellHighlight}
             clearViewedCellHighlight={clearViewedCellHighlight}
             onNodeEdit={handleNodeEdit}
+            deselectCell={deselectCell}
           />
         </div>
       </div>
