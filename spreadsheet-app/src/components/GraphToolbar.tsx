@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import { useGraphEditMode, useHyperFormula, type GraphEditModeContextValue, type HyperFormulaContextValue } from './context';
+import eyeIcon from '../assets/eye-svgrepo-com.svg';
+import penIcon from '../assets/pen-svgrepo-com.svg';
 import './GraphToolbar.css';
 
 /**
@@ -69,6 +71,7 @@ export default function GraphToolbar({
         title="Preview mode"
         aria-label="Preview mode"
       >
+        <img src={eyeIcon} alt="Preview" className="toolbar-icon" />
       </button>
       <button
         className={`toolbar-button ${isEditModeActive ? 'editMode' : ''}`}
@@ -76,6 +79,7 @@ export default function GraphToolbar({
         title="Edit mode"
         aria-label="Edit mode"
       >
+        <img src={penIcon} alt="Edit" className="toolbar-icon" />
       </button>
       <div className="toolbar-divider" />
       <button
