@@ -86,6 +86,7 @@
     border: 1px solid var(--node-border);
     border-radius: 4px;
     background: var(--node-bg);
+    font-family: system-ui, -apple-system, sans-serif;
     font-size: var(--node-font-size);
     font-weight: 600;
     cursor: pointer;
