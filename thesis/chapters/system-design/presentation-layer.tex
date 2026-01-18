@@ -1,4 +1,5 @@
 % TODO: Tell that we assume that the user clicks on a node to preview the formula and see the dependencies etc. ==> i.e to answer why we even click on a cell ?
+% TODO: Mention the spreadsheet presentation ?
 \section{The presentation layer}
 % TODO: more goals i.e for manipualtion ?
 For the presentation layer there are 3 important goals:
@@ -20,7 +21,7 @@ Placing the datatable-view and flow-graph-view side by side serves two purposes.
 \subsection{Node design}
 
 \subsection{Interaction design}
-The flow graph not only serves as a visualization but also as an interface for the exploration and manipulation of the datatable. Interactions are organized into two distinct modes: the \textbf{preview} mode and the \textbf{edit} mode. This seperation should provide clear visual feedback when changes will affect the underlying data of the datatable.
+The flow graph not only serves as a visualization but also as an interface for the exploration and manipulation of the datatable. Interactions are organized into two distinct modes: the \textbf{preview} mode and the \textbf{edit} mode. This separation should provide clear visual feedback when changes will affect the underlying data of the datatable.
 \subsubsection{Preview Mode}
 The Preview Mode is the default state and is intended for the exploration. Hovering over a reference node highlights the corresponding cell or range in the datatable. This allows the user to survey the dependency at the current position in the datatable. Clicking on a reference node scrolls the datatable to the corresponding cell or range to enable closer inspection of the dependencies.
 \subsubsection{Edit Mode}
@@ -31,7 +32,7 @@ Edit Mode is always entered through an explicit user action:
     \item double-clicking an edge
     \item dragging from a connection handle
 \end{enumerate}
-While the user is in edit mode the graph synchronization is paused to maintain a stable working state.
-% picture of the component and arrows what i.e value / addres / connection handle is.
+The entry action determines the initial editing context. Double-clicking on a node's address allows the user to select a new address directly from the datatable. The change is committed by pressing enter or clicking the confirmation symbol. Double-clicking an inline value transforms the field into an editable input. The user modifies the constant and commits the change through the same confirmation mechanism.
+Double-clicking an edge enters the edit mode with the double-clicked edge selected for further manipulations. Dragging from a connection handle initiates edge creation or modification. The user drags from a source handle to a target handle. While dragging the edge invalid handles are grayed out. If the target handle has no existing connection, the new edge connects directly. Else the target handle already has a connection, a popover asks the user to either replace the existing edge or swap positions with it. Clicking only the edit button enters the edit mode without an initial editing context. Once in edit mode, the user can change context freely.
+% picture of the component and arrows what i.e value / address / connection handle is.
 
-\subsection{Bidirectional editing}
