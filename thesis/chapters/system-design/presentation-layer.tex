@@ -2,6 +2,8 @@
 % TODO: Mention the spreadsheet presentation ?
 \section{The presentation layer}\label{sec: presentation-layer}
 % TODO: move these goals to the visualization layer ?
+% TODO: use datatable or worksheet ???
+% TODO: explain why only present one formula at a time. 
 For the presentation layer there are 3 important goals:
 \begin{enumerate}
     \item improve self-descriptiveness of the hidden data of the datatable
@@ -10,6 +12,8 @@ For the presentation layer there are 3 important goals:
 \end{enumerate}
 
 \subsection{Layout strategy}
+% TODO: mention Juxtaposition
+% TODO: also mention if we overlay it on the datatable the tool will automatically suffer from hidden dependencies and visibilty because the datatable itself suffers from it so by splitting the views we also make it independant of the datatables spatiality.
 Placing the datatable-view and flow-graph-view side by side serves two purposes. First by having them as near as possible to each other it should reduce the cognitive distance between datatable-view and flow-graph-view. Secondly by strictly separating the both views i.e not having a popover or even an overlay strategy, prevents the occlusion of other important cells.
 
 % TODO: insert image of the two views
@@ -24,6 +28,7 @@ The flow graph not only serves as a visualization but also as an interface for t
 \subsubsection{Preview Mode}
 The Preview Mode is the default state and is intended for the exploration. Hovering over a reference node highlights the corresponding cell or range in the datatable. This allows the user to survey the dependency at the current position in the datatable. Clicking on a reference node scrolls the datatable to the corresponding cell or range to enable closer inspection of the dependencies.
 \subsubsection{Edit Mode}
+% TODO: Maybe use viscosity to explain that the idea behind all these entry actions is that it should be very near to edit changes ==> instead of tracing the whole formula back to than edit it in the datatable.
 Edit Mode is always entered through an explicit user action:
 \begin{enumerate}
     \item clicking on the edit button

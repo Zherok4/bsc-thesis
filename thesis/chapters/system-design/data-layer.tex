@@ -1,27 +1,9 @@
 \section{The data layer}
 The data layer forms the foundation of the system architecture. It serves as the single source of truth for all spreadsheet related data. This includes for example: cell values, formulas and computed results.
 \subsection{Formula engine selection}
-\begin{definition}
-    \label{def:Worksheet}
-    A \textbf{worksheet} is a two-dimensional grid of cells that are organized into rows and columns. \cite[p. 65]{noauthor_ecma-376-12016_2016}
-\end{definition}
-\begin{definition}
-    \label{def:Workbook}
-    A \textbf{workbook} is a collection of worksheets. \cite[p. 65]{noauthor_ecma-376-12016_2016}
-    \end{definition}
 For the formula engine it is important that it provides a lot of functions which are also used in Microsoft Excel or Google Sheets to make the user as familiar with the formulas as possible. Another important feature should be the ability to handle multiple worksheets. The system uses HyperFormula as its calculation engine. HyperFormula provides compatible syntax with Microsoft Excel, 400 built-in functions and an easy integration with custom front-ends \cite{noauthor_hyperformula_nodate}. This allows the user to transfer their pre-knowledge about spreadsheet functions and behavior to this system.
 \subsection{Single engine instance}
-A single HyperFormula instance maintains the whole calculation state for the entire workbook. This allows the user to reference cells and ranges from different worksheets.
-\begin{definition}
-    \label{def:dependants}
-    \textbf{Dependants} of a cell address or range are :
-    \begin{enumerate}
-        \item All cells with formulas that contain the given cell address or range.
-        \item Some of the ranges that contain the given cell address or range. 
-    \end{enumerate}
-    \cite{noauthor_hyperformula_nodate}
-\end{definition}
-Having only one single-instance implies having only one dependency graph for all worksheets. This simplifies the process of checking and updating dependencies. But this also implies that one computationally heavy formula could affect the responsiveness of the entire workbook.
+A single HyperFormula instance maintains the whole calculation state for the entire workbook. This allows the user to reference cells and ranges from different worksheets. Having only one single-instance implies having only one dependency graph for all worksheets. This simplifies the process of checking and updating dependencies. But this also implies that one computationally heavy formula could affect the responsiveness of the entire workbook.
 \subsection{Asymmetric data flow}
 % TODO: define headless ?
 As mentioned in the presentation layer \ref{sec: presentation-layer} each worksheet is implemented by their own Handsontable component. Each component reads/writes from/to the same Hyperformula Engine. All components of the Graph-View also read directly from the same Hyperformula Engine. A read is done for example when nodes calculate their intermediate results.
