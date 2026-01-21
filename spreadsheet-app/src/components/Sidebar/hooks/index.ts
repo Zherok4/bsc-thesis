@@ -40,3 +40,9 @@ export {
     useGraphKeyboardShortcuts,
     type UseGraphKeyboardShortcutsParams,
 } from './useGraphKeyboardShortcuts';
+
+export {
+    useSidebarState,
+    type UseSidebarStateParams,
+    type UseSidebarStateReturn,
+} from './useSidebarState';

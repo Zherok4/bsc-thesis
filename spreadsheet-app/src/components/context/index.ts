@@ -41,3 +41,14 @@ export {
 export type {
   ConnectionDragContextValue
 } from './ConnectionDragContext';
+
+export {
+  SpreadsheetActionsProvider,
+  useSpreadsheetActions,
+  SpreadsheetActionsContext
+} from './SpreadsheetActionsContext';
+
+export type {
+  SpreadsheetActionsContextValue,
+  SpreadsheetActionsProviderProps
+} from './SpreadsheetActionsContext';

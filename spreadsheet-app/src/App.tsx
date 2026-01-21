@@ -11,6 +11,8 @@ import Sidebar from './components/Sidebar';
 import type { FormulaNode } from './parser';
 import { parseFormula } from './parser';
 import type { SelectedRange } from './components/context/HyperFormulaContext';
+import { SpreadsheetActionsProvider } from './components/context';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { createLogger } from './utils/logger';
 
 const log = createLogger('App');
@@ -133,6 +135,11 @@ function App() {
    * @param sheetName - name of the sheet to switch to
    */
   const handleSheetChange = useCallback((sheetName: string) => {
+    // Deselect cells in the current sheet before switching to prevent keyboard events on hidden sheets
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.deselectCell();
+    }
     setActiveSheetName(sheetName);
     // Clear selection to prevent accessing non-existent cells on the new sheet
     setSelectedCell(null);
@@ -232,7 +239,6 @@ function App() {
     const { sheetData, mergeData, styleData } = result;
     if (sheetData) {
       hfInstance.batch(() => {
-        // Remove all active Sheets
         const sheetNames = hfInstance.getSheetNames();
         for (const sheetName of sheetNames) {
           const sheetId = hfInstance.getSheetId(sheetName);
@@ -252,8 +258,6 @@ function App() {
         for (const [sheetName, data] of Object.entries(sheetData)) {
           const sheetId = hfInstance.getSheetId(sheetName);
           if (sheetId !== undefined) {
-            // TODO: First normalize data ==> first row has to be equal length of longest row
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             hfInstance.setSheetContent(sheetId, data as any);
           }
         }
@@ -273,16 +277,16 @@ function App() {
       <div className="main-container">
         <div className="datatable-container">
           <div className="hottable-wrapper">
-            <Datatable
-              onCellSelect={updateSelectionState}
-              onRangeSelect={updateRangeSelection}
-              hfInstance={hfInstance}
-              activeSheetName={activeSheetName}
-              sheetsVersion={sheetsVersion}
-              sheetMergeData={sheetMergeData}
-              sheetStyleData={sheetStyleData}
-              ref={datatableRef}
-            />
+              <Datatable
+                onCellSelect={updateSelectionState}
+                onRangeSelect={updateRangeSelection}
+                hfInstance={hfInstance}
+                activeSheetName={activeSheetName}
+                sheetsVersion={sheetsVersion}
+                sheetMergeData={sheetMergeData}
+                sheetStyleData={sheetStyleData}
+                ref={datatableRef}
+              />
           </div>
           <SheetTabs
             hfInstance={hfInstance}
@@ -291,20 +295,25 @@ function App() {
           />
         </div>
         <div className="sidebar-container">
-          <Sidebar
-            ast={selectedCellValueAST}
-            hfInstance={hfInstance}
-            activeSheetName={activeSheetName}
-            selectedCell={selectedCell}
-            selectedRange={selectedRange}
-            scrollToCell={scrollToCell}
-            highlightCells={highlightCells}
-            clearHighlight={handleClearHighlight}
-            setViewedCellHighlight={setViewedCellHighlight}
-            clearViewedCellHighlight={clearViewedCellHighlight}
-            onNodeEdit={handleNodeEdit}
-            deselectCell={deselectCell}
-          />
+          <ErrorBoundary componentName="Formula Graph">
+            <SpreadsheetActionsProvider
+              setViewedCellHighlight={setViewedCellHighlight}
+              clearViewedCellHighlight={clearViewedCellHighlight}
+              onNodeEdit={handleNodeEdit}
+              deselectCell={deselectCell}
+            >
+              <Sidebar
+                ast={selectedCellValueAST}
+                hfInstance={hfInstance}
+                activeSheetName={activeSheetName}
+                selectedCell={selectedCell}
+                selectedRange={selectedRange}
+                scrollToCell={scrollToCell}
+                highlightCells={highlightCells}
+                clearHighlight={handleClearHighlight}
+              />
+            </SpreadsheetActionsProvider>
+          </ErrorBoundary>
         </div>
       </div>
     </div>
