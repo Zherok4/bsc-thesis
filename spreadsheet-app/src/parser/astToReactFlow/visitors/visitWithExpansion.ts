@@ -22,7 +22,6 @@ import {
     createFunctionNode,
     createRangeNode,
     createReferenceNode,
-    createResultNode,
     createRowRangeNode,
     createStringNode,
 } from "../nodeFactories";
@@ -43,12 +42,41 @@ interface HandlerParams {
 }
 
 /**
- * Handles Formula nodes (top-level result wrapper)
+ * Handles Formula nodes (top-level result wrapper).
+ * Creates a ReferenceNode for the synced cell instead of a ResultNode.
  */
 function handleFormulaNode(params: HandlerParams): void {
     const { collapsedNode, nodes, edges, context, collapsedNodeId } = params;
 
-    const createdNode = createResultNode(collapsedNode.label, context.activeSheetName);
+    // Get the cell reference string from syncedCell
+    let cellReference = "?";
+    const { syncedCell, hfInstance, activeSheetName } = context;
+
+    if (syncedCell) {
+        const sheetId = hfInstance.getSheetId(syncedCell.sheet);
+        if (sheetId !== undefined) {
+            const refString = hfInstance.simpleCellAddressToString(
+                { sheet: sheetId, row: syncedCell.row, col: syncedCell.col },
+                { includeSheetName: false }
+            );
+            if (refString) {
+                cellReference = refString;
+            }
+        }
+    }
+
+    // Create a ReferenceNode for the formula's source cell
+    // hasFormula: true enables the target handle on the left to receive inputs
+    // disableInteraction: true prevents hover/click/edit since this is the formula's own cell
+    const createdNode = createReferenceNode(
+        cellReference,
+        syncedCell?.sheet ?? activeSheetName,
+        true,      // hasFormula - enables target handle for children to connect to
+        undefined, // no expansion config
+        undefined, // no astNodeId
+        undefined, // no sourceCell
+        true       // disableInteraction - this is the formula's source cell
+    );
     nodes.push(createdNode);
 
     collapsedNode.children.forEach((child, idx) => {

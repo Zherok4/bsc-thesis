@@ -21,6 +21,15 @@ export interface MergeConfig {
 }
 
 /**
+ * Position of a cell in the spreadsheet (used for synced cell tracking)
+ */
+export interface CellPosition {
+    row: number;
+    col: number;
+    sheet: string;
+}
+
+/**
  * Context passed through visitor functions for expansion state management
  */
 export interface ExpansionContext {
@@ -50,4 +59,9 @@ export interface ExpansionContext {
      * Used for routing edits to the correct cell when editing expanded nodes.
      */
     sourceCell?: SourceCell;
+    /**
+     * The cell that contains the formula being visualized.
+     * Used to create the top-level reference node instead of ResultNode.
+     */
+    syncedCell?: CellPosition;
 }

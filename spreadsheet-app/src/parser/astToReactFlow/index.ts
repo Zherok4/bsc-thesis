@@ -12,7 +12,7 @@
  */
 
 // Types
-export type { Graph, ExpansionContext, MergeConfig } from "./types";
+export type { Graph, ExpansionContext, MergeConfig, CellPosition } from "./types";
 
 // ID generation utilities
 export { resetNodeIdCounter, generateNodeId, getNodeIdCounter } from "./idGenerator";

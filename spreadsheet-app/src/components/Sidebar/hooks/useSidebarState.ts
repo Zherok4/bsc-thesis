@@ -237,6 +237,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
       enterEditMode,
       skipMergeForRefKey: editingUnmergedRefKey ?? undefined,
       onUnmerge: handleUnmerge,
+      syncedCell: syncedCell ?? undefined,
     };
 
     const graph = toGraphWithExpansion(tree, context, mergeConfig);
@@ -246,7 +247,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     handleToggleExpand,
     hfInstance,
     mergeConfig,
-    syncedCell?.sheet,
+    syncedCell,
     isEditModeActive,
     enterEditMode,
     editingUnmergedRefKey,

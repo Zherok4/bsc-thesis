@@ -43,6 +43,7 @@ interface ReferenceExpansionConfig {
  * @param expansionConfig - Optional expansion configuration (only used when hasFormula is true)
  * @param astNodeId - Optional AST node ID for identifying this node during edits
  * @param sourceCell - Optional source cell for nodes within expanded branches
+ * @param disableInteraction - Optional flag to disable hover/click/edit interactions
  */
 export function createReferenceNode(
     reference: string,
@@ -50,7 +51,8 @@ export function createReferenceNode(
     hasFormula: boolean = false,
     expansionConfig?: ReferenceExpansionConfig,
     astNodeId?: string,
-    sourceCell?: SourceCell
+    sourceCell?: SourceCell,
+    disableInteraction?: boolean
 ): Node {
     return {
         id: generateNodeId(),
@@ -61,6 +63,7 @@ export function createReferenceNode(
             hasFormula,
             astNodeId,
             sourceCell,
+            disableInteraction,
             ...(hasFormula && expansionConfig ? {
                 isExpanded: expansionConfig.isExpanded,
                 onToggleExpand: expansionConfig.onToggleExpand,

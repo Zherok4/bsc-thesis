@@ -28,11 +28,13 @@ export type ReferenceNode = Node<
     mergedRefKey?: string,
     /** Source cell for nodes within expanded branches (for edit routing) */
     sourceCell?: SourceCell,
+    /** Disables hover highlight, click-to-scroll, and edit interactions */
+    disableInteraction?: boolean,
 },
 'ReferenceNode'
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
-export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey, sourceCell}}: NodeProps<ReferenceNode>): JSX.Element {
+export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey, sourceCell, disableInteraction}}: NodeProps<ReferenceNode>): JSX.Element {
     const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
@@ -77,10 +79,12 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
+        if (disableInteraction) return;
+
         if (!isEditModeActive || !isThisNodeBeingEdited) {
             enterEditMode(id);
         }
-    }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id]);
+    }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id, disableInteraction]);
 
     const handleExpandToggle = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -95,18 +99,22 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         if (simpleCellAddress) {
             const {row, col} = simpleCellAddress;
             scrollToCell(row, col, residingSheet);
-            highlightCells(row, col, row, col, residingSheet);
+            if (!disableInteraction) {
+                highlightCells(row, col, row, col, residingSheet);
+            }
         }
-    }, [simpleCellAddress, scrollToCell, highlightCells, residingSheet]);
+    }, [simpleCellAddress, scrollToCell, highlightCells, residingSheet, disableInteraction]);
 
     const handleMouseOver = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+
+        if (disableInteraction) return;
 
         if (simpleCellAddress) {
             const {row, col} = simpleCellAddress;
             highlightCells(row, col, row, col, residingSheet);
         }
-    }, [simpleCellAddress, highlightCells, residingSheet]);
+    }, [simpleCellAddress, highlightCells, residingSheet, disableInteraction]);
 
     const handleSaveEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -186,7 +194,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     return (
         <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`} style={sheetColorStyle}>
             <div className="selected-indicator"></div>
-            <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={clearHighlight}>
+            <div className="ref-node" onClick={(e) => handleSimpleClick(e)} onMouseOver={(e) => handleMouseOver(e)} onMouseLeave={disableInteraction ? undefined : clearHighlight}>
                 <div className="ref-content" title={headerLabel}>
                     <div className="ref-left">
                         {isExpandable && (
