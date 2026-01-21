@@ -2,6 +2,8 @@ import './SheetTabs.css';
 import type { JSX } from 'react';
 import { HyperFormula } from 'hyperformula';
 import { getSheetColors } from '../utils/sheetColors';
+import Minimap from './Minimap';
+import type { ViewportInfo } from './Datatable';
 
 /**
  * Represents a spreadsheet sheet with its data
@@ -25,6 +27,10 @@ interface SheetTabsProps {
     activeSheetId: string;
     /** Callback invoked when a different sheet tab is selected */
     onSheetChange: (sheetId: string) => void;
+    /** Current viewport information for the minimap */
+    viewportInfo?: ViewportInfo | null;
+    /** Whether the minimap should be visible (during scrolling) */
+    isScrolling?: boolean;
 }
 
 /**
@@ -36,7 +42,13 @@ interface SheetTabsProps {
  * @param props.activeSheetId - Currently active sheet name
  * @param props.onSheetChange - Handler for sheet selection changes
  */
-const SheetTabs = ({hfInstance, activeSheetId, onSheetChange }: SheetTabsProps): JSX.Element => {
+const SheetTabs = ({
+    hfInstance,
+    activeSheetId,
+    onSheetChange,
+    viewportInfo = null,
+    isScrolling = false
+}: SheetTabsProps): JSX.Element => {
     return (
         <div className="sheet-tabs">
             <div className="sheet-tabs__container">
@@ -58,6 +70,7 @@ const SheetTabs = ({hfInstance, activeSheetId, onSheetChange }: SheetTabsProps):
                     );
                 })}
             </div>
+            <Minimap viewport={viewportInfo} visible={isScrolling} />
         </div>
     );
 };

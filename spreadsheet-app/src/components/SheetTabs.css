@@ -4,7 +4,8 @@
     padding: 0;
     height: 32px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .sheet-tabs__container {
@@ -13,6 +14,10 @@
     padding: 0 8px;
     height: 100%;
     align-items: flex-end;
+}
+
+.sheet-tabs .minimap {
+    margin-right: 12px;
 }
 
 .sheet-tabs__tab {

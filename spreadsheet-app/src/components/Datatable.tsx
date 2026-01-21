@@ -8,13 +8,26 @@ import 'handsontable/styles/handsontable.min.css';
 import 'handsontable/styles/ht-theme-main.min.css';
 import './Datatable.css';
 
+/**
+ * Represents the current viewport state of the spreadsheet
+ */
+export interface ViewportInfo {
+    firstVisibleRow: number;
+    lastVisibleRow: number;
+    firstVisibleCol: number;
+    lastVisibleCol: number;
+    totalRows: number;
+    totalCols: number;
+}
+
 const log = createLogger('Datatable');
 
 registerAllModules();
 
-const DEFAULT_COL_WIDTH : number = 110;
+const DEFAULT_COL_WIDTH: number = 110;
 const HIGHLIGHT_CLASS = 'cell-highlight';
 const VIEWED_CELL_CLASS = 'cell-viewed';
+const SCROLL_HIDE_DELAY_MS = 800;
 
 /**
  * Represents a range of highlighted cells
@@ -56,6 +69,8 @@ interface DatatableProps {
     sheetStyleData?: { [key: string]: SheetStyleData };
     /** Ref for imperative handle access */
     ref?: React.Ref<DatatableHandle>;
+    /** Callback invoked when the viewport changes during scrolling */
+    onViewportChange?: (viewport: ViewportInfo, isScrolling: boolean) => void;
 }
 
 /**
@@ -94,10 +109,11 @@ export interface DatatableHandle {
  * @param props.sheetsVersion - Version counter for sheet updates
  * @param props.ref - Imperative handle ref
  */
-const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, sheetMergeData, sheetStyleData, ref}: DatatableProps): JSX.Element[] => {
+const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sheetsVersion, sheetMergeData, sheetStyleData, ref, onViewportChange}: DatatableProps): JSX.Element[] => {
     const hotTableRefsMap = useRef<Map<string, HotTableRef | null>>(new Map());
     const currentHighlight = useRef<HighlightRange | null>(null);
     const currentViewedCell = useRef<ViewedCell | null>(null);
+    const scrollTimeoutRef = useRef<number | null>(null);
 
     const sheetNames = useMemo(() => {
         return hfInstance.getSheetNames();
@@ -334,21 +350,59 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
         };
     }, []);
 
+    /**
+     * Handles scroll events by calculating viewport info and notifying parent
+     */
+    const handleScroll = useCallback((sheetName: string): void => {
+        if (sheetName !== activeSheetName || !onViewportChange) return;
+
+        const hotTableRef = hotTableRefsMap.current.get(sheetName);
+        const hotInstance = hotTableRef?.hotInstance;
+        if (!hotInstance) return;
+
+        const viewport: ViewportInfo = {
+            firstVisibleRow: hotInstance.getFirstPartiallyVisibleRow() ?? 0,
+            lastVisibleRow: hotInstance.getLastPartiallyVisibleRow() ?? 0,
+            firstVisibleCol: hotInstance.getFirstPartiallyVisibleColumn() ?? 0,
+            lastVisibleCol: hotInstance.getLastPartiallyVisibleColumn() ?? 0,
+            totalRows: hotInstance.countRows(),
+            totalCols: hotInstance.countCols(),
+        };
+
+        onViewportChange(viewport, true);
+
+        if (scrollTimeoutRef.current !== null) {
+            window.clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = window.setTimeout(() => {
+            onViewportChange(viewport, false);
+        }, SCROLL_HIDE_DELAY_MS);
+    }, [activeSheetName, onViewportChange]);
+
+    /**
+     * Creates scroll handlers for horizontal and vertical scroll events
+     */
+    const createScrollHandler = useCallback((sheetName: string) => {
+        return (): void => {
+            handleScroll(sheetName);
+        };
+    }, [handleScroll]);
+
     // TODO: afterEdit hook ==> also an Edit can change current Value State
-    return (sheetNames.map((sheetName: string) => (
+    return sheetNames.map((sheetName: string) => (
         <div
             key={sheetName}
             className={`hottable-container ${sheetName === activeSheetName ? 'sheet-visible' : 'sheet-hidden'}`}
         >
             <HotTable
-                ref = {(el) => {
+                ref={(el) => {
                     if (el) {
                         hotTableRefsMap.current.set(sheetName, el);
-                    }}
-                }
+                    }
+                }}
                 themeName="ht-theme-main"
                 width="100%"
-                height= "100%"
+                height="100%"
                 rowHeaders={true}
                 colHeaders={true}
                 colWidths={DEFAULT_COL_WIDTH}
@@ -360,24 +414,23 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                 }}
                 mergeCells={sheetMergeData?.[sheetName] ?? false}
                 cells={createCellsCallback(sheetName)}
-                //minCols = {100}
                 contextMenu={true}
                 /*
-                * AutoRow / Column ==> lead to critical error
-                * ==> to prevent this we have to fix that every sheet has same dimensions or
-                * make the datatable remount on every sheet change (because if we do not remount them they still get rendered in the background)
-                * and if then a hfInstance does not have correct dimensions with one of the hiddensheets ==> crashes
-                */
-                //autoRowSize={true}
-                //autoColumnSize={true}
+                 * AutoRow / Column ==> lead to critical error
+                 * ==> to prevent this we have to fix that every sheet has same dimensions or
+                 * make the datatable remount on every sheet change (because if we do not remount them they still get rendered in the background)
+                 * and if then a hfInstance does not have correct dimensions with one of the hiddensheets ==> crashes
+                 */
                 licenseKey="non-commercial-and-evaluation"
                 outsideClickDeselects={false}
                 // HOOKS / EVENTS
                 afterSelection={createAfterSelectionHandler(sheetName)}
                 afterChange={createAfterChangeHandler(sheetName)}
-        />
+                afterScrollHorizontally={createScrollHandler(sheetName)}
+                afterScrollVertically={createScrollHandler(sheetName)}
+            />
         </div>
-    )));
+    ));
 }
 
 export default memo(Datatable)

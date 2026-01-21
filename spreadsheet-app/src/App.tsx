@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
 import './App.css'
 import Datatable from './components/Datatable';
-import type { DatatableHandle } from './components/Datatable';
+import type { DatatableHandle, ViewportInfo } from './components/Datatable';
 import FormulaBar from './components/FormulaBar';
 import TopBar from './components/TopBar';
 import type { ImportResult, MergeCellSettings, SheetStyleData } from './components/TopBar';
@@ -46,6 +46,8 @@ function App() {
   const [sheetsVersion, setSheetsVersion] = useState(0);
   const [sheetMergeData, setSheetMergeData] = useState<{ [key: string]: MergeCellSettings[] }>({});
   const [sheetStyleData, setSheetStyleData] = useState<{ [key: string]: SheetStyleData }>({});
+  const [viewportInfo, setViewportInfo] = useState<ViewportInfo | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
 
 
   const selectedCellValueAST: FormulaNode | undefined = useMemo(() => {
@@ -144,6 +146,14 @@ function App() {
     // Clear selection to prevent accessing non-existent cells on the new sheet
     setSelectedCell(null);
     setSelectedCellValue('');
+  }, []);
+
+  /**
+   * Handles viewport changes from the Datatable during scrolling
+   */
+  const handleViewportChange = useCallback((viewport: ViewportInfo, scrolling: boolean) => {
+    setViewportInfo(viewport);
+    setIsScrolling(scrolling);
   }, []);
 
   /** scrollToCell is triggered if:
@@ -286,12 +296,15 @@ function App() {
                 sheetMergeData={sheetMergeData}
                 sheetStyleData={sheetStyleData}
                 ref={datatableRef}
+                onViewportChange={handleViewportChange}
               />
           </div>
           <SheetTabs
             hfInstance={hfInstance}
             activeSheetId={activeSheetName}
             onSheetChange={handleSheetChange}
+            viewportInfo={viewportInfo}
+            isScrolling={isScrolling}
           />
         </div>
         <div className="sidebar-container">
