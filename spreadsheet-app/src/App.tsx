@@ -324,6 +324,7 @@ function App() {
                 scrollToCell={scrollToCell}
                 highlightCells={highlightCells}
                 clearHighlight={handleClearHighlight}
+                sheetsVersion={sheetsVersion}
               />
             </SpreadsheetActionsProvider>
           </ErrorBoundary>

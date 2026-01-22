@@ -189,7 +189,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             {formatConstant(leftDisplayValue).display}
                         </span>
                     )}
-                    {showLeftGhost && <span className="binop-ghost-placeholder">x</span>}
+                    {showLeftGhost && <span className="binop-ghost-placeholder">A</span>}
                 </div>
 
                 {/* Operator */}
@@ -214,7 +214,7 @@ export default function BinOpNodeComponent({ id, data: { operator, leftConstant,
                             {formatConstant(rightDisplayValue).display}
                         </span>
                     )}
-                    {showRightGhost && <span className="binop-ghost-placeholder">x</span>}
+                    {showRightGhost && <span className="binop-ghost-placeholder">B</span>}
                 </div>
 
                 {/* Output handle on the right side */}

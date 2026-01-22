@@ -30,6 +30,8 @@ export interface UseSyncedGraphParams {
     resetExpandedNodes: () => void;
     /** Ref to trigger fit view after sync */
     fitViewOnNextRenderRef: MutableRefObject<boolean>;
+    /** Version counter that increments when sheets are added/removed (triggers graph reset) */
+    sheetsVersion: number;
 }
 
 /**
@@ -65,6 +67,7 @@ export function useSyncedGraph({
     clearViewedCellHighlight,
     resetExpandedNodes,
     fitViewOnNextRenderRef,
+    sheetsVersion,
 }: UseSyncedGraphParams): UseSyncedGraphReturn {
     /** The AST that is currently synced/displayed in the graph */
     const [syncedAst, setSyncedAst] = useState<ASTNode | undefined>(ast);
@@ -79,6 +82,23 @@ export function useSyncedGraph({
 
     /** Counter that increments when synced cell's dependencies change, triggers graph rebuild */
     const [valuesVersion, setValuesVersion] = useState(0);
+
+    /**
+     * Clear the graph when the synced cell's sheet no longer exists (e.g., after file import).
+     * Uses sheetsVersion as a trigger to re-check sheet existence.
+     */
+    useEffect(() => {
+        if (!syncedCell) return;
+
+        const sheetId = hfInstance.getSheetId(syncedCell.sheet);
+        if (sheetId === undefined) {
+            log.debug(`Sheet "${syncedCell.sheet}" no longer exists - clearing graph`);
+            setSyncedAst(undefined);
+            setSyncedCell(null);
+            clearViewedCellHighlight();
+            resetExpandedNodes();
+        }
+    }, [sheetsVersion, syncedCell, hfInstance, clearViewedCellHighlight, resetExpandedNodes]);
 
     /**
      * Subscribe to HyperFormula value changes and update graph when any cell changes.

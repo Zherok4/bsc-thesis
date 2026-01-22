@@ -36,6 +36,8 @@ export interface UseSidebarStateParams {
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   /** Callback to clear cell highlighting */
   clearHighlight: () => void;
+  /** Version counter that increments when sheets are added/removed (triggers graph reset) */
+  sheetsVersion: number;
 }
 
 /**
@@ -127,6 +129,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     scrollToCell,
     highlightCells,
     clearHighlight,
+    sheetsVersion,
   } = params;
 
   // ReactFlow hooks
@@ -186,6 +189,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     clearViewedCellHighlight,
     resetExpandedNodes: resetExpansion,
     fitViewOnNextRenderRef,
+    sheetsVersion,
   });
 
   // 5. Formula editing - depends on syncedGraph, formulaHistory, exitEditMode

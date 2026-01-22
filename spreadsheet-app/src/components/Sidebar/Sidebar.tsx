@@ -42,6 +42,8 @@ export interface SidebarProps {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  /** Version counter that increments when sheets are added/removed (triggers graph reset) */
+  sheetsVersion: number;
 }
 
 const nodeTypes = {
