@@ -133,7 +133,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
   } = params;
 
   // ReactFlow hooks
-  const { fitView } = useReactFlow();
+  const { fitView, setCenter, getZoom } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -169,6 +169,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     expandedNodeIds,
     handleToggleExpand,
     resetExpansion,
+    pendingExpansionRef,
   } = useNodeExpansion({ isEditModeActive });
 
   // 4. Synced graph - depends on formulaHistory, resetExpansion
@@ -268,9 +269,12 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     collapsedTree,
     buildGraph,
     fitView,
+    setCenter,
+    getZoom,
     isEditModeActive,
     valuesVersion,
     fitViewOnNextRenderRef,
+    pendingExpansionRef,
   });
 
   // 8. Edge connections - depends on graph state, formula editing, edit mode

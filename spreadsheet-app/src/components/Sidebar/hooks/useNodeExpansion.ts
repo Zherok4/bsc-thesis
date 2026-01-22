@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 /**
  * Parameters for the useNodeExpansion hook
@@ -6,6 +6,16 @@ import { useState, useCallback } from 'react';
 export interface UseNodeExpansionParams {
     /** Whether edit mode is active (blocks expansion changes) */
     isEditModeActive: boolean;
+}
+
+/**
+ * Pending expansion/collapse action for panning
+ */
+export interface PendingExpansionAction {
+    /** The expansion node ID */
+    nodeId: string;
+    /** Whether this is an expand or collapse action */
+    type: 'expand' | 'collapse';
 }
 
 /**
@@ -18,6 +28,8 @@ export interface UseNodeExpansionReturn {
     handleToggleExpand: (nodeId: string) => void;
     /** Reset all expansions (clear the set) */
     resetExpansion: () => void;
+    /** Ref containing the pending expansion/collapse action (for panning) */
+    pendingExpansionRef: React.MutableRefObject<PendingExpansionAction | null>;
 }
 
 /**
@@ -29,6 +41,8 @@ export function useNodeExpansion({
     isEditModeActive,
 }: UseNodeExpansionParams): UseNodeExpansionReturn {
     const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
+    /** Ref to track a pending expansion/collapse action (for panning after layout) */
+    const pendingExpansionRef = useRef<PendingExpansionAction | null>(null);
 
     /**
      * Toggle expansion state of a node.
@@ -43,8 +57,12 @@ export function useNodeExpansion({
             const next = new Set(prev);
             if (next.has(nodeId)) {
                 next.delete(nodeId);
+                // Track this node for centering on collapse
+                pendingExpansionRef.current = { nodeId, type: 'collapse' };
             } else {
                 next.add(nodeId);
+                // Track this node for centering on expand
+                pendingExpansionRef.current = { nodeId, type: 'expand' };
             }
             return next;
         });
@@ -53,11 +71,13 @@ export function useNodeExpansion({
     /** Reset all expansions */
     const resetExpansion = useCallback(() => {
         setExpandedNodeIds(new Set());
+        pendingExpansionRef.current = null;
     }, []);
 
     return {
         expandedNodeIds,
         handleToggleExpand,
         resetExpansion,
+        pendingExpansionRef,
     };
 }
