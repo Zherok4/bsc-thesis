@@ -1,0 +1,47 @@
+/* Function Help Popover specific styles */
+@import './nodes.css';
+
+/* Override base popover positioning for function help */
+.function-help-popover.popover {
+    left: auto;
+    right: 0;
+    transform: none;
+    animation: function-help-fade-in 0.12s ease-out;
+}
+
+@keyframes function-help-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.function-help-popover .popover-content {
+    padding: 8px 10px;
+    max-width: 320px;
+}
+
+/* Adjust arrow position to align with button */
+.function-help-popover.popover.popover-below .popover-content::before {
+    left: auto;
+    right: 3px;
+    transform: none;
+}
+
+.function-help-popover.popover.popover-below .popover-content::after {
+    left: auto;
+    right: 4px;
+    transform: none;
+}
+
+.function-help-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--node-font-size-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}

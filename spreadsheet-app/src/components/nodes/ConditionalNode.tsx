@@ -1,4 +1,4 @@
-import { type JSX, useMemo, useCallback } from "react";
+import { type JSX, useMemo, useCallback, useState } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { useHyperFormula, type HyperFormulaContextValue, useConnectionDrag } from "../context";
@@ -6,6 +6,7 @@ import { evaluateFormula } from "../../utils";
 import { getParameterName } from "../../data/functionParameters";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
 import type { SourceCell } from "../context/GraphEditModeContext";
+import { FunctionHelpPopover } from "./FunctionHelpPopover";
 import './ConditionalNode.css';
 
 /**
@@ -123,6 +124,18 @@ export default function ConditionalNodeComponent({
     const { state: dragState, isHandleValid } = useConnectionDrag();
     const expandedSet = useMemo(() => new Set(expandedBranchIndices), [expandedBranchIndices]);
 
+    // Help popover state
+    const [showHelp, setShowHelp] = useState<boolean>(false);
+
+    const handleHelpClick = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        setShowHelp(prev => !prev);
+    }, []);
+
+    const handleHelpClose = useCallback((): void => {
+        setShowHelp(false);
+    }, []);
+
     if (funName === 'IF') {
         return (
             <IfModeContent
@@ -137,6 +150,9 @@ export default function ConditionalNodeComponent({
                 sourceCell={sourceCell}
                 isDragging={dragState.isDragging}
                 isHandleValid={isHandleValid}
+                showHelp={showHelp}
+                onHelpClick={handleHelpClick}
+                onHelpClose={handleHelpClose}
             />
         );
     }
@@ -155,6 +171,9 @@ export default function ConditionalNodeComponent({
             sourceCell={sourceCell}
             isDragging={dragState.isDragging}
             isHandleValid={isHandleValid}
+            showHelp={showHelp}
+            onHelpClick={handleHelpClick}
+            onHelpClose={handleHelpClose}
         />
     );
 }
@@ -171,6 +190,9 @@ interface IfModeProps {
     sourceCell?: SourceCell;
     isDragging: boolean;
     isHandleValid: (nodeId: string, handleId: string) => boolean;
+    showHelp: boolean;
+    onHelpClick: (e: React.MouseEvent) => void;
+    onHelpClose: () => void;
 }
 
 /**
@@ -188,6 +210,9 @@ function IfModeContent({
     sourceCell,
     isDragging,
     isHandleValid,
+    showHelp,
+    onHelpClick,
+    onHelpClose,
 }: IfModeProps): JSX.Element {
 
     const residingSheet = sheet;
@@ -235,6 +260,25 @@ function IfModeContent({
                     <div className="header-left">
                         <span className="func-symbol">f|</span>
                         <span className="func-name">IF</span>
+                    </div>
+                    <div className="header-right">
+                        <button
+                            className={`help-button ${showHelp ? 'active' : ''}`}
+                            onClick={onHelpClick}
+                            type="button"
+                            title="Show function description"
+                        >
+                            ?
+                        </button>
+                        {showHelp && (
+                            <FunctionHelpPopover
+                                functionName="IF"
+                                argFormulas={argFormulas}
+                                hfInstance={hfInstance}
+                                sheet={residingSheet}
+                                onClose={onHelpClose}
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -385,6 +429,9 @@ interface IfsModeProps {
     sourceCell?: SourceCell;
     isDragging: boolean;
     isHandleValid: (nodeId: string, handleId: string) => boolean;
+    showHelp: boolean;
+    onHelpClick: (e: React.MouseEvent) => void;
+    onHelpClose: () => void;
 }
 
 /**
@@ -402,6 +449,9 @@ function IfsModeContent({
     sourceCell,
     isDragging,
     isHandleValid,
+    showHelp,
+    onHelpClick,
+    onHelpClose,
 }: IfsModeProps): JSX.Element {
     // Check handle validity for smart highlighting
     const getHandleClass = (handleId: string): string => {
@@ -446,6 +496,25 @@ function IfsModeContent({
                     <div className="header-left">
                         <span className="func-symbol">f|</span>
                         <span className="func-name">IFS</span>
+                    </div>
+                    <div className="header-right">
+                        <button
+                            className={`help-button ${showHelp ? 'active' : ''}`}
+                            onClick={onHelpClick}
+                            type="button"
+                            title="Show function description"
+                        >
+                            ?
+                        </button>
+                        {showHelp && (
+                            <FunctionHelpPopover
+                                functionName="IFS"
+                                argFormulas={argFormulas}
+                                hfInstance={hfInstance}
+                                sheet={sheet}
+                                onClose={onHelpClose}
+                            />
+                        )}
                     </div>
                 </div>
 

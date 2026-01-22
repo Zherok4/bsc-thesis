@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useState, useCallback, type JSX } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { useHyperFormula, type HyperFormulaContextValue, useConnectionDrag } from "../context";
@@ -8,6 +8,7 @@ import { getParameterName } from "../../data/functionParameters";
 import { isVariadicFunction } from "../../data/variadicFunctions";
 import EditableConstant, { type ConstantType } from "./EditableConstant";
 import type { SourceCell } from "../context/GraphEditModeContext";
+import { FunctionHelpPopover } from "./FunctionHelpPopover";
 
 /**
  * Information about a constant argument for editing purposes
@@ -64,6 +65,18 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
     const { hfInstance }: HyperFormulaContextValue = useHyperFormula();
     const { state: dragState, isHandleValid } = useConnectionDrag();
 
+    // Help popover state
+    const [showHelp, setShowHelp] = useState<boolean>(false);
+
+    const handleHelpClick = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        setShowHelp(prev => !prev);
+    }, []);
+
+    const handleHelpClose = useCallback((): void => {
+        setShowHelp(false);
+    }, []);
+
     const residingSheet = sheet;
 
     // Note: No useMemo - we need fresh values on every render when cell values change
@@ -79,10 +92,28 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
             <div className="func-node">
                 <div className="node-header">
                     <div className="header-left">
-                    <span className="func-symbol">ƒ|</span>
-                    <span className="func-name">{funName}</span>
+                        <span className="func-symbol">ƒ|</span>
+                        <span className="func-name">{funName}</span>
                     </div>
-
+                    <div className="header-right">
+                        <button
+                            className={`help-button ${showHelp ? 'active' : ''}`}
+                            onClick={handleHelpClick}
+                            type="button"
+                            title="Show function description"
+                        >
+                            ?
+                        </button>
+                        {showHelp && (
+                            <FunctionHelpPopover
+                                functionName={funName}
+                                argFormulas={argFormulas}
+                                hfInstance={hfInstance}
+                                sheet={residingSheet}
+                                onClose={handleHelpClose}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 <div className="node-body">
@@ -139,6 +170,7 @@ export default function FunctionNodeComponent({id, data: {funName, argFormulas, 
                     </div>
                 </div>
             </div>
+
         </div>
     );
 }

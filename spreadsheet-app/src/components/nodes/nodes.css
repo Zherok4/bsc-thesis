@@ -1,6 +1,7 @@
 /* Shared node styles and CSS variables */
 :root {
   /* Typography */
+  --node-font-size-xs: 11px;
   --node-font-size-sm: 14px;
   --node-font-size: 18px;
   --node-font-size-lg: 20px;

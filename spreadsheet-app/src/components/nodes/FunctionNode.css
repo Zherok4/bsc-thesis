@@ -6,6 +6,44 @@
     gap: 6px;
 }
 
+.header-right {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Help button - question mark icon */
+.help-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--node-border);
+    border-radius: 50%;
+    background: var(--accent-light);
+    color: var(--text-tertiary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.help-button:hover {
+    border-color: var(--func-accent);
+    background: var(--func-accent-light);
+    color: var(--text-secondary);
+}
+
+.help-button.active {
+    border-color: var(--func-accent);
+    background: var(--func-accent);
+    color: white;
+}
+
 .func-symbol {
     font-family: 'IBM Plex Mono', monospace;
     font-size: var(--node-font-size);

@@ -1,0 +1,106 @@
+@import './nodes.css';
+
+/* Elevate the entire React Flow node when it contains an active popover */
+.react-flow__node:has(.popover) {
+    z-index: 10000 !important;
+}
+
+/* Base popover styles */
+.popover {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    animation: popover-fade-in 0.12s ease-out;
+}
+
+/* Position above anchor */
+.popover.popover-above {
+    bottom: 100%;
+    margin-bottom: 8px;
+}
+
+/* Position below anchor */
+.popover.popover-below {
+    top: 100%;
+    margin-top: 8px;
+}
+
+@keyframes popover-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.popover.popover-above {
+    animation-name: popover-fade-in-above;
+}
+
+@keyframes popover-fade-in-above {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Popover content container */
+.popover-content {
+    padding: 10px 14px;
+    background: var(--node-bg);
+    border: 1px solid var(--node-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(27, 31, 35, 0.12);
+    max-width: 280px;
+    min-width: 120px;
+}
+
+/* Arrow for popover-below (pointing up) */
+.popover.popover-below .popover-content::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: var(--node-border);
+}
+
+.popover.popover-below .popover-content::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: var(--node-bg);
+}
+
+/* Arrow for popover-above (pointing down) */
+.popover.popover-above .popover-content::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--node-border);
+}
+
+.popover.popover-above .popover-content::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--node-bg);
+}
