@@ -8,10 +8,11 @@ Literals for example numbers or strings, if presented as nodes they quickly clus
 %TODO: Comparison images ???
 \subsection{Cell References}
 %TODO: add cell reference / range or is it the same ??
+%TODO: mention tradeoff by choosing color as notation and not as text notation ==> fast distinction but bit more "work" i.e mapping the node color to the sheet color int he sheets tab than having the text 
 In order to understand the dependencies of the formula the system explicitly creates nodes for cell references. A cell reference node has tree important components. The most important component is the address component. The address is colored accordingly to the pre-defined color of its Sheet. When importing a new workbook the system generates distinct colors for each worksheet. The decision to color it by the respective worksheet was important because in a formula writing A2 automatically resolves the residing sheet of the address to where the formula resides. But when formulas refer across worksheets two distinct address can look the same even though they refer two different cells or ranges. The colors were used to add a secondary notation \cite{green_usability_1996} to resolve this problem see Figure \ref{fig:identical-address-formula} instead of text.
 
 %TODO (IMPORTANT): update graphic if we change notations and make it prettier
-\begin{figure}[htbp]
+\begin{figure}[!h]
     \centering
     \begin{minipage}{0.45\textwidth}
         \centering
@@ -32,4 +33,17 @@ The second component of a reference node is its name. The system naively resolve
 The last component is the result component which displays the data the cell at the referenced address holds. This allows the user to quickly see without navigating inside the workbook to the cell the value is. 
 
 \subsection{Functions}
-\subsection{Conditional Nodes}
+A function in Spreadsheet programs is a predefined formula, which takes one or more arguments to produce a result \cite{noauthor_ecma-376-12016_2016}. In traditional formula syntax, the semantic meaning of an argument is only defined by its position for example in the function: VLOOKUP(E6,H6:I9,2,0). When reading this the user must actively recall which argument is responsible for what. This mental mapping can lead to errors. To solve this the system gives each argument a semantic label. By visually linking a node to a semantic label the system aims to increase the role expressiveness of the argument nodes. This should decrease the need of consulting a documentation.
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.3]{chapters/system-design/images/semantic-argument-label-example.png}
+    \caption{Example of the linking between argument nodes to semantic argument labels}
+    \label{fig:semantic-argument-example}
+\end{figure}
+% TODO: if we add an help button ==> with small extra step help even unfamiliar users
+ 
+%TODO: Image ??
+
+\subsubsection{Conditional Nodes}
+
+\subsection{intermediate Results}
