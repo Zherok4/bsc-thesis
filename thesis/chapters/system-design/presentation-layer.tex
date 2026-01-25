@@ -25,6 +25,7 @@ A flow graph allows us to uncover this state and enables the user to see the dep
 The flow direction is left to right. This should mirror the spatial convention for spreadsheets, where the inputs of a formula are located in columns on the left side of the formula.
 
 \subsection{Interaction design}
+\label{sec:interaction-design}
 The flow graph not only serves as a visualization but also as an interface for the exploration and manipulation of the datatable. Interactions are organized into two distinct modes: the \textbf{preview} mode and the \textbf{edit} mode. This separation should provide clear visual feedback when changes will affect the underlying data of the datatable.
 \subsubsection{Preview Mode}
 The Preview Mode is the default state and is intended for the exploration. Hovering over a reference node highlights the corresponding cell or range in the datatable. This allows the user to survey the dependency at the current position in the datatable. Clicking on a reference node scrolls the datatable to the corresponding cell or range to enable closer inspection of the dependencies.
