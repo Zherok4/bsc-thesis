@@ -85,8 +85,8 @@ export interface DatatableHandle {
     deselectCell: () => void;
     /** Load data into the active sheet */
     loadData: (data: (string | number | null)[][]) => void;
-    /** Scroll the viewport to show a specific cell */
-    scrollToCell: (row: number, col: number) => void;
+    /** Scroll the viewport to show a specific cell, optionally on a specific sheet */
+    scrollToCell: (row: number, col: number, sheet?: string) => void;
     /** Highlight a range of cells, optionally on a specific sheet */
     highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
     /** Clear all cell highlights */
@@ -184,11 +184,12 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
                 hotInstance.loadData(data);
             }
         },
-        scrollToCell: (row: number, col: number) => {
-            const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
+        scrollToCell: (row: number, col: number, sheet?: string) => {
+            const targetSheet = sheet ?? activeSheetName;
+            const hotTableRef = hotTableRefsMap.current.get(targetSheet);
             const hotInstance = hotTableRef?.hotInstance;
             // using heuristic that most of the time the important semantic naming is at top of a range / cell scroll one column and row back
-            
+
             if (hotInstance) {
                 const targetRow = Math.max(0, row - 1);
                 const targetCol = Math.max(0, col - 1);

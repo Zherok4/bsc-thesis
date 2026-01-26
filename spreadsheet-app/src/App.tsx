@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import './App.css'
 import Datatable from './components/Datatable';
 import type { DatatableHandle, ViewportInfo } from './components/Datatable';
@@ -34,7 +34,9 @@ function isFormula(text: string) : boolean {
 
 function App() {
   const datatableRef = useRef<DatatableHandle>(null);
-  
+  const pendingScrollRef = useRef<{row: number, col: number, sheet: string} | null>(null);
+  const pendingHighlightRef = useRef<{startRow: number, startCol: number, endRow: number, endCol: number, sheet: string} | null>(null);
+
   const hfInstance = useMemo(() => {
     return HyperFormula.buildFromSheets({'Tabelle1': DEFAULT_DATA}, options);
   }, []);
@@ -159,24 +161,45 @@ function App() {
   /** scrollToCell is triggered if:
    *  - user clicks on a cell reference node
    *  - user click on a range reference node
-   * 
+   *
    *  moves the viewport of the handsontable spreadsheet to the corresponding cell
    */
   const scrollToCell = useCallback((row: number, col: number, sheet?: string) => {
-    if (sheet !== undefined) {
+    if (sheet !== undefined && sheet !== activeSheetName) {
+      // Store pending scroll and switch sheet - useEffect will execute scroll after render
+      pendingScrollRef.current = { row, col, sheet };
       handleSheetChange(sheet);
+    } else {
+      // Same sheet or no sheet specified - scroll immediately
+      datatableRef.current?.scrollToCell(row, col, sheet);
     }
-    datatableRef.current?.scrollToCell(row, col);
-  }, [handleSheetChange]);
+  }, [handleSheetChange, activeSheetName]);
 
-  /** highlightCells assumes that the highlight should be in the activeSheet */
+  /** Execute pending scroll and highlight after sheet change has rendered */
+  useEffect(() => {
+    if (pendingScrollRef.current && pendingScrollRef.current.sheet === activeSheetName) {
+      const { row, col, sheet } = pendingScrollRef.current;
+      pendingScrollRef.current = null;
+      datatableRef.current?.scrollToCell(row, col, sheet);
+    }
+    if (pendingHighlightRef.current && pendingHighlightRef.current.sheet === activeSheetName) {
+      const { startRow, startCol, endRow, endCol, sheet } = pendingHighlightRef.current;
+      pendingHighlightRef.current = null;
+      datatableRef.current?.highlightCells(startRow, startCol, endRow, endCol, sheet);
+    }
+  }, [activeSheetName]);
+
+  /** Highlight cells, deferring to after sheet change if targeting a different sheet */
   const highlightCells = useCallback((startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => {
     const currentDatatable = datatableRef.current;
 
-    if (currentDatatable) {
+    if (sheet !== undefined && sheet !== activeSheetName) {
+      // Store pending highlight - useEffect will execute after sheet change renders
+      pendingHighlightRef.current = { startRow, startCol, endRow, endCol, sheet };
+    } else if (currentDatatable) {
       currentDatatable.highlightCells(startRow, startCol, endRow, endCol, sheet);
     }
-  }, []);
+  }, [activeSheetName]);
 
   const handleClearHighlight = useCallback(() => {
     const currentDatatable = datatableRef.current;
