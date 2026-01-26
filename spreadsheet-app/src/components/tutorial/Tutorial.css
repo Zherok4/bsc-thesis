@@ -1,0 +1,135 @@
+/* Tutorial System Styles */
+
+/* Full-screen overlay container */
+.tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    pointer-events: none;
+}
+
+/* SVG backdrop with spotlight cutout - purely visual, allows click-through */
+.tutorial-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Animated highlight ring around target element */
+.tutorial-highlight-ring {
+    position: fixed;
+    border: 3px solid #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+    pointer-events: none;
+    animation: tutorial-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tutorial-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.2);
+    }
+}
+
+/* Tooltip container */
+.tutorial-tooltip {
+    position: fixed;
+    z-index: 10002;
+    pointer-events: all;
+    background: #1e1e1e;
+    border: 1px solid #3e3e3e;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Tooltip header */
+.tutorial-tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.tutorial-tooltip-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.tutorial-tooltip-step {
+    font-size: 11px;
+    color: #888888;
+}
+
+/* Tooltip content */
+.tutorial-tooltip-content {
+    font-size: 13px;
+    color: #cccccc;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+/* Navigation controls */
+.tutorial-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorial-controls-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.tutorial-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tutorial-btn-primary {
+    background: #f59e0b;
+    color: #000000;
+    border: none;
+    font-weight: 500;
+}
+
+.tutorial-btn-primary:hover {
+    background: #d97706;
+}
+
+.tutorial-btn-secondary {
+    background: transparent;
+    color: #cccccc;
+    border: 1px solid #3e3e3e;
+}
+
+.tutorial-btn-secondary:hover {
+    border-color: #5e5e5e;
+}
+
+.tutorial-btn-skip {
+    background: transparent;
+    color: #888888;
+    border: none;
+    font-size: 11px;
+}
+
+.tutorial-btn-skip:hover {
+    color: #cccccc;
+}
+
+/* Help button in toolbar */
+.tutorial-trigger-button {
+    font-weight: bold;
+    font-size: 14px;
+}

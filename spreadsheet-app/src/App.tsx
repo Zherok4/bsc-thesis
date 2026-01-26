@@ -14,6 +14,9 @@ import type { SelectedRange } from './components/context/HyperFormulaContext';
 import { SpreadsheetActionsProvider } from './components/context';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { createLogger } from './utils/logger';
+import { TUTORIAL_ENABLED, TUTORIAL_SPREADSHEET_ENABLED } from './tutorial/config';
+import { loadTutorialSpreadsheet } from './tutorial/tutorialSpreadsheet';
+import { TutorialProvider } from './components/tutorial';
 
 const log = createLogger('App');
 
@@ -36,6 +39,7 @@ function App() {
   const datatableRef = useRef<DatatableHandle>(null);
   const pendingScrollRef = useRef<{row: number, col: number, sheet: string} | null>(null);
   const pendingHighlightRef = useRef<{startRow: number, startCol: number, endRow: number, endCol: number, sheet: string} | null>(null);
+  const pendingSelectionRef = useRef<{row: number, col: number, sheet: string} | null>(null);
 
   const hfInstance = useMemo(() => {
     return HyperFormula.buildFromSheets({'Tabelle1': DEFAULT_DATA}, options);
@@ -175,7 +179,22 @@ function App() {
     }
   }, [handleSheetChange, activeSheetName]);
 
-  /** Execute pending scroll and highlight after sheet change has rendered */
+  /**
+   * Selects a cell in the spreadsheet, switching sheets if necessary.
+   * Unlike scrollToCell, this actually selects the cell (triggers onCellSelect).
+   */
+  const selectCell = useCallback((row: number, col: number, sheet?: string) => {
+    if (sheet !== undefined && sheet !== activeSheetName) {
+      // Store pending selection and switch sheet - useEffect will execute after render
+      pendingSelectionRef.current = { row, col, sheet };
+      handleSheetChange(sheet);
+    } else {
+      // Same sheet or no sheet specified - select immediately
+      datatableRef.current?.selectCell(row, col);
+    }
+  }, [handleSheetChange, activeSheetName]);
+
+  /** Execute pending scroll, highlight, and selection after sheet change has rendered */
   useEffect(() => {
     if (pendingScrollRef.current && pendingScrollRef.current.sheet === activeSheetName) {
       const { row, col, sheet } = pendingScrollRef.current;
@@ -186,6 +205,11 @@ function App() {
       const { startRow, startCol, endRow, endCol, sheet } = pendingHighlightRef.current;
       pendingHighlightRef.current = null;
       datatableRef.current?.highlightCells(startRow, startCol, endRow, endCol, sheet);
+    }
+    if (pendingSelectionRef.current && pendingSelectionRef.current.sheet === activeSheetName) {
+      const { row, col } = pendingSelectionRef.current;
+      pendingSelectionRef.current = null;
+      datatableRef.current?.selectCell(row, col);
     }
   }, [activeSheetName]);
 
@@ -303,13 +327,35 @@ function App() {
     }
   }, [handleSheetChange]);
 
-  return (
+  /** Reset app state to clean slate for tutorial - re-imports the spreadsheet */
+  const resetForTutorial = useCallback(async (): Promise<void> => {
+    // Re-import the tutorial spreadsheet to get a completely fresh state
+    try {
+      const result = await loadTutorialSpreadsheet();
+      handleImport(result);
+    } catch (error) {
+      log.debug('Failed to reload tutorial spreadsheet:', error);
+    }
+  }, [handleImport]);
+
+  // Auto-load tutorial spreadsheet on mount if enabled
+  useEffect(() => {
+    if (TUTORIAL_SPREADSHEET_ENABLED) {
+      loadTutorialSpreadsheet()
+        .then(handleImport)
+        .catch((error) => {
+          log.debug('Failed to load tutorial spreadsheet:', error);
+        });
+    }
+  }, [handleImport]);
+
+  const appContent = (
     <div className="app-container">
       <TopBar onImport={handleImport} />
       <FormulaBar value={selectedCellValue} onChange={updateSelectedCellValueState} onEnterPress={handleMoveSelectionDown}/>
       <div className="main-container">
         <div className="datatable-container">
-          <div className="hottable-wrapper">
+          <div className="hottable-wrapper" data-tutorial="spreadsheet">
               <Datatable
                 onCellSelect={updateSelectionState}
                 onRangeSelect={updateRangeSelection}
@@ -354,7 +400,12 @@ function App() {
         </div>
       </div>
     </div>
-  )
+  );
+
+  // Conditionally wrap with TutorialProvider
+  return TUTORIAL_ENABLED
+    ? <TutorialProvider selectCell={selectCell} onReset={resetForTutorial}>{appContent}</TutorialProvider>
+    : appContent;
 }
 
 export default App

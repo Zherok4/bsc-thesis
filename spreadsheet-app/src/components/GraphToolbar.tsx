@@ -70,6 +70,7 @@ export default function GraphToolbar({
         onClick={handlePreviewMode}
         title="Preview mode"
         aria-label="Preview mode"
+        data-tutorial="preview-mode"
       >
         <img src={eyeIcon} alt="Preview" className="toolbar-icon" />
       </button>
@@ -78,6 +79,7 @@ export default function GraphToolbar({
         onClick={handleEditMode}
         title="Edit mode"
         aria-label="Edit mode"
+        data-tutorial="edit-mode"
       >
         <img src={penIcon} alt="Edit" className="toolbar-icon" />
       </button>
@@ -116,7 +118,7 @@ export default function GraphToolbar({
         title="Sync graph to current selection"
         aria-label="Sync graph"
       >
-        {`load ${pendingCellAddress} \u21BB`}
+        {`sync ${pendingCellAddress} \u21BB`}
       </button>
     </div>
   );

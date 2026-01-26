@@ -67,7 +67,7 @@ function SidebarInner(props: SidebarProps) {
   const state = useSidebarState(props);
 
   return (
-    <div className={`sidebar-inner ${state.isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`}>
+    <div className={`sidebar-inner ${state.isEditModeActive ? 'edit-mode-active' : 'preview-mode-active'}`} data-tutorial="flow-graph">
       <GraphEditModeContext.Provider
         value={{
           isEditModeActive: state.isEditModeActive,

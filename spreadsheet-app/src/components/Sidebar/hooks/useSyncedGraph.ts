@@ -84,21 +84,21 @@ export function useSyncedGraph({
     const [valuesVersion, setValuesVersion] = useState(0);
 
     /**
-     * Clear the graph when the synced cell's sheet no longer exists (e.g., after file import).
-     * Uses sheetsVersion as a trigger to re-check sheet existence.
+     * Clear the graph when a new file is imported (sheetsVersion changes).
+     * This ensures a fresh start after import, even if sheet names match.
      */
     useEffect(() => {
+        // Skip the initial mount (sheetsVersion starts at 0)
+        if (sheetsVersion === 0) return;
         if (!syncedCell) return;
 
-        const sheetId = hfInstance.getSheetId(syncedCell.sheet);
-        if (sheetId === undefined) {
-            log.debug(`Sheet "${syncedCell.sheet}" no longer exists - clearing graph`);
-            setSyncedAst(undefined);
-            setSyncedCell(null);
-            clearViewedCellHighlight();
-            resetExpandedNodes();
-        }
-    }, [sheetsVersion, syncedCell, hfInstance, clearViewedCellHighlight, resetExpandedNodes]);
+        log.debug(`Sheets version changed to ${sheetsVersion} - clearing graph`);
+        setSyncedAst(undefined);
+        setSyncedCell(null);
+        clearViewedCellHighlight();
+        resetExpandedNodes();
+    }, [sheetsVersion]); // Only depend on sheetsVersion to trigger on import
+    // Note: clearViewedCellHighlight and resetExpandedNodes are stable callbacks
 
     /**
      * Subscribe to HyperFormula value changes and update graph when any cell changes.
