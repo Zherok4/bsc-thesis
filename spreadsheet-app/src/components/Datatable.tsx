@@ -77,8 +77,8 @@ interface DatatableProps {
  * Imperative handle interface for controlling the Datatable externally
  */
 export interface DatatableHandle {
-    /** Update a cell's value at the specified position */
-    updateCell: (newValue: string, row: number, col: number) => void;
+    /** Update a cell's value at the specified position, optionally on a specific sheet */
+    updateCell: (newValue: string, row: number, col: number, sheet?: string) => void;
     /** Select a cell at the specified position */
     selectCell: (row: number, col: number) => void;
     /** Deselect any selected cells (prevents keyboard events from affecting spreadsheet) */
@@ -153,14 +153,15 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
     }, [activeSheetName]);
 
     useImperativeHandle(ref, () => ({
-        updateCell: (newValue: string, row: number, col: number) => {
-            log.debug(`updateCell called: row=${row}, col=${col}, sheet=${activeSheetName}`);
-            const hotTableRef = hotTableRefsMap.current.get(activeSheetName);
+        updateCell: (newValue: string, row: number, col: number, sheet?: string) => {
+            const targetSheet = sheet ?? activeSheetName;
+            log.debug(`updateCell called: row=${row}, col=${col}, sheet=${targetSheet}`);
+            const hotTableRef = hotTableRefsMap.current.get(targetSheet);
             const hotInstance = hotTableRef?.hotInstance;
             if (hotInstance) {
                 hotInstance.setDataAtCell(row, col, newValue);
             } else {
-                log.warn(`No hotInstance found for sheet: ${activeSheetName}`);
+                log.warn(`No hotInstance found for sheet: ${targetSheet}`);
             }
         },
         selectCell: (row: number, col: number) => {

@@ -84,6 +84,7 @@ export function useFormulaEditing({
 
         // Get the AST for the target cell
         let targetAst: FormulaNode | undefined;
+        let originalFormula: string | undefined;
 
         if (edit.sourceCell) {
             // Expanded node: fetch and parse the source cell's formula
@@ -98,6 +99,8 @@ export function useFormulaEditing({
                 exitEditMode();
                 return;
             }
+            // Store original formula for undo support
+            originalFormula = formula;
             try {
                 targetAst = parseFormula(formula);
             } catch {
@@ -174,7 +177,12 @@ export function useFormulaEditing({
         if (anyTransformed) {
             const newFormula = serializeNode(currentAst);
 
-            // Push to history for undo/redo
+            // Push original formula to history first for expanded cells (undo support)
+            if (edit.sourceCell && originalFormula) {
+                formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+            }
+
+            // Push new formula to history for undo/redo
             formulaHistory.push(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
 
             onNodeEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);

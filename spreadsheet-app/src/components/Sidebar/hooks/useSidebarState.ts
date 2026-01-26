@@ -323,6 +323,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     onNodeEdit,
     showToast,
     applyFormulaEdit,
+    formulaHistory,
     isEditModeActive,
     enterEditMode,
     exitEditMode,

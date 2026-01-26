@@ -12,6 +12,7 @@ import { getTargetAstNodeId, getSourceCell, type UserEdgeData } from '../../../p
 import type { HyperFormula } from 'hyperformula';
 import type { CellPosition } from './useEdgeConnections';
 import type { ToastType } from '../../context';
+import type { FormulaHistoryState } from '../../../hooks';
 import { createLogger } from '../../../utils/logger';
 
 const log = createLogger('useEdgeManagement');
@@ -30,6 +31,7 @@ export interface UseEdgeManagementParams {
     onNodeEdit?: (formula: string, row: number, col: number, sheet: string) => void;
     showToast: (message: string, type: ToastType) => void;
     applyFormulaEdit: (formula: string, row: number, col: number, sheet: string) => void;
+    formulaHistory: FormulaHistoryState;
     isEditModeActive: boolean;
     enterEditMode: (nodeId?: string) => void;
     exitEditMode: () => void;
@@ -61,6 +63,7 @@ export function useEdgeManagement({
     onNodeEdit,
     showToast,
     applyFormulaEdit,
+    formulaHistory,
     isEditModeActive,
     enterEditMode,
     exitEditMode,
@@ -208,6 +211,7 @@ export function useEdgeManagement({
 
                 // Get the AST - use syncedAst for synced cell, fetch from HyperFormula for expanded cells
                 let currentAst: FormulaNode | undefined;
+                let originalFormula: string | undefined;
 
                 if (isForSyncedCell) {
                     // Use the already-parsed syncedAst for the synced cell
@@ -232,6 +236,8 @@ export function useEdgeManagement({
                         continue;
                     }
 
+                    // Store original formula for undo support
+                    originalFormula = currentFormula;
                     log.debug(`Current formula from HyperFormula: ${currentFormula}`);
 
                     try {
@@ -258,6 +264,12 @@ export function useEdgeManagement({
                 if (result.transformed && onNodeEdit) {
                     const newFormula = serializeNode(result.ast);
                     log.debug(`Applying formula: ${newFormula} to cell: ${JSON.stringify(targetCell)}`);
+
+                    // Push original formula to history first for expanded cells (undo support)
+                    if (!isForSyncedCell && originalFormula) {
+                        formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+                    }
+
                     applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
                     showToast('Edge deleted', 'success');
 
@@ -280,7 +292,7 @@ export function useEdgeManagement({
                 }
             }
         },
-        [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle, showToast, applyFormulaEdit, setSyncedAst, userEdgeDataRef, exitEditMode]
+        [nodes, syncedCell, syncedAst, hfInstance, onNodeEdit, getReplacementValue, isValidDeletionHandle, showToast, applyFormulaEdit, formulaHistory, setSyncedAst, userEdgeDataRef, exitEditMode]
     );
 
     return {

@@ -268,22 +268,17 @@ function App() {
   const handleNodeEdit = useCallback((newFormula: string, row: number, col: number, sheet: string) => {
     log.debug(`handleNodeEdit called: row=${row}, col=${col}, sheet=${sheet}`);
 
-    // Switch to the target sheet if different from current
-    if (sheet !== activeSheetName) {
-      handleSheetChange(sheet);
-    }
-
     const currentDatatable = datatableRef.current;
     if (currentDatatable) {
-      log.debug(`Calling updateCell: row=${row}, col=${col}`);
-      currentDatatable.updateCell(newFormula, row, col);
+      log.debug(`Calling updateCell: row=${row}, col=${col}, sheet=${sheet}`);
+      currentDatatable.updateCell(newFormula, row, col, sheet);
     }
 
     // Update selected cell value if the edited cell is currently selected
     if (selectedCell && selectedCell.row === row && selectedCell.col === col && sheet === activeSheetName) {
       setSelectedCellValue(newFormula);
     }
-  }, [activeSheetName, handleSheetChange, selectedCell]);
+  }, [activeSheetName, selectedCell]);
 
   /**
    * handleImport is triggered when:

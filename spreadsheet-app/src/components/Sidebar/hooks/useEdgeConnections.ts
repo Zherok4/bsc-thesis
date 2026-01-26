@@ -327,6 +327,7 @@ export function useEdgeConnections({
             }
 
             let targetAst: FormulaNode | undefined;
+            let originalFormula: string | undefined;
             if (sourceCell) {
                 const sheetId = hfInstance.getSheetId(sourceCell.sheet);
                 if (sheetId === undefined) return;
@@ -336,6 +337,8 @@ export function useEdgeConnections({
                     col: sourceCell.col
                 });
                 if (!formula) return;
+                // Store original formula for undo support
+                originalFormula = formula;
                 try {
                     targetAst = parseFormula(formula);
                 } catch {
@@ -360,6 +363,12 @@ export function useEdgeConnections({
 
             if (result.transformed && onNodeEdit) {
                 const newFormula = serializeNode(result.ast);
+
+                // Push original formula to history first for expanded cells (undo support)
+                if (sourceCell && originalFormula) {
+                    formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+                }
+
                 applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
                 showToast('Connection created', 'success');
 
@@ -388,7 +397,7 @@ export function useEdgeConnections({
 
             setEdges((currentEdges) => addEdge(edge, currentEdges));
         },
-        [nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, setSyncedAst]
+        [nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, formulaHistory, setSyncedAst]
     );
 
     /**
@@ -475,6 +484,7 @@ export function useEdgeConnections({
         }
 
         let targetAst: FormulaNode | undefined;
+        let originalFormula: string | undefined;
         if (sourceCell) {
             const sheetId = hfInstance.getSheetId(sourceCell.sheet);
             if (sheetId === undefined) {
@@ -490,6 +500,8 @@ export function useEdgeConnections({
                 setPendingSwap(null);
                 return;
             }
+            // Store original formula for undo support
+            originalFormula = formula;
             try {
                 targetAst = parseFormula(formula);
             } catch {
@@ -510,6 +522,12 @@ export function useEdgeConnections({
 
         if (result.transformed && onNodeEdit) {
             const newFormula = serializeNode(result.ast);
+
+            // Push original formula to history first for expanded cells (undo support)
+            if (sourceCell && originalFormula) {
+                formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+            }
+
             applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
             showToast('Connection replaced', 'success');
 
@@ -526,7 +544,7 @@ export function useEdgeConnections({
 
         setPendingSwap(null);
         exitEditMode();
-    }, [pendingSwap, nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, exitEditMode, setSyncedAst]);
+    }, [pendingSwap, nodes, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, formulaHistory, exitEditMode, setSyncedAst]);
 
     /**
      * Handles the "Swap" action from the pending swap popover.
@@ -583,6 +601,7 @@ export function useEdgeConnections({
         }
 
         let targetAst: FormulaNode | undefined;
+        let originalFormula: string | undefined;
         if (sourceCell) {
             const sheetId = hfInstance.getSheetId(sourceCell.sheet);
             if (sheetId === undefined) {
@@ -598,6 +617,8 @@ export function useEdgeConnections({
                 setPendingSwap(null);
                 return;
             }
+            // Store original formula for undo support
+            originalFormula = formula;
             try {
                 targetAst = parseFormula(formula);
             } catch {
@@ -623,6 +644,12 @@ export function useEdgeConnections({
 
         if (onNodeEdit) {
             const newFormula = serializeNode(swapResult.ast);
+
+            // Push original formula to history first for expanded cells (undo support)
+            if (sourceCell && originalFormula) {
+                formulaHistory.push(originalFormula, targetCell.row, targetCell.col, targetCell.sheet);
+            }
+
             applyFormulaEdit(newFormula, targetCell.row, targetCell.col, targetCell.sheet);
             showToast('Arguments swapped', 'success');
 
@@ -645,7 +672,7 @@ export function useEdgeConnections({
 
         setPendingSwap(null);
         exitEditMode();
-    }, [pendingSwap, nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, handlePendingReplace, exitEditMode, setSyncedAst]);
+    }, [pendingSwap, nodes, edges, syncedAst, syncedCell, hfInstance, onNodeEdit, setEdges, showToast, applyFormulaEdit, formulaHistory, handlePendingReplace, exitEditMode, setSyncedAst]);
 
     /**
      * Cancels the pending swap/replace action.
