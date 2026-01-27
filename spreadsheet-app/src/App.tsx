@@ -397,7 +397,6 @@ function App() {
     </div>
   );
 
-  // Conditionally wrap with TutorialProvider
   return TUTORIAL_ENABLED
     ? <TutorialProvider selectCell={selectCell} onReset={resetForTutorial}>{appContent}</TutorialProvider>
     : appContent;
