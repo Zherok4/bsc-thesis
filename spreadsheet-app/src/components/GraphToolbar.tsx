@@ -36,7 +36,7 @@ interface GraphToolbarProps {
 export default function GraphToolbar({
   currentCellAddress,
   currentCell,
-  hasPendingSync,
+  hasPendingSync: _hasPendingSync,
   pendingCellAddress,
   onSync,
   onUndo,

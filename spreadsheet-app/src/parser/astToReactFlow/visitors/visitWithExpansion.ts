@@ -23,7 +23,6 @@ import {
     createRangeNode,
     createReferenceNode,
     createRowRangeNode,
-    createStringNode,
 } from "../nodeFactories";
 import type { ExpansionContext } from "../types";
 import { evaluateFormula } from "../../../utils";
@@ -308,7 +307,7 @@ function handleNumberLiteral(_params: HandlerParams): void {
 /**
  * Handles StringLiteral nodes
  */
-function handleStringLiteral(params: HandlerParams): void {
+function handleStringLiteral(_params: HandlerParams): void {
     //const { collapsedNode, nodes, edges, parentID, handleID } = params;
 
     //const strLiteralNode = collapsedNode.original as StringLiteralNode;

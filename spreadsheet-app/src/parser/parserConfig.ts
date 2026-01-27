@@ -1,9 +1,7 @@
 import { CstParser } from "chevrotain";
 import type { CstNode } from "chevrotain";
-import { SpreadsheetFormulaLexer } from "./tokens";
 import { allTokens } from "./tokens";
 import {
-    WhiteSpace,
     Number,
     String,
     NotEqual,
