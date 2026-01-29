@@ -1,7 +1,8 @@
 \section{The parsing layer}
-\subsection{Spreadsheet grammar}
-( Here I will write about the Spreadsheet grammar ands its detail and also list the detailed grammar used in the parser)
-\subsection{Transformers}
-( Here I will write about how the system transforms the AST when we have edited something. The transformers are cell reference transformer, literal transformer, expression replacement transformer and also how the system swaps or adds function arguments)
-\subsection{Serializer}
-( Here I will write about how the system serializes the AST back into a formula. Maybe I will also make a diagram to show the flow of these)
+The Parsing Layer's main responsibility is transforming a spreadsheet formula into an AST, and its inverse operation serializing the AST back into a formula. This allows the system to transform and reconstruct formulas after graph-based edits.
+\subsection{Parsing}
+The system uses Chevrotain, a parser building toolkit for JavaScript. The grammar follows standard spreadsheet formula syntax, supporting basic operations, cell references, ranges and function calls.
+\subsection{Serialization}
+The serializer reconstructs a formula string from an AST. This is needed when a user has made an edit in the flow graph, because the modified AST has to be written back to the spreadsheet cell.
+\subsection{Transformators}
+Whenever a user applies an edit in the flow graph the system locates the corresponding AST nodes and applies the corresponding transformation. All transformations are immutable, which means that the system produces a new AST rather than modifying the original. The transformed AST is then serialized and written back to the cell.
