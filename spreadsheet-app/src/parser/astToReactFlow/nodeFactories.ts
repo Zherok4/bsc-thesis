@@ -36,6 +36,18 @@ interface ReferenceExpansionConfig {
 }
 
 /**
+ * Configuration for expandable range nodes (cell grid expansion)
+ */
+interface RangeExpansionConfig {
+    /** Whether this node is currently expanded to show cell grid */
+    isExpanded: boolean;
+    /** Callback to toggle expansion state */
+    onToggleExpand: (nodeId: string) => void;
+    /** Stable ID used for tracking expansion state */
+    expansionNodeId: string;
+}
+
+/**
  * Creates a cell reference node
  * @param reference - The cell reference (e.g., "A1", "B2")
  * @param sheet - Optional sheet name for cross-sheet references
@@ -81,18 +93,32 @@ export function createReferenceNode(
  * @param sheet - Sheet name where this range resides
  * @param astNodeId - Optional AST node ID for identifying this node during edits
  * @param sourceCell - Optional source cell for nodes within expanded branches
+ * @param expansionConfig - Optional expansion configuration for cell grid display
  */
 export function createRangeNode(
     startReference: string,
     endReference: string,
     sheet: string,
     astNodeId?: string,
-    sourceCell?: SourceCell
+    sourceCell?: SourceCell,
+    expansionConfig?: RangeExpansionConfig
 ): Node {
     return {
         id: generateNodeId(),
         position: { x: 0, y: 100 * getNodeIdCounter() },
-        data: { startReference, endReference, sheet, rangeType: "cell", astNodeId, sourceCell },
+        data: {
+            startReference,
+            endReference,
+            sheet,
+            rangeType: "cell",
+            astNodeId,
+            sourceCell,
+            ...(expansionConfig ? {
+                isExpanded: expansionConfig.isExpanded,
+                onToggleExpand: expansionConfig.onToggleExpand,
+                expansionNodeId: expansionConfig.expansionNodeId,
+            } : {}),
+        },
         type: "RangeNode",
     };
 }

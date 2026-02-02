@@ -164,3 +164,80 @@
   width: 14px;
   height: 14px;
 }
+
+/* ========================================
+   EXPANDABLE CELL GRID
+   ======================================== */
+
+/* Expanded state - highlight the value display */
+.range-node .node-result-value.expandable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 2px 4px;
+  transition: background 0.15s ease;
+}
+
+.range-node .node-result-value.expandable:hover {
+  background: var(--sheet-accent-light);
+}
+
+.node-wrapper.expanded .node-result-value.expandable {
+  background: var(--sheet-accent);
+  color: white;
+}
+
+/* Cell grid container - uses CSS table for column alignment */
+.range-cell-grid {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 4px 2px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--node-border);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Row within the grid */
+.range-cell-row {
+  display: table-row;
+}
+
+/* Individual cell item */
+.range-cell-item {
+  display: table-cell;
+  padding: 2px 6px;
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 3px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Cell reference label (e.g., A1, B2) */
+.range-cell-ref {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: var(--node-font-size-sm);
+  color: var(--text-secondary);
+  margin-right: 6px;
+}
+
+/* Cell value styling */
+.range-cell-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: var(--node-font-size);
+  color: var(--text-primary);
+}
+
+.range-cell-value.non-editable {
+  opacity: 0.7;
+}
+
+/* Truncation notice for large ranges */
+.range-truncation-notice {
+  font-size: var(--node-font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 4px;
+}

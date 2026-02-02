@@ -7,6 +7,7 @@ import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useRangeHeaders } from "../../hooks";
 import splitIcon from "../../assets/split-svgrepo-com.svg";
 import type { SourceCell } from "../context/GraphEditModeContext";
+import EditableConstant, { type ConstantType } from "./EditableConstant";
 import "./RangeNode.css"
 
 /**
@@ -51,21 +52,45 @@ export type RangeNode = Node<
     mergedRefKey?: string;
     /** Source cell for nodes within expanded branches (for edit routing) */
     sourceCell?: SourceCell;
+    /** Whether this range node is expanded to show cell grid (only for cell ranges) */
+    isExpanded?: boolean;
+    /** Callback to toggle expansion state */
+    onToggleExpand?: (nodeId: string) => void;
+    /** Stable ID for tracking expansion state */
+    expansionNodeId?: string;
 },
 'RangeNode'
 >;
+
+/** Maximum number of cells to display in the expanded grid */
+const MAX_DISPLAYED_CELLS = 50;
+
+/**
+ * Represents a cell item in the expanded grid
+ */
+interface CellGridItem {
+    ref: string;
+    address: SimpleCellAddress;
+    value: CellValue;
+    rawValue: string | number;
+    type: ConstantType;
+    isEditable: boolean;
+}
 
 /**
  * Component that renders cell ranges, column ranges, and row ranges
  */
 export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): JSX.Element {
-    const { hfInstance, activeSheetName, selectedRange, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance, activeSheetName, selectedRange, scrollToCell, highlightCells, clearHighlight, updateCell }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
 
     const isThisNodeBeingEdited = editingNodeId === id;
     const rangeType = data.rangeType ?? "cell"; // Default to cell for backwards compatibility
     const residingSheet = data.sheet;
-    const { astNodeId, astNodeIds, mergedRefKey, sourceCell } = data;
+    const { astNodeId, astNodeIds, mergedRefKey, sourceCell, isExpanded, onToggleExpand, expansionNodeId } = data;
+
+    /** Whether this cell range can be expanded (only cell ranges with expansion config) */
+    const isExpandable = rangeType === "cell" && onToggleExpand !== undefined && expansionNodeId !== undefined;
 
     const sheetId = useMemo<number | undefined>(() => {
         return hfInstance.getSheetId(residingSheet);
@@ -135,13 +160,21 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
         simpleCellAddressEnd?.col ?? 0
     );
 
-    // Double-click handler to enter edit mode
+    // Double-click handler to enter edit mode for changing the range reference
     const handleDoubleClick = useCallback((e: React.MouseEvent): void => {
         e.stopPropagation();
         if (!isEditModeActive || !isThisNodeBeingEdited) {
             enterEditMode(id);
         }
     }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id]);
+
+    // Double-click handler for the value display - toggles cell grid expansion
+    const handleValueDoubleClick = useCallback((e: React.MouseEvent): void => {
+        e.stopPropagation();
+        if (isExpandable && onToggleExpand && expansionNodeId) {
+            onToggleExpand(expansionNodeId);
+        }
+    }, [isExpandable, onToggleExpand, expansionNodeId]);
 
     // Click handler - scrolls to the range location
     const handleClick = useCallback((e: React.MouseEvent): void => {
@@ -338,8 +371,68 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
         }
     }, [rangeType, cellValuesTruncated, numRows]);
 
+    // Compute the 2D grid of cell data for expanded view
+    const cellGrid = useMemo<CellGridItem[][]>(() => {
+        if (!isExpanded || rangeType !== "cell" || !simpleCellAddressStart || !simpleCellAddressEnd) {
+            return [];
+        }
+
+        const startRow = Math.min(simpleCellAddressStart.row, simpleCellAddressEnd.row);
+        const startCol = Math.min(simpleCellAddressStart.col, simpleCellAddressEnd.col);
+        const endRow = Math.max(simpleCellAddressStart.row, simpleCellAddressEnd.row);
+        const endCol = Math.max(simpleCellAddressStart.col, simpleCellAddressEnd.col);
+
+        const grid: CellGridItem[][] = [];
+        let cellCount = 0;
+
+        for (let row = startRow; row <= endRow && cellCount < MAX_DISPLAYED_CELLS; row++) {
+            const rowCells: CellGridItem[] = [];
+            for (let col = startCol; col <= endCol && cellCount < MAX_DISPLAYED_CELLS; col++) {
+                const address: SimpleCellAddress = { sheet: sheetId || 0, row, col };
+                const ref = hfInstance.simpleCellAddressToString(address, { includeSheetName: false }) ?? '?';
+                let value: CellValue;
+                try {
+                    value = hfInstance.getCellValue(address);
+                } catch {
+                    value = '#REF!';
+                }
+                const isEditable = typeof value === 'number' || typeof value === 'string';
+
+                rowCells.push({
+                    ref,
+                    address,
+                    value,
+                    rawValue: typeof value === 'number' ? value : String(value ?? ""),
+                    type: typeof value === 'number' ? 'number' : 'string',
+                    isEditable,
+                });
+                cellCount++;
+            }
+            if (rowCells.length > 0) grid.push(rowCells);
+        }
+
+        return grid;
+    }, [isExpanded, rangeType, simpleCellAddressStart, simpleCellAddressEnd, sheetId, hfInstance]);
+
+    // Calculate total cells for truncation notice
+    const totalCells = useMemo<number>(() => {
+        if (rangeType !== "cell" || !simpleCellAddressStart || !simpleCellAddressEnd) {
+            return 0;
+        }
+        const numRows = Math.abs(simpleCellAddressStart.row - simpleCellAddressEnd.row) + 1;
+        const numCols = Math.abs(simpleCellAddressStart.col - simpleCellAddressEnd.col) + 1;
+        return numRows * numCols;
+    }, [rangeType, simpleCellAddressStart, simpleCellAddressEnd]);
+
+    const hasMoreCells = totalCells > MAX_DISPLAYED_CELLS;
+
+    // Handler for saving individual cell values in the expanded grid
+    const handleCellSave = useCallback((address: SimpleCellAddress, value: string | number): void => {
+        updateCell(value, address.row, address.col, residingSheet);
+    }, [updateCell, residingSheet]);
+
     return (
-        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''}`} style={sheetColorStyle}>
+        <div className={`node-wrapper ${isThisNodeBeingEdited ? 'editing' : ''} ${isExpanded ? 'expanded' : ''}`} style={sheetColorStyle}>
             <div className="selected-indicator"></div>
             <div
                 className={`range-node ${rangeType !== "cell" ? "no-highlight" : ""}`}
@@ -365,7 +458,13 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                         </div>
                     </div>
                     <div className="range-right">
-                        <span className="node-result-value">{valueDisplay}</span>
+                        <span
+                            className={`node-result-value ${isExpandable ? 'expandable' : ''}`}
+                            onDoubleClick={isExpandable ? handleValueDoubleClick : undefined}
+                            title={isExpandable ? (isExpanded ? "Double-click to collapse" : "Double-click to expand cells") : undefined}
+                        >
+                            {valueDisplay}
+                        </span>
                         <Handle type="source" position={Position.Right} className="value-handle" />
                     </div>
                 </div>
@@ -393,6 +492,37 @@ export default function RangeNodeComponent({ id, data }: NodeProps<RangeNode>): 
                             >
                                 <img src={splitIcon} alt="Unmerge" />
                             </button>
+                        )}
+                    </div>
+                )}
+                {isExpanded && rangeType === "cell" && cellGrid.length > 0 && (
+                    <div className="range-cell-grid">
+                        {cellGrid.map((row, rowIdx) => (
+                            <div key={rowIdx} className="range-cell-row">
+                                {row.map((cell) => (
+                                    <div key={cell.ref} className="range-cell-item">
+                                        <span className="range-cell-ref">{cell.ref}</span>
+                                        {cell.isEditable ? (
+                                            <EditableConstant
+                                                displayValue={String(cell.value ?? "")}
+                                                rawValue={cell.rawValue}
+                                                type={cell.type}
+                                                editId={`${id}-cell-${cell.ref}`}
+                                                className="range-cell-value"
+                                                title="Double-click to edit"
+                                                onSave={(value) => handleCellSave(cell.address, value)}
+                                            />
+                                        ) : (
+                                            <span className="range-cell-value non-editable">{String(cell.value ?? "")}</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                        {hasMoreCells && (
+                            <div className="range-truncation-notice">
+                                +{totalCells - MAX_DISPLAYED_CELLS} more cells
+                            </div>
                         )}
                     </div>
                 )}

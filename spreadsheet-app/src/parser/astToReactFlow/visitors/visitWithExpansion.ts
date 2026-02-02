@@ -229,21 +229,30 @@ function handleCellReferenceWithFormula(
 }
 
 /**
- * Handles CellRange nodes
+ * Handles CellRange nodes with expansion support for cell grid display
  */
 function handleCellRange(params: HandlerParams): void {
-    const { collapsedNode, nodes, edges, parentID, handleID, context } = params;
+    const { collapsedNode, nodes, edges, parentID, handleID, context, collapsedNodeId } = params;
 
     const rangeNode = collapsedNode.original as CellRangeNode;
     const startNode = rangeNode.start;
     const endNode = rangeNode.end;
+
+    // Generate expansion ID for this range node
+    const rangeExpandId = `${collapsedNodeId}-range`;
+    const isExpanded = context.expandedNodeIds.has(rangeExpandId);
 
     const createdNode = createRangeNode(
         startNode.reference,
         endNode.reference,
         rangeNode.sheet || context.activeSheetName,
         rangeNode.nodeId,
-        context.sourceCell
+        context.sourceCell,
+        {
+            isExpanded,
+            onToggleExpand: context.onToggleExpand,
+            expansionNodeId: rangeExpandId,
+        }
     );
     const createdEdge = createDefaultEdge(createdNode.id, parentID, handleID);
     nodes.push(createdNode);

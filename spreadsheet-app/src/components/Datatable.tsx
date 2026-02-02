@@ -199,29 +199,32 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
         },
         highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => {
             const targetSheet = sheet ?? activeSheetName;
-            const highlight = currentHighlight.current;
+            const prevHighlight = currentHighlight.current;
 
-            /** first clear all the previous highlights */
-            if (highlight) {
-                const hotTableRef = hotTableRefsMap.current.get(highlight.sheetName);
-                const hotInstance = hotTableRef?.hotInstance;
-                if (hotInstance) {
-                    for (let row = highlight.startRow; row <= highlight.endRow; row++) {
-                        for (let col = highlight.startCol; col <= highlight.endCol; col++) {
-                            hotInstance.setCellMeta(row, col, 'className', '');
+            // Clear previous highlight (restore base styles)
+            if (prevHighlight) {
+                const prevHotTableRef = hotTableRefsMap.current.get(prevHighlight.sheetName);
+                const prevHotInstance = prevHotTableRef?.hotInstance;
+                if (prevHotInstance) {
+                    for (let row = prevHighlight.startRow; row <= prevHighlight.endRow; row++) {
+                        for (let col = prevHighlight.startCol; col <= prevHighlight.endCol; col++) {
+                            const baseClass = getBaseStyleClasses(prevHighlight.sheetName, row, col);
+                            prevHotInstance.setCellMeta(row, col, 'className', baseClass);
                         }
                     }
-                    hotInstance.render();
+                    prevHotInstance.render();
                 }
             }
 
+            // Apply new highlight (base styles + highlight class)
             const hotTableRef = hotTableRefsMap.current.get(targetSheet);
             const hotInstance = hotTableRef?.hotInstance;
-
             if (hotInstance) {
                 for (let row = startRow; row <= endRow; row++) {
                     for (let col = startCol; col <= endCol; col++) {
-                        hotInstance.setCellMeta(row, col, 'className', HIGHLIGHT_CLASS);
+                        const baseClass = getBaseStyleClasses(targetSheet, row, col);
+                        const newClass = baseClass ? `${baseClass} ${HIGHLIGHT_CLASS}` : HIGHLIGHT_CLASS;
+                        hotInstance.setCellMeta(row, col, 'className', newClass);
                     }
                 }
                 hotInstance.render();
@@ -238,12 +241,14 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
             const highlight = currentHighlight.current;
             if (!highlight) return;
 
+            // Restore base styles (remove highlight class)
             const hotTableRef = hotTableRefsMap.current.get(highlight.sheetName);
             const hotInstance = hotTableRef?.hotInstance;
             if (hotInstance) {
                 for (let row = highlight.startRow; row <= highlight.endRow; row++) {
                     for (let col = highlight.startCol; col <= highlight.endCol; col++) {
-                        hotInstance.setCellMeta(row, col, 'className', '');
+                        const baseClass = getBaseStyleClasses(highlight.sheetName, row, col);
+                        hotInstance.setCellMeta(row, col, 'className', baseClass);
                     }
                 }
                 hotInstance.render();
@@ -295,27 +300,60 @@ const Datatable = ({onCellSelect, onRangeSelect, hfInstance, activeSheetName, sh
     }), [activeSheetName]);
 
     /**
-     * Creates a cells callback for applying font styles from imported XLSX data
+     * Gets the base style classes for a cell from sheetStyleData
      */
-    const createCellsCallback = useCallback((sheetName: string) => {
+    const getBaseStyleClasses = useCallback((sheetName: string, row: number, col: number): string => {
         const styles = sheetStyleData?.[sheetName];
-        if (!styles || Object.keys(styles).length === 0) {
-            return undefined;
-        }
+        if (!styles) return '';
 
-        return (row: number, col: number): { className?: string } => {
-            const cellStyle = styles[`${row},${col}`];
-            if (!cellStyle) return {};
+        const cellStyle = styles[`${row},${col}`];
+        if (!cellStyle) return '';
 
-            const classes: string[] = [];
-            if (cellStyle.bold) classes.push('cell-bold');
-            if (cellStyle.italic) classes.push('cell-italic');
-            if (cellStyle.underline) classes.push('cell-underline');
-            if (cellStyle.strikethrough) classes.push('cell-strikethrough');
-
-            return classes.length > 0 ? { className: classes.join(' ') } : {};
-        };
+        const classes: string[] = [];
+        if (cellStyle.bold) classes.push('cell-bold');
+        if (cellStyle.italic) classes.push('cell-italic');
+        if (cellStyle.underline) classes.push('cell-underline');
+        if (cellStyle.strikethrough) classes.push('cell-strikethrough');
+        return classes.join(' ');
     }, [sheetStyleData]);
+
+    /**
+     * Apply base styles via setCellMeta when sheet style data changes.
+     * We don't use the cells callback for className because it overwrites setCellMeta changes.
+     */
+    useEffect(() => {
+        if (!sheetStyleData) return;
+
+        Object.entries(sheetStyleData).forEach(([sheetName, styles]) => {
+            const hotTableRef = hotTableRefsMap.current.get(sheetName);
+            const hotInstance = hotTableRef?.hotInstance;
+            if (!hotInstance || !styles) return;
+
+            Object.entries(styles).forEach(([key, cellStyle]) => {
+                const [rowStr, colStr] = key.split(',');
+                const row = parseInt(rowStr, 10);
+                const col = parseInt(colStr, 10);
+
+                const classes: string[] = [];
+                if (cellStyle.bold) classes.push('cell-bold');
+                if (cellStyle.italic) classes.push('cell-italic');
+                if (cellStyle.underline) classes.push('cell-underline');
+                if (cellStyle.strikethrough) classes.push('cell-strikethrough');
+
+                if (classes.length > 0) {
+                    hotInstance.setCellMeta(row, col, 'className', classes.join(' '));
+                }
+            });
+            hotInstance.render();
+        });
+    }, [sheetStyleData]);
+
+    /**
+     * Creates a cells callback - returns undefined since we handle className via setCellMeta.
+     */
+    const createCellsCallback = useCallback((_sheetName: string) => {
+        return undefined;
+    }, []);
 
     const createAfterSelectionHandler = useCallback((sheetName: string): (startRow: number, startColumn: number, endRow: number, endCol: number) => void => {
         return (
