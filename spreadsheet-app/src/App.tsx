@@ -257,6 +257,14 @@ function App() {
     }
   }, []);
 
+  /** Update a cell's content via Handsontable (for inline editing in graph nodes) */
+  const updateCell = useCallback((newValue: string | number, row: number, col: number, sheet?: string) => {
+    const currentDatatable = datatableRef.current;
+    if (currentDatatable) {
+      currentDatatable.updateCell(newValue, row, col, sheet);
+    }
+  }, []);
+
   /**
    * Handles node edits from the graph view.
    * Updates the cell with the new formula and refreshes the state.
@@ -388,6 +396,7 @@ function App() {
                 scrollToCell={scrollToCell}
                 highlightCells={highlightCells}
                 clearHighlight={handleClearHighlight}
+                updateCell={updateCell}
                 sheetsVersion={sheetsVersion}
               />
             </SpreadsheetActionsProvider>

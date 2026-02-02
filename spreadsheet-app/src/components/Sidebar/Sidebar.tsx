@@ -42,6 +42,8 @@ export interface SidebarProps {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  /** Updates a cell's content via Handsontable (triggers proper rendering) */
+  updateCell: (newValue: string | number, row: number, col: number, sheet?: string) => void;
   /** Version counter that increments when sheets are added/removed (triggers graph reset) */
   sheetsVersion: number;
 }
@@ -86,6 +88,7 @@ function SidebarInner(props: SidebarProps) {
           scrollToCell={state.scrollToCell}
           highlightCells={state.highlightCells}
           clearHighlight={state.clearHighlight}
+          updateCell={state.updateCell}
         >
           <ReactFlow
             nodes={state.nodes}

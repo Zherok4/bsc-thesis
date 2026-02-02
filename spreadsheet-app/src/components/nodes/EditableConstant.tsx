@@ -25,8 +25,8 @@ export interface EditableConstantProps {
     rawValue: string | number;
     /** The type of constant */
     type: ConstantType;
-    /** AST node ID for identifying this constant during edits */
-    astNodeId: string;
+    /** AST node ID for identifying this constant during edits (not required when onSave is provided) */
+    astNodeId?: string;
     /** Unique identifier for this editable constant within the node */
     editId: string;
     /** Optional CSS class name for styling */
@@ -37,6 +37,8 @@ export interface EditableConstantProps {
     variant?: EditableConstantVariant;
     /** Source cell for nodes within expanded branches (for edit routing) */
     sourceCell?: SourceCell;
+    /** Custom save handler - when provided, overrides default saveEdit behavior */
+    onSave?: (value: string | number, type: ConstantType) => void;
 }
 
 /**
@@ -83,6 +85,7 @@ export default function EditableConstant({
     title,
     variant = 'default',
     sourceCell,
+    onSave,
 }: EditableConstantProps): JSX.Element {
     const { editingNodeId, enterEditMode, exitEditMode, saveEdit }: GraphEditModeContextValue = useGraphEditMode();
     const isThisConstantBeingEdited = editingNodeId === editId;
@@ -131,6 +134,19 @@ export default function EditableConstant({
             return;
         }
 
+        // Use custom save handler if provided
+        if (onSave) {
+            onSave(value, type);
+            exitEditMode();
+            return;
+        }
+
+        // Default behavior: save via AST edit
+        if (!astNodeId) {
+            exitEditMode();
+            return;
+        }
+
         if (type === 'number') {
             saveEdit({
                 type: 'number',
@@ -146,7 +162,7 @@ export default function EditableConstant({
                 sourceCell,
             });
         }
-    }, [inputValue, type, astNodeId, saveEdit, sourceCell]);
+    }, [inputValue, type, astNodeId, saveEdit, sourceCell, onSave, exitEditMode]);
 
     const handleCancel = useCallback((e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();

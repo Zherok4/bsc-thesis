@@ -21,6 +21,8 @@ export interface HyperFormulaContextValue {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  /** Updates a cell's content via Handsontable (triggers proper rendering) */
+  updateCell: (newValue: string | number, row: number, col: number, sheet?: string) => void;
 }
 
 const HyperFormulaContext = createContext<HyperFormulaContextValue | undefined>(undefined);
@@ -33,6 +35,7 @@ export interface HyperFormulaProviderProps {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  updateCell: (newValue: string | number, row: number, col: number, sheet?: string) => void;
   children: ReactNode;
 }
 
@@ -44,11 +47,12 @@ export function HyperFormulaProvider({
   scrollToCell,
   highlightCells,
   clearHighlight,
+  updateCell,
   children
 }: HyperFormulaProviderProps): React.ReactElement {
   return (
     <HyperFormulaContext.Provider
-      value={{ hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight }}
+      value={{ hfInstance, activeSheetName, selectedCell, selectedRange, scrollToCell, highlightCells, clearHighlight, updateCell }}
     >
       {children}
     </HyperFormulaContext.Provider>

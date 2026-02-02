@@ -36,6 +36,8 @@ export interface UseSidebarStateParams {
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   /** Callback to clear cell highlighting */
   clearHighlight: () => void;
+  /** Updates a cell's content via Handsontable (triggers proper rendering) */
+  updateCell: (newValue: string | number, row: number, col: number, sheet?: string) => void;
   /** Version counter that increments when sheets are added/removed (triggers graph reset) */
   sheetsVersion: number;
 }
@@ -94,6 +96,7 @@ export interface UseSidebarStateReturn {
   scrollToCell: (row: number, col: number, sheet?: string) => void;
   highlightCells: (startRow: number, startCol: number, endRow: number, endCol: number, sheet?: string) => void;
   clearHighlight: () => void;
+  updateCell: (newValue: string | number, row: number, col: number, sheet?: string) => void;
   hfInstance: HyperFormula;
   activeSheetName: string;
   selectedCell: { row: number; col: number } | null;
@@ -129,6 +132,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     scrollToCell,
     highlightCells,
     clearHighlight,
+    updateCell,
     sheetsVersion,
   } = params;
 
@@ -389,6 +393,7 @@ export function useSidebarState(params: UseSidebarStateParams): UseSidebarStateR
     scrollToCell,
     highlightCells,
     clearHighlight,
+    updateCell,
     hfInstance,
     activeSheetName,
     selectedCell,

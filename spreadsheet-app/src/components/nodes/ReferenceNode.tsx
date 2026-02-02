@@ -7,6 +7,7 @@ import { getSheetColorStyle } from "../../utils/sheetColors";
 import { useCellHeaders } from "../../hooks";
 import splitIcon from "../../assets/split-svgrepo-com.svg";
 import type { SourceCell } from "../context/GraphEditModeContext";
+import EditableConstant, { type ConstantType } from "./EditableConstant";
 import "./ReferenceNode.css"
 
 export type ReferenceNode = Node<
@@ -35,7 +36,7 @@ export type ReferenceNode = Node<
 >;
 // TODO: Make standard reference format ==> i.e also if anode has Sheet prefix ==> extract it / remove from reference
 export default function ReferenceNodeComponent({id, data: {reference, sheet, hasFormula, isExpanded, onToggleExpand, expansionNodeId, astNodeId, astNodeIds, mergedRefKey, sourceCell, disableInteraction}}: NodeProps<ReferenceNode>): JSX.Element {
-    const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight }: HyperFormulaContextValue = useHyperFormula();
+    const { hfInstance, activeSheetName, selectedCell, scrollToCell, highlightCells, clearHighlight, updateCell }: HyperFormulaContextValue = useHyperFormula();
     const { isEditModeActive, editingNodeId, enterEditMode, exitEditMode, saveEdit, onUnmerge }: GraphEditModeContextValue = useGraphEditMode();
     const isThisNodeBeingEdited = editingNodeId === id;
     const isExpandable = hasFormula && onToggleExpand && expansionNodeId;
@@ -157,7 +158,6 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
         exitEditMode();
     }, [exitEditMode]);
 
-    /** Whether this node is merged (multiple occurrences combined into one) */
     const isMerged = Boolean(mergedRefKey);
 
     const handleUnmerge = useCallback((e: React.MouseEvent) => {
@@ -166,6 +166,24 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             onUnmerge(mergedRefKey);
         }
     }, [mergedRefKey, onUnmerge]);
+
+    /** Whether the cell value is editable (number or string, not boolean/error/empty) */
+    const isEditableCellValue = typeof cellValue === 'number' || typeof cellValue === 'string';
+
+    /** Whether cell value editing is enabled (non-expandable, non-disabled nodes with valid editable value) */
+    const canEditCellValue = !isExpandable && !disableInteraction && simpleCellAddress !== undefined && isEditableCellValue;
+
+    /** Determine the type of the cell value for EditableConstant */
+    const cellValueType: ConstantType = typeof cellValue === 'number' ? 'number' : 'string';
+
+    /** The raw value for EditableConstant (only used when canEditCellValue is true) */
+    const editableRawValue: string | number = typeof cellValue === 'number' ? cellValue : String(cellValue ?? "");
+
+    /** Handler for saving cell value edits - updates the cell content via Handsontable */
+    const handleCellValueSave = useCallback((value: string | number): void => {
+        if (!simpleCellAddress) return;
+        updateCell(value, simpleCellAddress.row, simpleCellAddress.col, residingSheet);
+    }, [updateCell, simpleCellAddress, residingSheet]);
 
     // TODO: change sheet reference
     const internalReference: string | undefined = useMemo(() => {
@@ -217,7 +235,19 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                         </div>
                     </div>
                     <div className="ref-right">
-                        <span className="node-result-value">{String(cellValue ?? "")}</span>
+                        {canEditCellValue ? (
+                            <EditableConstant
+                                displayValue={String(cellValue ?? "")}
+                                rawValue={editableRawValue}
+                                type={cellValueType}
+                                editId={`${id}-value`}
+                                className="node-result-value"
+                                title="Double-click to edit cell value"
+                                onSave={handleCellValueSave}
+                            />
+                        ) : (
+                            <span className="node-result-value">{String(cellValue ?? "")}</span>
+                        )}
                         <Handle type="source" position={Position.Right} className="value-handle"/>
                     </div>
                 </div>
