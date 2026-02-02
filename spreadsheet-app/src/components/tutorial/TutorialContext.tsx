@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef, type ReactNode, type JSX } from 'react';
 import { TutorialOverlay } from './TutorialOverlay';
+import { TutorialGraphHighlights } from './TutorialGraphHighlights';
 
 /**
  * Action to automatically select a cell when entering a tutorial step
@@ -18,6 +19,18 @@ export interface SelectCellAction {
  * Union type for all tutorial actions
  */
 export type TutorialAction = SelectCellAction;
+
+/**
+ * Configuration for highlighting graph nodes during a tutorial step
+ */
+export interface GraphHighlightConfig {
+    /** Highlight nodes by React Flow node type (e.g., 'ReferenceNode', 'RangeNode') */
+    nodeTypes?: string[];
+    /** Highlight nodes matching a CSS selector within the graph */
+    nodeSelector?: string;
+    /** Highlight mode - determines the visual style (default: 'pulse') */
+    mode?: 'pulse' | 'glow' | 'border';
+}
 
 /**
  * Represents a single step in the tutorial
@@ -39,6 +52,10 @@ export interface TutorialStep {
     blockSpreadsheet?: boolean;
     /** CSS selector for element user must click to proceed (hides Next button) */
     awaitClick?: string;
+    /** CSS selector for element user must double-click to proceed (hides Next button) */
+    awaitDoubleClick?: string;
+    /** Configuration for highlighting graph nodes during this step */
+    graphHighlight?: GraphHighlightConfig;
 }
 
 /**
@@ -174,6 +191,39 @@ export function TutorialProvider({ children, selectCell, onReset }: TutorialProv
         }
     }, [isActive, steps, currentIndex]);
 
+    // Listen for double-clicks on awaitDoubleClick element to auto-advance
+    useEffect(() => {
+        if (!isActive || steps.length === 0) return;
+
+        const currentStep = steps[currentIndex];
+        if (!currentStep?.awaitDoubleClick) return;
+
+        const handleDoubleClick = (): void => {
+            // Small delay to let the double-click action complete first
+            setTimeout(() => {
+                if (currentIndex < steps.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                } else {
+                    setIsActive(false);
+                    setCurrentIndex(0);
+                }
+            }, 100);
+        };
+
+        // Query all matching elements since user might double-click any of them
+        const elements = document.querySelectorAll(currentStep.awaitDoubleClick);
+        if (elements.length > 0) {
+            elements.forEach(element => {
+                element.addEventListener('dblclick', handleDoubleClick);
+            });
+            return () => {
+                elements.forEach(element => {
+                    element.removeEventListener('dblclick', handleDoubleClick);
+                });
+            };
+        }
+    }, [isActive, steps, currentIndex]);
+
     const value: TutorialContextValue = useMemo(() => ({
         isActive,
         currentStep: isActive && steps.length > 0 ? steps[currentIndex] : null,
@@ -190,6 +240,7 @@ export function TutorialProvider({ children, selectCell, onReset }: TutorialProv
         <TutorialContext.Provider value={value}>
             {children}
             {isActive && <TutorialOverlay />}
+            {isActive && <TutorialGraphHighlights />}
         </TutorialContext.Provider>
     );
 }

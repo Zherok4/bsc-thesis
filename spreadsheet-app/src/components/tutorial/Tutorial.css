@@ -133,3 +133,40 @@
     font-weight: bold;
     font-size: 14px;
 }
+
+/* ================================
+   Graph Node Tutorial Highlighting
+   ================================ */
+
+/* Base graph node highlight overlay */
+.tutorial-node-highlight {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+/* Pulse mode - pulsing amber ring (matches main tutorial highlight) */
+.tutorial-node-highlight-pulse {
+    border: 3px solid #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+    animation: tutorial-node-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tutorial-node-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(245, 158, 11, 0.15);
+    }
+}
+
+/* Glow mode - soft ambient glow */
+.tutorial-node-highlight-glow {
+    box-shadow: 0 0 20px 8px rgba(245, 158, 11, 0.5);
+}
+
+/* Border mode - simple solid border */
+.tutorial-node-highlight-border {
+    border: 3px solid #f59e0b;
+}
