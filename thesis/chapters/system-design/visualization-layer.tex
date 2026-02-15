@@ -1,4 +1,5 @@
 \section{The visualization layer}
+\label{sec:visualization-layer}
 In the visualization layer the system transforms the AST into a graph representation which is then rendered as an interactive flow graph. This section focuses on the visual design choices of the flow graph nodes and how each AST node maps to a corresponding graphical representation. The primary goal when transforming the AST is to reduce the overall number of nodes and edges while improving clarity. This aims to create a compact and informative flow graph. Literal nodes are inlined into their parent nodes. Arithmetic operations are either transformed into a binary operation node or collapsed together into one expression node. Reference nodes are enhanced with visual cues and header inference heuristics. Function nodes are augmented with semantic argument labels. Conditional functions are represented by a separate node to help the comprehension of the branching logic. Function nodes as well as reference nodes display their intermediate results to provide more information about the current state to the user.   
 %TODO: refer the diffuseness.
 
@@ -6,6 +7,13 @@ In the visualization layer the system transforms the AST into a graph representa
 Literals are for example numbers or strings, literals are used almost in every formula. Because the meaning of literals are evident rendering them as nodes would node add meaningful help for the users. The system solves this by inlining literals into their parent node. There they are still visible but do not occupy any additional space in the graph.
 
 \subsection{Arithmetic operations}
+The system identifies certain operations as simple operations. These include arithmetic operators(+, -, *, /) string and comparison operations.
+\subsubsection{Binary operation node}
+If the left and right operand of these operations are not simple operations themselves, the system creates a binary operation node. Because these operations are self-explaining, the system aims to minimize the size of the node. Therefore, the system only displays the operator symbol with pseudo operators or inlined constants. 
+\subsubsection{Expression nodes}
+When multiple operations are chained together the system creates an expandable expression node. Initially, this node displays only a preview of the complete expression, occupying minimal space in the flow graph while still indicating to the user that here an operation is happening. Users can expand the node via double click to see the complete expression. 
+Like the expandable cell reference node (sec. \ref{sec: expandable cell references}) this design follows a details-on-demand strategy to balance between compactness and accessibility. In its minimized state, the expression node serves as a visual indicator that a calculation occurs at this point in the flow graph, without occupying too much space in the flow graph. However, this introduces a trade-off: users who want to examine the complete expression must perform an additional step compared to a fully-expanded default state.
+By grouping chained operations together, the system addresses two cognitive dimensions simultaneously. First, it reduces diffuseness by only having one node instead of multiple nodes. Second, it improves role expressiveness by presenting these operations in a more familiar way. Because these simple operations are more self explaining than functions, it is potentially easier for the user to read the familiar inline expression compared to a series of binary operation nodes. 
 %TODO: Comparison images ???
 \subsection{Reference Nodes}
 %TODO: add cell reference / range or is it the same ??
@@ -13,7 +21,7 @@ Literals are for example numbers or strings, literals are used almost in every f
 In order to understand the dependencies of the formula the system explicitly creates nodes for references. A reference node has three important components: Address, label and result. The most important component is the address component. The address is colored accordingly to the pre-defined color of its worksheet. When importing a new workbook the system generates distinct colors for each worksheet. The coloring gives a fast visual cue to the users where nodes reside. For example when formulas refer across worksheets two distinct addresses can look the same even though they refer two different cells or ranges (see Figure \ref{fig:identical-address-formula}).
 
 %TODO (IMPORTANT): update graphic if we change notations and make it prettier
-\begin{figure}[!h]
+\begin{figure}[!ht]
     \centering
     \begin{minipage}{0.45\textwidth}
         \centering
@@ -32,6 +40,8 @@ In order to understand the dependencies of the formula the system explicitly cre
 \subsubsection{Label}
 Hodnigg et al. identify the comprehension indicator "realization" which refers to an insight of the spreadsheet to the user. And one of the comprehension patterns is reading a label\footnote{textual descriptions in cells} followed by a "realization". This indicates that labels can help in the process of comprehending spreadsheets. To help the user in the process of reading labels, the system implements a header inference heuristic. One limitation of this heuristic is that it assumes well-structured spreadsheets and may yield suboptimal results in spreadsheets that do not follow standard column/row orientation. To generate a label the system scans upwards and leftwards and selects the first non-formula string value to compose them into a composite label. For example in Figure \ref{fig:exp-cell-ref-m} the system resolved J4 to Bob:Rounded. By inferring the label for the user, the system aims to preserve the user's spatial context within the data table, as the users are no longer required to visually scan through columns and rows.
   
+
+% TODO: mention the tradeoff by minimizing these by default less clutter but worse visibility (maybe define visibility)
 \subsubsection{Expandable Cell References}
 \label{sec: expandable cell references}
 As mentioned in section \ref{sec:problem-statement}, one major challenge for spreadsheet comprehension is the tracing of the dependency chain. To address this the system implements a recursive resolution strategy, to build the dependency chain.
@@ -56,6 +66,9 @@ Crucially the graph navigation is decoupled from the grid navigation. When a use
 
 \subsubsection{Merging references}
 In Spreadsheets it is common that formulas use the same references. The flow graph tries to merge same reference nodes, which are located in a distance of 5 edges, into one single node. The distance of 5 edges was chosen arbitrarily but by merging same reference nodes together the system aims to make the flow graph more compact and less confusing.
+
+\subsubsection{Range references}
+In difference to cell references, which hold one value, range references encompass many cells with many value. The system cannot display all the cells and their values of the range initially without clustering the flow graph. To reduce the diffuseness the system implements, similar to the expression nodes and the expandable reference nodes, the details on demand strategy. If the user wants to know or edit a value of the range, they first must expand the range node. When expanded the user can edit values like static values or the values in cell reference nodes. 
 
 \subsection{Functions}
 \label{sec: functions}
@@ -97,6 +110,9 @@ Furthermore, because spreadsheets are dynamic the system updates the active bran
         \caption{The system grays non taken branches out if expanded}
         \label{fig:conditional-node-branch-gray}
 \end{figure}
+
+\subsubsection{Helper Button}
+Ragavan et al., in Spreadsheet Comprehension: Guesswork, Giving up and Going Back to the Author \cite{srinivasa_ragavan_spreadsheet_2021}, pinpoint one of the information needs is the "understanding of unfamiliar concepts". This need happens when users encounter unfamiliar functions and do not understand what they calculate. To help the user as an intermediate step before the user has to go to the documentation, every function node has a help butotn. The help button summarizes based on the input value and result value what is calculated in this function node. 
 
 
 \subsection{Intermediate Results}
