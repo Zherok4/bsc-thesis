@@ -1,26 +1,26 @@
 \section{Cognitive dimensions}
-To describe and evaluate certain design choices, this thesis uses vocabulary from the "Cognitive Dimensions" Framework from the paper "Usability Analysis of Visual Programming Environments: A 'Cognitive Dimensions' Framework" \cite{green_usability_1996}. The following dimensions are particularly relevant:
+To describe and evaluate certain design choices, this thesis uses vocabulary from the "Cognitive Dimensions" Framework from the paper \textit{Usability Analysis of Visual Programming Environments: A 'Cognitive Dimensions' Framework}~\cite{green_usability_1996}. The following dimensions are particularly relevant:
 
 \begin{definition}
     \label{def:diffuseness}
-    "How many symbols or graphic entities are required to express a meaning?" \cite[p.~138]{green_usability_1996}
+    \textbf{Diffuseness} is defined as "How many symbols or graphic entities are required to express a meaning?" \cite[p.~138]{green_usability_1996}
 \end{definition}
-Diffuseness in this thesis describes whether the flow graph requires many nodes to represent the logic and therefore is not compact.
+Diffuseness in this thesis is used to describe whether the flow graph requires many nodes to represent the logic and therefore is not compact.
 
 \begin{definition}
     \label{def:role-expressiveness}
-    "Can the reader see how each component of a program relates to the whole?" \cite[p.~139]{green_usability_1996}
+    \textbf{Role expressiveness} is defined as "Can the reader see how each component of a program relates to the whole?" \cite[p.~139]{green_usability_1996}
 \end{definition}
 Role expressiveness is used to describe in the flow graph if the purpose of a certain component can be inferred from its appearance and how it interacts with the other nodes. If the flow graph has high role expressiveness the user should also be able to infer from reading the flow graph how the components relate to the underlying logic of the spreadsheet.
 
 \begin{definition}
     \label{def:hidden-dependencies}
-    "Is every dependency overtly indicated in both directions? Is the indication perceptual or only symbolic?" \cite[p.~139]{green_usability_1996}
+    \textbf{Hidden dependencies} are defined as "Is every dependency overtly indicated in both directions? Is the indication perceptual or only symbolic?" \cite[p.~139]{green_usability_1996}
 \end{definition}
 Green and Petre mention an example of hidden dependencies in spreadsheets: "The formula in a cell tells which other cells it takes its value from, but does not tell which other cells take their value from it." \cite[p.~154]{green_usability_1996}. This thesis evaluates whether the flow graph is able to show these dependencies and make them visible.
 
 \begin{definition}
     \label{def:viscosity}
-    "How much effort is required to perform a single change?" \cite[p.~139]{green_usability_1996}
+    \textbf{Viscosity} is defined as "How much effort is required to perform a single change?" \cite[p.~139]{green_usability_1996}
 \end{definition}
 Viscosity is relevant to evaluating and describing if the edit mode is easy and intuitive to use.

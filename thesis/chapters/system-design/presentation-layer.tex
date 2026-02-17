@@ -1,59 +1,46 @@
 % TODO: Tell that we assume that the user clicks on a node to preview the formula and see the dependencies etc. ==> i.e to answer why we even click on a cell ?
 % TODO: Mention the spreadsheet presentation ?
-\section{The presentation layer}\label{sec: presentation-layer}
-% TODO: move these goals to the visualization layer ?
-% TODO: use datatable or worksheet ???
-% TODO: explain why only present one formula at a time. 
-The representation layers main responsibility are the interactions, for example changing a constant value, modify an edge or highlight cells on hover, and rendering, the dual view and flow graph representation. The system uses a dual view, having on the left side the spreadsheet and on the right side the flow graph. The flow graph aims to represent the hidden dependency graph of the spreadsheet. The flow graph is not static but dynamic and the user can interact and modify the flow graph.
+\section{The presentation layer}\label{sec: presentation-layer} 
+The presentation layer is responsible for rendering the split-view and dispatching user interactions. User interactions include for example highlighting cells on hover, modifying constant values, and editing edges in the flow graph. The system uses a split view, where the worksheet occupies the left side and the flow graph occupies the right side, allowing both to be visible simultaneously.
 
 \subsection{Layout strategy}
-% TODO: mention Juxtaposition
-% TODO: also mention if we overlay it on the datatable the tool will automatically suffer from hidden dependencies and visibilty because the datatable itself suffers from it so by splitting the views we also make it independant of the datatables spatiality.
-% TODO: also mention data we explicitly use the mechanism of hyperformula to not make an infinite grid ==> if data is more than the viewport can show ==> minimap to give user some intuition of the size of the spreadsheet
 The spatial arrangement of the tool and the spreadsheet has a significant impact on the cognitive load during the spreadsheet comprehension.
 \begin{definition}
     \label{def:juxtaposability}
-    Juxtaposability is the ability to see any two portions on screen side-by-side at the same time. \cite{green_usability_1996}
+    Juxtaposability is the ability to see any two portions on screen side-by-side at the same time~\cite{green_usability_1996}.
 \end{definition}
 \subsubsection{The split view}
-As mentioned in section \ref{sec:built-in-tools}, traditional spreadsheet tools for tracing precedents and dependents use an overlay strategy. While this approach directly integrates visual information into the spreadsheet, it fails when dependencies are complex and span multiple worksheets. Since spreadsheet applications can only display one worksheet at a time, it is difficult to have for example an arrow which is rendered across worksheets. This forces the user to navigate away from the current position in order to understand the cross-worksheet dependencies. 
+To achieve juxtaposability (Definition~\ref{def:juxtaposability}) between the spreadsheet and the flow graph, the system employs a split view layout. The spreadsheet occupies the left side, while the flow graph appears on the right side.
+The split view layout introduces the cognitive cost known as the split-attention effect. Chandler and Sweller, in \textit{The Split-Attention Effect as a Factor in the Design of Instruction}~\cite{chandler_split-attention_1992}, describe this as a phenomenon in which learners are forced to mentally integrate information from disparate sources.
+However, the split view is a response to a fundamental limitation of overlay-based approaches. As mentioned in section~\ref{sec:built-in-tools}, traditional spreadsheet tools for tracing precedents and dependents use an overlay strategy. An overlay strategy ties the dependency visualization directly to the current worksheet view. But it fails when the user navigates to another worksheet to inspect a referenced cell, the visualization disappears, causing the user to lose the visual context of the formula they were investigating. This is the loss of spatial context identified in section~\ref{sec:problem-statement}, where users lose track when navigating between dependents and precedents. Furthermore, an overlay would occlude cells and formulas the user needs to see. By decoupling the flow graph from worksheet navigation, the split view keeps the dependency graph of the synchronized formula visible and stable while the user is able to freely navigate between worksheets.
 
-To address this limitation and achieve juxtaposability between the spreadsheet and the flow graph, the system employs a split view layout. The spreadsheet occupies the left side, while the flow graph appears on the right side. This separation allows the system to render the flow graph independently of the current worksheet-view.
-
-The split view layout introduces the cognitive cost known as split-attention effect. Sweller and Chandler describe the split-attention effect in, The split-attention effect as a factor in the design of instruction \cite{chandler_split-attention_1992}, that Learners are often forced to split their attention between and mentally integrate disparate sources of information. In this case the user has to integrate form the flow-graph to the current worksheet or reversed.
-
-However, the split-attention effect is only a disadvantage when all relevant dependencies are visible within a single worksheet. Spreadsheet with complex formulas frequently contain cross-worksheet dependencies. When dependencies span multiple worksheets, an overlay approach also introduces the split-attention effect. The user must still switch between worksheets to view the remaining dependencies and must mentally integrate the information from one worksheet to another.
-
-\subsubsection{The minimap}
-Ragavan et al. mention in, Spreadsheet Comprehension: Guesswork, Giving up and Going Back to the Author \cite{srinivasa_ragavan_spreadsheet_2021}, the problem that it is easy to miss data because of the unbounded grid size of spreadsheets. In order to give the user some sense of the size of the spreadsheet, the system implements a minimap which displays the proportional size of the current viewport to the whole spreadsheet and where the viewport is located.
-%TODO: Image ?
-% TODO: insert image of the two views
+% TODO: maybe remove this section
+%\subsubsection{The minimap}
+%Ragavan et al. identify anot the problem that it is easy to miss data because of the unbounded grid size of spreadsheets. In order to give the user some sense of the size of the spreadsheet, the system implements a minimap which displays the proportional size of the current viewport to the whole spreadsheet and where the viewport is located.
 
 \subsection{Flow graph justification}
-The decision to represent the hidden data as a flow graph was driven by the nature of the underlying state of spreadsheet formulas, the dependency graph.
-A flow graph allows to uncover this hidden state and enables the user to see the dependencies rather than by reading formulas in the cells and parsing it on their own.
-The flow direction is left to right. This should mirror the spatial convention for spreadsheets, where the inputs of a formula are located in columns on the left side of the formula.
+The decision to represent the dependency graph of a formula as a visual flow graph was motivated by the need to expose a structure that exists implicitly in every formula but remains hidden from the user. Rather than requiring the user to read and mentally parse individual formulas, a visual flow graph makes the dependencies directly visible. Hermans et al. demonstrate that dataflow diagrams help users understand spreadsheet structure across multiple levels of detail~\cite{hermans_supporting_2011}. The system in this thesis focuses on the formula level exclusively, as supporting multiple levels of abstraction would have added significant complexity. The flow direction is left to right, mirroring the spatial convention of spreadsheets where formula inputs are located in columns on the left side of a formula cell.
 
 \subsection{Interaction design}
 \label{sec:interaction-design}
-The flow graph serves as a visualisation of a formula's dependency structure and an interface for exploring and manipulating it. The interface operates in two modes, the preview mode and the edit mode, where edit mode extends the available interactions to include modifications to the underlying data. The visual distinction between modes serves as a cue to the user, that changes are now possible. Edit Mode is intentionally easy to enter, prioritizing a low viscosity \cite{green_usability_1996}. 
+Before interacting with the flow graph, the user must first synchronize it to a formula. When the user selects a cell containing a formula in the worksheet, the flow graph view exposes a synchronize button. Clicking it loads the selected formula's dependency graph into the flow graph view.
+The flow graph serves as a visualization of a formula's dependency graph and as an interface for exploring and manipulating it. The interface operates in two modes, the preview mode and the edit mode, where edit mode extends the available interactions to include modifications to the underlying data. In edit mode the flow graphs border is orange whereas in preview mode it is a blue border. The visual distinction between modes serves as a cue to the user that changes are now possible. Edit Mode is intentionally easy to enter, prioritizing a low viscosity (definition~\ref{def:viscosity}). 
 
 \subsubsection{Preview Mode}
-Preview Mode is the default state of the flow graph and is designed for exploration. Hovering over a reference node highlights the corresponding cell or range in its worksheet. If the cell is already visible in the current viewport, this allows the user to see the dependency at a glance without dirupting their current position in the worksheet. Clicking on a reference node explicitly scrolls to the corresponding worksheet and cell or range, enabling closer inspection when the user requests it. This aims to preserve the user's spatial context in the worksheet and only disrupt it on demand. 
+Preview Mode is the default state of the flow graph and is designed for exploration. Hovering over a reference node highlights the corresponding cell or range in its worksheet. If the cell is already visible in the current viewport, this allows the user to see the dependencies at a glance without disrupting their current position in the worksheet. Clicking on a reference node explicitly scrolls to the corresponding worksheet and cell or range, enabling closer inspection when the user requests it. This aims to preserve the user's spatial context in the worksheet and only disrupt it on demand. 
 
 \subsubsection{Edit Mode}
-% TODO: Maybe use viscosity to explain that the idea behind all these entry actions is that it should be very near to edit changes ==> instead of tracing the whole formula back to than edit it in the datatable.
-% TODO: And also the bidirectional interaction ==> closeness of mapping by existing knowledge to drag or select cells should assist user in editing nodes. But also mention because flow-graph complete new environment ==> new interactions to learn therefore even more important to have these bidirectional interactions which are known
-Edit Mode extends the interactions available in Preview Mode to allow direct manipulation of the flow graph and its underlying data. It is designed to minimize the distance between recognizing a value to change and modifying it. Rather than requiring the user to trace the node back to its source in a worksheet and modify it there, changes can be initiated directly from the point of interest in the flow graph. This aims to reduce the viscosity \cite{green_usability_1996}.
+Edit Mode extends the interactions available in Preview Mode to allow direct manipulation of the flow graph and its underlying data. It is designed to minimize the distance between recognizing a value to change and modifying it. Rather than requiring the user to trace the node back to its source in a worksheet and modify it there, changes can be initiated directly from the point of interest in the flow graph, aiming to reduce viscosity~\cite{green_usability_1996}.
 Edit Mode is always entered through an explicit user action:
-\begin{enumerate}
+\begin{samepage}
+    \begin{enumerate}
     \item clicking on the edit button
     \item double-clicking on an inline value or address
     \item double-clicking an edge
     \item dragging from a connection handle
 \end{enumerate}
-The entry action determines the initial editing context. Double-clicking on a node's address allows the user to select a new address directly from the worksheet. This aims to resemble similar actions in other spreadsheet programs where the user can replace addresses by selecting a cell in a worksheet.%TODO: mention closeness of mapping
-Double-clicking an inline value transforms the field into an editable input, enabling the user to modify the constant in place. In both cases, the change is committed by pressing Enter or clicking the confirmation button.
-Double-clicking an edge enters Edit mode with that edge pre-selected for further manipulations. Dragging from a connection handle initiates edge creation or modification. The user drags from a source handle to a target handle. While dragging the edge invalid handles are grayed out. If the target handle has no existing connection, the new edge connects directly. Else the target handle already has a connection, a popover asks the user to either replace the existing edge or swap positions with it. Clicking only the edit button enters the edit mode without an initial editing context. Once in edit mode, the user can change context freely.
+\end{samepage}
+The entry action determines the initial editing context. Double-clicking on a node's address allows the user to select a new address directly from the worksheet. This interaction is designed to leverage closeness of mapping to already known spreadsheet tools~\cite{green_usability_1996}. In  most spreadsheet tools the user can select cells and ranges directly in the workbook to supply them as function arguments. Double-clicking an inline value transforms the field into an editable input, enabling the user to modify the constant in place. In both cases, the change is committed by pressing Enter or clicking the confirmation button.
+Double-clicking an edge enters Edit Mode with that edge pre-selected for further manipulation. Dragging from a connection handle initiates edge creation or modification. As the user drags from a source handle toward a target handle, invalid handles are grayed out to constrain the action to permissible connections. If the target handle has no existing connection, the new edge is created directly. If the target handle is already occupied, a popover prompts the user to either replace the existing edge or swap positions with it. The swap option aims to minimize the edit steps for especially switching arguments inside a function. Clicking the edit button enters the Edit Mode without an initial editing context. Once in edit mode, the user may freely select any element to begin editing.
 % picture of the component and arrows what i.e value / address / connection handle is.
 

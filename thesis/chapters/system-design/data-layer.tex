@@ -10,7 +10,7 @@ As mentioned in the presentation layer \ref{sec: presentation-layer} each worksh
 In contrast to the read paths, data manipulation in the Graph-View follows a slightly different path. Because HyperFormula is a headless calculation engine it is not able to know if it is connected to any Handsontable component. Therefore to prevent inconsistencies between the datatable and the underlying calculation engine, edits to the data have to go through the active Handsontable component to trigger rendering and the corresponding hooks. 
 % TODO: image / flow of the edit / read path
 \subsection{Data Structure}
-( Here I will write about the underlying data of the engine what type of data does HyperFormula recognize / store)
+HyperFormula recognizes five basic cell value types: numbers, booleans, dates, strings and empty cells. Dates are stored internally as a numeric representation rather than as date objects \cite{noauthor_hyperformula_nodate}.
 % Like how is the underlying data organized ?
 % Section about auto-sync ?
 % Section about the HyperFormulaContext
