@@ -1,0 +1,28 @@
+\begin{figure}[h]
+    \centering
+    \definecolor{clrMental}{HTML}{4E79A7}
+    \definecolor{clrTemporal}{HTML}{F28E2B}
+    \definecolor{clrPerformance}{HTML}{59A14F}
+    \definecolor{clrEffort}{HTML}{E15759}
+    \definecolor{clrFrustration}{HTML}{B07AA1}
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            compat=1.18,
+            ylabel={Raw TLX Score (0-100)},
+            ymin=0,
+            ymax=100,
+            symbolic x coords={Task 1, Task 2, Task 3, Overall},
+            xtick=data,
+            enlarge x limits=0.2,
+            legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1},
+            error bars/y dir=both,
+            error bars/y explicit,
+        ]
+        % Mental Demand
+        \addplot[fill=clrMental, draw=clrMental!80!black] coordinates {(Task 1, 30.0) +- (0, 9.5) (Task 2, 23.2) +- (0, 15.3) (Task 3, 30.0) +- (0, 18.9) (Overall, 27.7) +- (0, 14.4)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Raw TLX Scores for each Task and Average over all Tasks}
+    \label{fig:raw-tlx-scores}
+\end{figure}
