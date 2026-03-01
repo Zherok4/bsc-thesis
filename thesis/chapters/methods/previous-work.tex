@@ -2,7 +2,7 @@
 \subsection{Built-in spreadsheet tools}
 \label{sec:built-in-tools}
 Excel and LibreOffice Calc have their own built-in tool to track dependents and precedents of a cell. If a user tracks for example the precedent of a cell (figure~\ref{fig:precedent-libre}), the program draws an arrow of the precedent to the cell. Even though the arrows highlight the precedent / dependents of a cell, if they are located on a different worksheet the user has to move to the other worksheet and possibly lose their current spatial context. Another issue is that the user only sees the precedents / dependents which are in the viewport. If they are not located in the current viewport the user has to scroll away to locate the precedents / dependents.
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[scale=0.3]{chapters/methods/images/precedent-tracking-libre.png}
     \caption{Tracking a precedent of a cell in LibreOffice Calc}
@@ -12,8 +12,8 @@ Excel and LibreOffice Calc have their own built-in tool to track dependents and 
 \subsection{Separate dataflow visualizations}
 \subsubsection{Leveled dataflow}
 \label{sec:leveled-dataflow}
-Several researches have proposed different approaches to display the underlying dependency graph of spreadsheets. 
-Hermans et al. present in their paper \textit{Supporting Professional Spreadsheet Users by Generating Leveled dataflow Diagrams}~\cite{hermans_supporting_2011}, a solution to explicitly show these relationships. Their approach consist by using three Views: The global view, the worksheet view and the formula view. The global view (figure~\ref{fig:global-view}) shows the relationships between the worksheets. The worksheet view groups the data in a worksheet into blocks and how they relate to each other. On the lowest level is the formula view which gives more detail about the calculations of a specific formula. One of the limitations of the leveled dataflow is, that it is a read only tool. It does not exist bidirectionality to allow the user to connect the data blocks to the data in the worksheet. Unlike the multiple representation spreadsheet discussed below, it does not allow edits to the view.
+Several studies have proposed different approaches to display the underlying dependency graph of spreadsheets. 
+Hermans et al. present in their paper \textit{Supporting Professional Spreadsheet Users by Generating Leveled dataflow Diagrams}~\cite{hermans_supporting_2011}, a solution to explicitly show these relationships. Their approach consist of three Views: The global view, the worksheet view and the formula view. The global view (figure~\ref{fig:global-view}) shows the relationships between the worksheets. The worksheet view groups the data in a worksheet into blocks and how they relate to each other. On the lowest level is the formula view which gives more detail about the calculations of a specific formula. One of the limitations of the leveled dataflow is that it is a read only tool. It does not exist bidirectionality to allow the user to connect the data blocks to the data in the worksheet. Unlike the multiple representation spreadsheet discussed below, it does not allow edits to the view.
 \begin{figure}
     \centering
     \includegraphics[scale=0.3]{chapters/methods/images/global-view.png}
@@ -27,4 +27,6 @@ To tackle the inability to clearly see the underlying computational structure an
 
 \subsection{Grid-embedded visualizations}
 \subsubsection{Fluid Visualization}
-In the paper \textit{Fluid Visualization of Spreadsheet Structures}~\cite{igarashi_fluid_1998} by Igarashi et al. embed the visualization directly into the spreadsheet grid. They use different techniques for the visualization. The first one is the transient local view, which allows the user to see the incoming and outgoing cells of a selected cell. It is called transient because the view appears and gradually fades dependent where the cursor is moved to. It also implements a static global view, which shows the entire dataflow graph at once to the user. To highlight the direction of the dataflow, the system animates the dataflow.
+In the paper \textit{Fluid Visualization of Spreadsheet Structures}~\cite{igarashi_fluid_1998} by Igarashi et al. embed the visualization directly into the spreadsheet grid. They use different techniques for the visualization. The first one is the transient local view, which allows the user to see the incoming and outgoing cells of a selected cell. It is called transient because the view appears and gradually fades depending on where the cursor is moved to. It also implements a static global view, which shows the entire dataflow graph at once to the user. To highlight the direction of the dataflow, the system animates the dataflow.
+
+\subsection{Summary}
