@@ -25,15 +25,15 @@ In order to understand the dependencies of the formula the system explicitly cre
     \centering
     \begin{minipage}{0.45\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{chapters/system-design/images/two-identical-looking-address-with-secondary-notation.png}
-        \caption{Two references resolve to the same looking address even though they do not reside in the same worksheet. The colors indicate that A1 (green, top) is on a different worksheet than A1, B1 (pink). }
+        \includegraphics[width=\textwidth]{chapters/system-design/images/two-identical-looking-addresses-with-secondary-notation-3.png}
+        \caption{Two references resolve to the same looking address even though they do not reside in the same worksheet. The colors indicate that A1 (red, top) is on a different worksheet than A1, B1 (blue). }
         \label{fig:identical-address-formula}
     \end{minipage}
     \hfill
     \begin{minipage}{0.45\textwidth}
         \centering
-        \includegraphics[width=\textwidth, scale=0.1]{chapters/system-design/images/sheet-tabs-colors.png}
-        \caption{In the sheets tab of the data table view the corresponding worksheets are colored corresponding to their assigned color.}
+        \includegraphics[width=\textwidth, scale=0.1]{chapters/system-design/images/sheet-tabs-colors-2.png}
+        \caption{The sheet tabs are color accordingly.}
         \label{fig:sheet-tabs-colors}
     \end{minipage}
 \end{figure} 
@@ -53,13 +53,13 @@ Expandable cell reference nodes (figure~\ref{fig:exp-cell-ref-e}) are only expan
 Crucially the graph navigation is decoupled from the grid navigation. When a user expands a cell reference node the viewport of the worksheet remains the same. This aims to preserve the spatial context of the user in the worksheet while being able to trace down the dependency chain, directly addressing an issue reported by Ragavan et al., where a user has lost track when navigating between dependents and precedents \cite{srinivasa_ragavan_spreadsheet_2021}. %TODO: mention even more why it helps keeping track of th positon => because the tool shows whole dependency chain and does stay the same => users can easily click on the graph to navigate through the worksheets without having to invest to much attention. ==> maybe write this in the edit section 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.3]{chapters/system-design/images/expandable-cell-referencence-node-minimized.png}
+    \includegraphics[scale=0.3]{chapters/system-design/images/expandable-cell-reference-node-minimized.png}
     \caption{Expandable cell reference node when minimized}
     \label{fig:exp-cell-ref-m}
 \end{figure}
 \begin{figure}
     \centering
-    \includegraphics[scale=0.3]{chapters/system-design/images/expandable-cell-reference-node-expanded.png}
+    \includegraphics[scale=0.3]{chapters/system-design/images/expandable-cell-reference-node-expanded-2.png}
     \caption{Expandable cell reference node when expanded}
     \label{fig:exp-cell-ref-e}
 \end{figure}    
@@ -75,7 +75,7 @@ In contrast to cell references, which hold one value, range references encompass
 A function in Spreadsheet programs is a predefined formula, which takes one or more arguments to produce a result \cite{noauthor_ecma-376-12016_2016}. In traditional formula syntax, the semantic meaning of an argument is only defined by its position for example in the function: VLOOKUP(E6,H6:I9,2,0). When reading this the user must actively recall which argument is responsible for what. This mental mapping increases cognitive load. To solve this the system gives each argument a semantic label. By visually linking a node to a semantic label the system aims to increase the role~expressiveness of the argument nodes. This should decrease the need of consulting a documentation.
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.3]{chapters/system-design/images/semantic-argument-label-example.png}
+    \includegraphics[width=0.8\linewidth]{chapters/system-design/images/semantic-argument-label-2.png}
     \caption{Example of the linking between argument nodes to semantic argument labels}
     \label{fig:semantic-argument-example}
 \end{figure}
@@ -101,14 +101,14 @@ Furthermore, because spreadsheets are dynamic the system updates the active bran
 
 \begin{figure}
         \centering
-        \includegraphics[scale=0.25]{chapters/system-design/images/conditional-node-design-example-1.png}
+        \includegraphics[width=\linewidth]{chapters/system-design/images/if-not-expanded.png}
         \caption{The system strikes non taken arguments in conditional nodes through}
         \label{fig:conditional-node-arguments}
 \end{figure}
 
 \begin{figure}
         \centering
-        \includegraphics[scale=0.3]{chapters/system-design/images/conditional-node-design-example-2.png}
+        \includegraphics[width=\linewidth]{chapters/system-design/images/if-expanded.png}
         \caption{The system grays non taken branches out if expanded}
         \label{fig:conditional-node-branch-gray}
 \end{figure}

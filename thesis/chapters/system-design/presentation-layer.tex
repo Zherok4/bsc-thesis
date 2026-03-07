@@ -11,6 +11,13 @@ To achieve juxtaposability~(Definition~\ref{def:juxtaposability}) between the sp
 The split view layout introduces the cognitive cost known as the split-attention effect. Chandler and Sweller, in \textit{The Split-Attention Effect as a Factor in the Design of Instruction}~\cite{chandler_split-attention_1992}, describe this as a phenomenon in which learners are forced to mentally integrate information from disparate sources.
 However, the split view is a response to a fundamental limitation of overlay-based approaches. As mentioned in section~\ref{sec:built-in-tools}, traditional spreadsheet tools for tracing precedents and dependents use an overlay strategy. An overlay strategy ties the dependency visualization directly to the current worksheet view. But it fails when the user navigates to another worksheet to inspect a referenced cell, the visualization disappears, causing the user to lose the visual context of the formula they were investigating. This is the loss of spatial context identified in section~\ref{sec:problem-statement}, where users lose track when navigating between dependents and precedents. Furthermore, an overlay would occlude cells and formulas the user needs to see. By decoupling the flow graph from worksheet navigation, the split view keeps the dependency graph of the synchronized formula visible and stable while the user is able to freely navigate between worksheets.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{chapters/system-design/images/whole-tool-overview.png}
+    \caption{On the left side is the spreadsheet view and on the right side the flow-graph view}
+    \label{fig:overall-view-tool}
+\end{figure}
+
 % TODO: maybe remove this section
 %\subsubsection{The minimap}
 %Ragavan et al. identify anot the problem that it is easy to miss data because of the unbounded grid size of spreadsheets. In order to give the user some sense of the size of the spreadsheet, the system implements a minimap which displays the proportional size of the current viewport to the whole spreadsheet and where the viewport is located.

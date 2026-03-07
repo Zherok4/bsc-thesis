@@ -1,7 +1,7 @@
 \section{Related work}
 \subsection{Built-in spreadsheet tools}
 \label{sec:built-in-tools}
-Excel and LibreOffice Calc have their own built-in tool to track dependents and precedents of a cell. If a user tracks for example the precedent of a cell (figure~\ref{fig:precedent-libre}), the program draws an arrow of the precedent to the cell. Even though the arrows highlight the precedent / dependents of a cell, if they are located on a different worksheet the user has to move to the other worksheet and possibly lose their current spatial context. Another issue is that the user only sees the precedents / dependents which are in the viewport. If they are not located in the current viewport the user has to scroll away to locate the precedents / dependents.
+Excel and LibreOffice Calc have their own built-in tool to track dependents and precedents of a cell. If a user tracks for example the precedent of a cell (figure~\ref{fig:precedent-libre}), the program draws an arrow from the precedent to the cell. Even though the arrows highlight the precedent / dependents of a cell, if they are located on a different worksheet the user has to move to the other worksheet. Another issue is that the user only sees the precedents / dependents which are in the viewport. If they are not located in the current viewport the user also has to scroll away to locate the precedents / dependents. Both of these navigational steps can disrupt the user's spatial context in the spreadsheet and increase the overall viscosity~(definition~\ref{def:viscosity}). These costs compound with increasing complexity.
 \begin{figure}[H]
     \centering
     \includegraphics[scale=0.3]{chapters/methods/images/precedent-tracking-libre.png}
@@ -23,10 +23,24 @@ Hermans et al. present in their paper \textit{Supporting Professional Spreadshee
 
 \subsubsection{Multiple representation spreadsheet}
 \label{sec:multiple-representation}
-To tackle the inability to clearly see the underlying computational structure and lack of abstraction, Sarkar et al. present their solution, multiple representation spreadsheet, in the paper \textit{Calculation View: multiple-representation editing in spreadsheets}~\cite{sarkar_calculation_2018}. Their solution leaves the grid and formula syntax untouched, but it should provide additional representation to abstract. Their additional representation is a textual view, which describes "a set of formula assignments"~\cite[p.~86]{sarkar_calculation_2018}. The tool also allows for bidirectionality. The user can make an edit in one view, and it gets propagated to the other, it is live.
+To tackle the inability to clearly see the underlying computational structure and lack of abstraction, Sarkar et al. present their solution, multiple representation spreadsheet, in the paper \textit{Calculation View: multiple-representation editing in spreadsheets}~\cite{sarkar_calculation_2018}. Their solution leaves the grid and formula syntax untouched, but it should provide additional representation to abstract. Their additional representation is a textual view, which describes "a set of formula assignments"~\cite[p.~86]{sarkar_calculation_2018}(figure~\ref{fig:calculation-view}). The tool also allows for bidirectionality. The user can make an edit in one view, and it gets propagated to the other, it is live.
+Sarkar et al. explicitly mention that solving different kinds of problems in spreadsheets requires more representations beyond their textual one~\cite[p.~91]{sarkar_calculation_2018}. Because the flow graph visualization presented in this thesis follows a very similar approach of having a side-by-side view, the tool can be understood as an additional representation. In contrast to a textual representation, where users have to mentally reconstruct the dependencies from the formula assignments, a flow graph makes these relationships explicit and improves the self-descriptiveness. On the other hand, the textual representation may be better suited for expert programmers, as the assignment syntax resembles code. 
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.3]{chapters/methods/images/calculation-view.png}
+    \caption{Calculation view abstracts and lists the formulas of a spreadsheet \cite{sarkar_calculation_2018}}
+    \label{fig:calculation-view}
+\end{figure}
 
 \subsection{Grid-embedded visualizations}
 \subsubsection{Fluid Visualization}
 In the paper \textit{Fluid Visualization of Spreadsheet Structures}~\cite{igarashi_fluid_1998} by Igarashi et al. embed the visualization directly into the spreadsheet grid. They use different techniques for the visualization. The first one is the transient local view, which allows the user to see the incoming and outgoing cells of a selected cell. It is called transient because the view appears and gradually fades depending on where the cursor is moved to. It also implements a static global view, which shows the entire dataflow graph at once to the user. To highlight the direction of the dataflow, the system animates the dataflow.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{chapters/methods/images/fluid-visualization.png}
+    \caption{Overlaying the visualization directly onto the Grid. The user is also able to change things by directly interacting with the visualization~\cite{igarashi_fluid_1998}}
+    \label{fig:fluid-view}
+\end{figure}
 
 \subsection{Summary}
