@@ -1,0 +1,62 @@
+.credits-button__wrapper {
+    position: relative;
+}
+
+.credits-button__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 1000;
+    background: #ffffff;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    min-width: 200px;
+    white-space: nowrap;
+}
+
+.credits-button__heading {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.credits-button__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.credits-button__list a {
+    font-size: 13px;
+    color: #1a6bc4;
+    text-decoration: none;
+}
+
+.credits-button__list a:hover {
+    text-decoration: underline;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .credits-button__dropdown {
+        background: #2a2a2a;
+        border-color: #404040;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .credits-button__heading {
+        color: #aaaaaa;
+    }
+
+    .credits-button__list a {
+        color: #6babf0;
+    }
+}

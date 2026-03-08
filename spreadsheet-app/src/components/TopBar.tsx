@@ -2,6 +2,7 @@ import './TopBar.css';
 import { useRef, type JSX } from 'react';
 import { parseXlsxFile, type ImportResult, type MergeCellSettings, type CellStyle, type SheetStyleData } from '../utils/xlsxParser';
 import { TutorialTrigger } from './tutorial';
+import { CreditsButton } from './CreditsButton';
 
 // Re-export types for backwards compatibility
 export type { ImportResult, MergeCellSettings, CellStyle, SheetStyleData };
@@ -57,6 +58,7 @@ const TopBar = ({ onImport } : TopBarProps): JSX.Element => {
                 Import File
             </button>
             <TutorialTrigger />
+            <CreditsButton />
         </div>
     );
 }
