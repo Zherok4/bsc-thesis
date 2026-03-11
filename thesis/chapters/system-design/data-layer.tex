@@ -1,7 +1,7 @@
 \section{The data layer}
 The data layer forms the foundation of the system architecture. It serves as the single source of truth for all spreadsheet related data. This includes for example: cell values, formulas and computed results.
 \subsection{Formula engine selection}
-For the formula engine it is important that it provides a lot of functions which are also used in Microsoft Excel or Google Sheets to make the user as familiar with the formulas as possible. Another important feature should be the ability to handle multiple worksheets. The system uses HyperFormula as its calculation engine. HyperFormula provides compatible syntax with Microsoft Excel, 400 built-in functions and an easy integration with custom front-ends \cite{noauthor_hyperformula_nodate}. This allows the user to transfer their pre-knowledge about spreadsheet functions and behavior to this system.
+For the formula engine it is important that it provides a lot of functions which are also used in Microsoft Excel or Google Sheets to make the user as familiar with the formulas as possible. Another important feature should be the ability to handle multiple worksheets. The system uses HyperFormula as its calculation engine. HyperFormula provides compatible syntax with Microsoft Excel, 400 built-in functions and an easy integration with custom front-ends \cite{hyperformula}. This allows the user to transfer their pre-knowledge about spreadsheet functions and behavior to this system.
 \subsection{Single engine instance}
 A single HyperFormula instance maintains the whole calculation state for the entire workbook. This allows the user to reference cells and ranges from different worksheets. Having only one single-instance implies having only one dependency graph for all worksheets. This simplifies the process of checking and updating dependencies. But this also implies that one computationally heavy formula could affect the responsiveness of the entire workbook.
 \subsection{Asymmetric data flow}
@@ -10,7 +10,7 @@ As mentioned in the presentation layer \ref{sec: presentation-layer} each worksh
 In contrast to the read paths, data manipulation in the Graph-View follows a slightly different path. Because HyperFormula is a headless calculation engine it is not able to know if it is connected to any Handsontable component. Therefore to prevent inconsistencies between the datatable and the underlying calculation engine, edits to the data have to go through the active Handsontable component to trigger rendering and the corresponding hooks. 
 % TODO: image / flow of the edit / read path
 \subsection{Data Structure}
-HyperFormula recognizes five basic cell value types: numbers, booleans, dates, strings and empty cells. Dates are stored internally as a numeric representation rather than as date objects \cite{noauthor_hyperformula_nodate}.
+HyperFormula recognizes five basic cell value types: numbers, booleans, dates, strings and empty cells. Dates are stored internally as a numeric representation rather than as date objects \cite{hyperformula}.
 % Like how is the underlying data organized ?
 % Section about auto-sync ?
 % Section about the HyperFormulaContext
