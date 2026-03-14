@@ -1,5 +1,6 @@
 # bsc-thesis
-Spreadsheet Website which should enhance bidirectionality and live-programming
+Supporting Self-Descriptiveness, Reusability, and Code Bidirectionality in Spreadsheet Programming
+Example: https://bsc-thesis.vercel.app/
 
 # Third-Party Assets
 

@@ -1,8 +1,8 @@
 \section{The parsing layer}
-The Parsing Layer's main responsibility is transforming a spreadsheet formula into an AST, and its inverse operation serializing the AST back into a formula. This allows the system to transform and reconstruct formulas after graph-based edits.
+The parsing layer's main responsibility is transforming a spreadsheet formula into an AST, and its inverse operation serializing the AST back into a formula. This allows the system to transform and reconstruct formulas after graph-based edits.
 \subsection{Parsing}
-The system uses Chevrotain, a parser building toolkit for JavaScript. The grammar follows standard spreadsheet formula syntax, supporting basic operations, cell references, ranges and function calls.
+The system uses Chevrotain~\cite{chevrotain}, a parser building toolkit for JavaScript. The grammar follows standard spreadsheet formula syntax, supporting basic operations, cell references, ranges and function calls.
 \subsection{Serialization}
-The serializer reconstructs a formula string from an AST. This is needed when a user has made an edit in the flow graph, because the modified AST has to be written back to the spreadsheet cell.
+The serializer reconstructs a formula string from an AST. This is needed when a user has made an edit in the flow-graph, because the modified AST has to be written back to the spreadsheet cell.
 \subsection{Transformations}
-Whenever a user applies an edit in the flow graph the system locates the corresponding AST nodes and applies the corresponding transformation. All transformations are immutable, which means that the system produces a new AST rather than modifying the original. The transformed AST is then serialized and written back to the cell.
+Whenever a user applies an edit in the flow-graph the system locates the corresponding AST nodes and applies the corresponding transformation. All transformations are immutable, which means that the system produces a new AST rather than modifying the original. The transformed AST is then serialized and written back to the cell.

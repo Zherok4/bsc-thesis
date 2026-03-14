@@ -1,14 +1,14 @@
 \section{The spreadsheet paradigm}
 % TODO: mention name of the standard
 \subsection{Spreadsheet units}
-A spreadsheet program is used to organize, store and maintain data and perform calculations on the data. The primary unit of a spreadsheet is the cell. A cell can have three types of content: a static value, a formula or an empty state. A value is data which is directly entered by the user. A formula is a recipe for calculating a value\cite[p.~18]{noauthor_ecma-376-12016_2016}. In this thesis we define the terms worksheet and workbook as follows:
+A spreadsheet program is used to organize, store and maintain data and perform calculations on the data. The primary unit of a spreadsheet is the cell. A cell can have three types of content: a static value, a formula or an empty state. A value is data which is directly entered by the user. A formula is a recipe for calculating a value~\cite[p.~18]{noauthor_ecma-376-12016_2016}. In this thesis we define the terms worksheet and workbook as follows:
 \begin{definition}
     \label{def:Worksheet}
-    A \textbf{worksheet} is a two-dimensional grid of cells that are organized into rows and columns. \cite[p.~65]{noauthor_ecma-376-12016_2016}
+    A \textbf{worksheet} is a two-dimensional grid of cells that are organized into rows and columns.~\cite[p.~65]{noauthor_ecma-376-12016_2016}
 \end{definition}
 \begin{definition}
     \label{def:Workbook}
-    A \textbf{workbook} is a collection of worksheets. \cite[p.~65]{noauthor_ecma-376-12016_2016}
+    A \textbf{workbook} is a collection of worksheets.~\cite[p.~65]{noauthor_ecma-376-12016_2016}
 \end{definition}
 
 \subsection{Dependencies}
@@ -22,5 +22,5 @@ Conversely, the cells that the formula references are called the precedents of t
     \label{def:precedents}
     \textbf{Precedents} of a cell are all cells that the formula in that cell directly references.
 \end{definition}
-The dependencies can be tracked and modeled as a  Directed Graph. With the constraint that spreadsheets do not allow cyclic referencing, the resulting graph will be a Directed Acyclic Graph. But spreadsheets programs do not explicitly show the dependency graph and the relationship between precedents and dependents stay hidden. Such hidden dependencies can cause hidden changes. For example, if we have a formula in one worksheet, which is dependent on a cell in another worksheet, and change the data in this cell the change in the computed value of the formula stays hidden \cite{green_usability_1996}. The change stays hidden because almost all spreadsheets only display one worksheet at a time.
+The dependencies can be tracked and modeled as a directed graph. With the constraint that spreadsheets do not allow cyclic referencing, the resulting graph will be a directed acyclic graph. However, spreadsheet programs do not explicitly show the dependency graph and the relationship between precedents and dependents stays hidden. Such hidden dependencies can cause hidden changes. For example, if a formula in one worksheet depends on a cell in another worksheet, changing the value of that cell will change the computed value of the formula without any visible indication to the user~\cite{green_usability_1996}, since most spreadsheet programs only display one worksheet at a time.
 % TODO: examples ??

@@ -1,37 +1,38 @@
 \section{Cognitive dimensions}
-To describe and evaluate certain design choices, this thesis uses vocabulary from the paper \textit{Usability Analysis of Visual Programming Environments: A 'Cognitive Dimensions' Framework}~\cite{green_usability_1996}. The Cognitive Dimensions Framework has a small vocabulary in order to capture the important aspects of visual programming environments. The following dimensions are particularly relevant:
+To describe and evaluate certain design choices, this thesis uses vocabulary from the paper \textit{Usability Analysis of Visual Programming Environments: A 'Cognitive Dimensions' Framework} by Green and Petre~\cite{green_usability_1996}. The Cognitive Dimensions Framework has a small vocabulary in order to capture the important aspects of visual programming environments. The following dimensions are particularly relevant:
 
 \begin{definition}
     \label{def:diffuseness}
     \textbf{Diffuseness} is defined as "How many symbols or graphic entities are required to express a meaning?" \cite[p.~138]{green_usability_1996}
 \end{definition}
-Diffuseness in this thesis is used to describe whether the flow graph requires many nodes to represent the logic and therefore is not compact.
+Diffuseness in this thesis is used to describe whether the flow-graph requires many nodes to represent the logic and therefore is not compact.
 
 \begin{definition}
     \label{def:role-expressiveness}
     \textbf{Role expressiveness} is defined as "Can the reader see how each component of a program relates to the whole?" \cite[p.~139]{green_usability_1996}
 \end{definition}
-Role expressiveness is used to describe in the flow graph if the purpose of a certain component can be inferred from its appearance and how it interacts with the other nodes. If the flow graph has high role expressiveness the user should also be able to infer from reading the flow graph how the components relate to the underlying logic of the spreadsheet.
+Role expressiveness is used to describe if the purpose of a certain component in the flow-graph can be inferred from its appearance and how it interacts with the other nodes. If the flow-graph has high role expressiveness, the user should be able to infer how the components relate to the underlying logic of the spreadsheet from only reading the flow-graph.
 
 \begin{definition}
     \label{def:hidden-dependencies}
     \textbf{Hidden dependencies} are defined as "Is every dependency overtly indicated in both directions? Is the indication perceptual or only symbolic?" \cite[p.~139]{green_usability_1996}
 \end{definition}
-Green and Petre mention an example of hidden dependencies in spreadsheets: "The formula in a cell tells which other cells it takes its value from, but does not tell which other cells take their value from it." \cite[p.~154]{green_usability_1996}. This thesis evaluates whether the flow graph is able to show these dependencies and make them visible.
+Green and Petre mention an example of hidden dependencies in spreadsheets: "The formula in a cell tells which other cells it takes its value from, but does not tell which other cells take their value from it." \cite[p.~154]{green_usability_1996}. This thesis evaluates whether the flow-graph is able to show these dependencies and make them visible.
 
 \begin{definition}
     \label{def:viscosity}
     \textbf{Viscosity} is defined as "How much effort is required to perform a single change?" \cite[p.~139]{green_usability_1996}
 \end{definition}
-Viscosity is relevant to evaluating and describing if the edit mode is easy and intuitive to use.
+Viscosity is relevant to evaluating both the navigation cost of tracing dependencies and describing the ease of making changes in the edit mode.
 
 \begin{definition}
     \label{def:closeness-of-mapping}
     \textbf{Closeness of mapping} is defined as "What programming games need to be learned?" \cite[p.~138]{green_usability_1996}
 \end{definition}
-Closeness of mapping is used in this thesis to describe whether interactions in the flow graph correspond to interactions the user already knows from existing spreadsheet tools.
+In this thesis, closeness of mapping is used to describe whether interactions in the flow-graph correspond to interactions the user already knows from existing spreadsheet tools.
 
 \begin{definition}
     \label{def:juxtaposability}
     \textbf{Juxtaposability} is defined as the ability to see any two portions of the program on screen side-by-side at the same time \cite[p.~162]{green_usability_1996}
 \end{definition}
+Juxtaposability is relevant to evaluating whether the user can view both the spreadsheet and the flow-graph simulataneously.
