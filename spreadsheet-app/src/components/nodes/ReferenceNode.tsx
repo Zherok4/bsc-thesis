@@ -77,12 +77,24 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     );
     
 
+    /** In preview mode, double-click to enter edit mode */
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (disableInteraction) return;
 
-        if (!isEditModeActive || !isThisNodeBeingEdited) {
+        if (!isEditModeActive) {
+            enterEditMode(id);
+        }
+    }, [enterEditMode, isEditModeActive, id, disableInteraction]);
+
+    /** In edit mode, a single click on the address is enough to start editing this node */
+    const handleAddressClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (disableInteraction) return;
+
+        if (isEditModeActive && !isThisNodeBeingEdited) {
             enterEditMode(id);
         }
     }, [enterEditMode, isEditModeActive, isThisNodeBeingEdited, id, disableInteraction]);
@@ -97,6 +109,12 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
     const handleSimpleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
 
+        // In edit mode, a single click anywhere on the node enters edit for this node's address
+        if (isEditModeActive && !isThisNodeBeingEdited && !disableInteraction) {
+            enterEditMode(id);
+            return;
+        }
+
         if (simpleCellAddress) {
             const {row, col} = simpleCellAddress;
             scrollToCell(row, col, residingSheet);
@@ -104,7 +122,7 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                 highlightCells(row, col, row, col, residingSheet);
             }
         }
-    }, [simpleCellAddress, scrollToCell, highlightCells, residingSheet, disableInteraction]);
+    }, [simpleCellAddress, scrollToCell, highlightCells, residingSheet, disableInteraction, isEditModeActive, isThisNodeBeingEdited, enterEditMode, id]);
 
     const handleMouseOver = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -151,7 +169,9 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
             sheet: activeSheetName,
             sourceCell,
         });
-    }, [astNodeId, astNodeIds, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode, sourceCell]);
+
+        highlightCells(selectedCell.row, selectedCell.col, selectedCell.row, selectedCell.col, activeSheetName);
+    }, [astNodeId, astNodeIds, selectedCell, activeSheetName, hfInstance, saveEdit, exitEditMode, sourceCell, highlightCells]);
 
     const handleCancelEdit = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -228,8 +248,9 @@ export default function ReferenceNodeComponent({id, data: {reference, sheet, has
                             {headerLabel && <span className="header-label">{headerLabel}</span>}
                             <div
                                 className={`cell-ref ${isThisNodeBeingEdited ? 'editing' : ''}`}
-                                onDoubleClick={e => handleDoubleClick(e)}
-                                title={"double click to change Reference"}>
+                                onClick={handleAddressClick}
+                                onDoubleClick={handleDoubleClick}
+                                title={isEditModeActive ? "Click to change reference" : "Double-click to change reference"}>
                                 {internalReference}
                             </div>
                         </div>
